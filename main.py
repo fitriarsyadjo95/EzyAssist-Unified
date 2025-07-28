@@ -28,7 +28,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, or_, func, text, Enum
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Text, or_, func, text, Enum, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import jwt
@@ -162,6 +162,40 @@ if Base:
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
+    class BotActivity(Base):
+        __tablename__ = "bot_activity"
+        
+        id = Column(Integer, primary_key=True, index=True)
+        date = Column(Date, nullable=False, unique=True, index=True)
+        total_messages = Column(Integer, default=0)
+        unique_users = Column(Integer, default=0)
+        new_users = Column(Integer, default=0)
+        start_commands = Column(Integer, default=0)
+        register_commands = Column(Integer, default=0)
+        clear_commands = Column(Integer, default=0)
+        errors = Column(Integer, default=0)
+        peak_active_users = Column(Integer, default=0)
+        avg_response_time = Column(Float, default=0.0)
+        created_at = Column(DateTime, default=datetime.utcnow)
+        updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'date': self.date.isoformat() if self.date else None,
+                'total_messages': self.total_messages,
+                'unique_users': self.unique_users,
+                'new_users': self.new_users,
+                'start_commands': self.start_commands,
+                'register_commands': self.register_commands,
+                'clear_commands': self.clear_commands,
+                'errors': self.errors,
+                'peak_active_users': self.peak_active_users,
+                'avg_response_time': self.avg_response_time,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            }
+
 # Language translations
 TRANSLATIONS = {
     'ms': {
@@ -259,6 +293,9 @@ class EzyAssistBot:
         }
         self.last_activity = None
         self.error_count = 0
+        self.daily_users = set()  # Track unique users per day
+        self.daily_new_users = set()  # Track new users per day
+        self.response_times = []  # Track response times for averaging
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /start command"""
@@ -270,8 +307,15 @@ class EzyAssistBot:
         self.last_activity = datetime.utcnow()
         self.user_sessions[telegram_id] = self.last_activity
         
+        # Check if new user
+        is_new_user = telegram_id not in self.engagement_scores
+        
         # Initialize engagement score
         self.engagement_scores[telegram_id] = 0
+        
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'start', is_new_user)
+        self.reset_daily_tracking()
         
         welcome_message = (
             f"Selamat datang ke EzyAssist, {user.first_name}! 🌟\n\n"
@@ -292,6 +336,10 @@ class EzyAssistBot:
         self.command_usage['register'] += 1
         self.last_activity = datetime.utcnow()
         self.user_sessions[telegram_id] = self.last_activity
+        
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'register')
+        self.reset_daily_tracking()
         
         try:
             # Generate registration token
@@ -328,6 +376,10 @@ class EzyAssistBot:
         self.last_activity = datetime.utcnow()
         self.user_sessions[telegram_id] = self.last_activity
         
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'clear')
+        self.reset_daily_tracking()
+        
         # Reset engagement score
         self.engagement_scores[telegram_id] = 0
         
@@ -349,10 +401,17 @@ class EzyAssistBot:
         self.last_activity = datetime.utcnow()
         self.user_sessions[telegram_id] = self.last_activity
 
+        # Check if new user
+        is_new_user = telegram_id not in self.engagement_scores
+
         # Update engagement score
         if telegram_id not in self.engagement_scores:
             self.engagement_scores[telegram_id] = 0
         self.engagement_scores[telegram_id] += 1
+
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'message', is_new_user)
+        self.reset_daily_tracking()
 
         # Update last seen (removed Supabase dependency)
 
@@ -380,6 +439,7 @@ class EzyAssistBot:
     async def error_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle errors"""
         self.error_count += 1
+        self.update_daily_stats(errors=1)
         logger.error(f"Update {update} caused error {context.error}")
 
     def get_bot_statistics(self):
@@ -449,6 +509,96 @@ class EzyAssistBot:
                 'last_activity': 'Error',
                 'error_rate': 100.0
             }
+
+    def update_daily_stats(self, telegram_id: str, command_type: str = 'message', is_new_user: bool = False):
+        """Update daily statistics in database"""
+        try:
+            if not SessionLocal:
+                return
+                
+            db = SessionLocal()
+            today = datetime.utcnow().date()
+            
+            # Get or create today's record
+            daily_stats = db.query(BotActivity).filter_by(date=today).first()
+            if not daily_stats:
+                daily_stats = BotActivity(date=today)
+                db.add(daily_stats)
+            
+            # Update statistics
+            if command_type == 'message':
+                daily_stats.total_messages += 1
+            elif command_type == 'start':
+                daily_stats.start_commands += 1
+            elif command_type == 'register':
+                daily_stats.register_commands += 1
+            elif command_type == 'clear':
+                daily_stats.clear_commands += 1
+            elif command_type == 'error':
+                daily_stats.errors += 1
+            
+            # Track unique users
+            self.daily_users.add(telegram_id)
+            daily_stats.unique_users = len(self.daily_users)
+            
+            # Track new users
+            if is_new_user:
+                self.daily_new_users.add(telegram_id)
+                daily_stats.new_users = len(self.daily_new_users)
+            
+            # Update peak active users
+            current_active = len([ts for ts in self.user_sessions.values() 
+                                if ts and ts > datetime.utcnow() - timedelta(minutes=30)])
+            if current_active > daily_stats.peak_active_users:
+                daily_stats.peak_active_users = current_active
+            
+            # Update average response time
+            if self.response_times:
+                daily_stats.avg_response_time = sum(self.response_times) / len(self.response_times)
+            
+            daily_stats.updated_at = datetime.utcnow()
+            db.commit()
+            db.close()
+            
+        except Exception as e:
+            logger.error(f"Error updating daily stats: {e}")
+            if 'db' in locals():
+                db.close()
+
+    def get_historical_stats(self, days: int = 30):
+        """Get historical bot activity stats"""
+        try:
+            if not SessionLocal:
+                return []
+                
+            db = SessionLocal()
+            end_date = datetime.utcnow().date()
+            start_date = end_date - timedelta(days=days-1)
+            
+            stats = db.query(BotActivity).filter(
+                BotActivity.date >= start_date,
+                BotActivity.date <= end_date
+            ).order_by(BotActivity.date.desc()).all()
+            
+            db.close()
+            return [stat.to_dict() for stat in stats]
+            
+        except Exception as e:
+            logger.error(f"Error getting historical stats: {e}")
+            if 'db' in locals():
+                db.close()
+            return []
+
+    def reset_daily_tracking(self):
+        """Reset daily tracking sets (call at midnight)"""
+        current_date = datetime.utcnow().date()
+        if hasattr(self, '_last_reset_date') and self._last_reset_date == current_date:
+            return
+            
+        self.daily_users = set()
+        self.daily_new_users = set()
+        self.response_times = []
+        self._last_reset_date = current_date
 
     def setup_bot(self):
         """Setup the Telegram bot"""
@@ -960,6 +1110,42 @@ async def get_bot_status(admin = Depends(get_current_admin)):
             "success": False,
             "error": str(e)
         }
+
+@app.get("/admin/bot-activity", response_class=HTMLResponse)
+async def admin_bot_activity(request: Request, admin = Depends(get_current_admin)):
+    """Admin bot activity page with historical data"""
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    historical_data = []
+    current_stats = {}
+    
+    if SessionLocal:
+        db = get_db()
+        if db:
+            try:
+                # Get historical activity data (last 30 days)
+                thirty_days_ago = datetime.utcnow().date() - timedelta(days=30)
+                historical_data = db.query(BotActivity).filter(
+                    BotActivity.date >= thirty_days_ago
+                ).order_by(BotActivity.date.desc()).all()
+                
+                # Get current bot statistics
+                if bot_instance:
+                    current_stats = bot_instance.get_bot_statistics()
+                    
+            except Exception as e:
+                logger.error(f"Error getting bot activity data: {e}")
+            finally:
+                db.close()
+    
+    return templates.TemplateResponse("admin/bot_activity.html", {
+        "request": request,
+        "admin": admin,
+        "historical_data": historical_data,
+        "current_stats": current_stats
+    })
 
 @app.get("/admin/registrations", response_class=HTMLResponse)
 async def admin_registrations_list(
