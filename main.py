@@ -36,7 +36,6 @@ import uvicorn
 
 # AI and conversation
 from conversation_engine import ConversationEngine
-from supabase_client import SupabaseClient
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -180,7 +179,6 @@ class EzyAssistBot:
         self.token = os.getenv('TELEGRAM_BOT_TOKEN')
         self.admin_id = os.getenv('ADMIN_ID')
         self.conversation_engine = ConversationEngine()
-        self.supabase_client = SupabaseClient()
         self.engagement_scores = {}
         self.application = None
 
@@ -188,9 +186,6 @@ class EzyAssistBot:
         """Handle /start command"""
         user = update.effective_user
         telegram_id = str(user.id)
-        
-        # Save user to database
-        await self.supabase_client.upsert_user(telegram_id)
         
         # Initialize engagement score
         self.engagement_scores[telegram_id] = 0
@@ -261,11 +256,7 @@ class EzyAssistBot:
             self.engagement_scores[telegram_id] = 0
         self.engagement_scores[telegram_id] += 1
 
-        # Update last seen
-        try:
-            await self.supabase_client.update_user_last_seen(telegram_id)
-        except Exception as e:
-            logger.warning(f"Supabase update failed: {e}")
+        # Update last seen (removed Supabase dependency)
 
         # Process message through conversation engine
         try:
@@ -543,30 +534,18 @@ class RegistrationPayload(BaseModel):
 async def api_register_user(payload: RegistrationPayload):
     """API endpoint for external registration"""
     try:
-        # Process via Supabase if needed
-        if bot_instance and bot_instance.supabase_client:
-            # Handle image upload if provided
-            image_url = ""
-            if payload.deposit_base64:
-                # Handle image upload logic here
-                pass
-            
-            # Save to Supabase
-            data = {
-                "telegram_id": payload.telegram_id,
-                "full_name": payload.full_name,
-                "phone_number": payload.phone_number,
-                "experience_level": payload.experience_level,
-                "client_id": payload.client_id,
-                "deposit_proof": image_url,
-            }
-            
-            # Save to Supabase table
-            # supabase.table("registrations").insert(data).execute()
-            
-            # Send notifications
-            await send_registration_confirmation(payload.telegram_id, data)
-            await send_admin_notification(data)
+        # Process registration data
+        data = {
+            "telegram_id": payload.telegram_id,
+            "full_name": payload.full_name,
+            "phone_number": payload.phone_number,
+            "experience_level": payload.experience_level,
+            "client_id": payload.client_id,
+        }
+        
+        # Send notifications
+        await send_registration_confirmation(payload.telegram_id, data)
+        await send_admin_notification(data)
         
         return {"status": "success"}
     except Exception as e:
