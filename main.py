@@ -14,7 +14,7 @@ import time
 from functools import wraps
 
 # FastAPI and web components
-from fastapi import FastAPI, Request, Form, HTTPException, status
+from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -362,7 +362,10 @@ async def submit_registration(
     phone_number: str = Form(...),
     brokerage_name: str = Form(...),
     deposit_amount: str = Form(...),
-    client_id: str = Form(...)
+    client_id: str = Form(...),
+    deposit_proof_1: UploadFile = File(None),
+    deposit_proof_2: UploadFile = File(None),
+    deposit_proof_3: UploadFile = File(None)
 ):
     """Process registration form submission"""
     logger.info("🚨 Registration form submitted")

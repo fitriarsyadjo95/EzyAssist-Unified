@@ -350,6 +350,11 @@ document.addEventListener('DOMContentLoaded', function() {
             input.disabled = true;
         });
 
+        // Ensure all form steps are visible for submission
+        formSteps.forEach(step => {
+            step.style.display = 'block';
+        });
+        
         // Add a small delay for better UX
         setTimeout(() => {
             console.log('Submitting form to server...');
@@ -365,6 +370,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (loadingState) {
                     loadingState.classList.add('d-none');
                 }
+                // Restore step visibility
+                showStep(currentStep);
             }
         }, 500);
     }
