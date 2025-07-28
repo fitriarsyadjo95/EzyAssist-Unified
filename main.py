@@ -8,6 +8,8 @@ import logging
 import asyncio
 from datetime import datetime, timedelta
 import random
+import csv
+import io
 from typing import Optional
 import secrets
 import hashlib
@@ -20,7 +22,7 @@ from functools import wraps
 # FastAPI and web components
 from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile, Depends
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -1572,6 +1574,132 @@ async def create_test_registrations(admin = Depends(get_current_admin)):
         logger.error(f"Error creating test data: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create test data: {str(e)}")
+    finally:
+        db.close()
+
+@app.get("/admin/registrations/export")
+async def export_registrations(
+    start_date: str = None,
+    end_date: str = None,
+    status: str = "",
+    format: str = "csv",
+    admin = Depends(get_current_admin)
+):
+    """Export registrations to CSV with optional date and status filtering"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Build query with filters
+        query = db.query(VipRegistration)
+        
+        # Date filtering
+        if start_date:
+            try:
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                query = query.filter(VipRegistration.created_at >= start_dt)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid start_date format. Use YYYY-MM-DD")
+        
+        if end_date:
+            try:
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)  # Include full end day
+                query = query.filter(VipRegistration.created_at < end_dt)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid end_date format. Use YYYY-MM-DD")
+        
+        # Status filtering
+        if status:
+            if status == "pending":
+                query = query.filter(VipRegistration.status == RegistrationStatus.PENDING)
+            elif status == "verified":
+                query = query.filter(VipRegistration.status == RegistrationStatus.VERIFIED)
+            elif status == "rejected":
+                query = query.filter(VipRegistration.status == RegistrationStatus.REJECTED)
+        
+        # Get filtered registrations
+        registrations = query.order_by(VipRegistration.created_at.desc()).all()
+        
+        if format.lower() == "csv":
+            # Create CSV content
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Write header
+            writer.writerow([
+                'ID', 'Registration Date', 'Full Name', 'Email', 'Phone Number',
+                'Telegram ID', 'Telegram Username', 'Client ID', 'Brokerage Name',
+                'Deposit Amount', 'Status', 'IP Address', 'Status Updated At',
+                'Updated By Admin', 'Files Count'
+            ])
+            
+            # Write data rows
+            for reg in registrations:
+                # Count uploaded files
+                file_count = sum(1 for path in [
+                    reg.deposit_proof_1_path,
+                    reg.deposit_proof_2_path, 
+                    reg.deposit_proof_3_path
+                ] if path)
+                
+                writer.writerow([
+                    reg.id,
+                    reg.created_at.strftime('%Y-%m-%d %H:%M:%S') if reg.created_at else '',
+                    reg.full_name,
+                    reg.email,
+                    reg.phone_number,
+                    reg.telegram_id,
+                    reg.telegram_username or '',
+                    reg.client_id,
+                    reg.brokerage_name,
+                    reg.deposit_amount,
+                    reg.status.value if reg.status else '',
+                    reg.ip_address or '',
+                    reg.status_updated_at.strftime('%Y-%m-%d %H:%M:%S') if reg.status_updated_at else '',
+                    reg.updated_by_admin or '',
+                    file_count
+                ])
+            
+            # Generate filename with filters
+            filename_parts = ["ezyassist_registrations"]
+            if start_date and end_date:
+                filename_parts.append(f"{start_date}_to_{end_date}")
+            elif start_date:
+                filename_parts.append(f"from_{start_date}")
+            elif end_date:
+                filename_parts.append(f"until_{end_date}")
+            
+            if status:
+                filename_parts.append(f"status_{status}")
+            
+            filename_parts.append(datetime.now().strftime("%Y%m%d_%H%M%S"))
+            filename = "_".join(filename_parts) + ".csv"
+            
+            # Log export activity
+            logger.info(f"📊 Registration export by {admin.get('username')} - {len(registrations)} records, filters: start={start_date}, end={end_date}, status={status}")
+            
+            # Return CSV file
+            csv_content = output.getvalue()
+            output.close()
+            
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported format. Only 'csv' is supported.")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error exporting registrations: {e}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
     finally:
         db.close()
 
