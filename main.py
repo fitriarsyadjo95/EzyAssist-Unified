@@ -435,12 +435,20 @@ async def success_page(request: Request, token: str = None):
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    bot_ready = False
+    if bot_instance and bot_instance.application:
+        try:
+            # Check if bot application is properly initialized
+            bot_ready = hasattr(bot_instance.application, '_initialized') or bot_instance.application.running
+        except:
+            bot_ready = False
+    
     return {
         "status": "ok", 
         "message": "EzyAssist Unified System is running",
         "timestamp": datetime.utcnow().isoformat(),
-        "bot_ready": bool(bot_instance and bot_instance.application),
-        "database_ready": bool(SessionLocal)
+        "bot_ready": bot_ready,
+        "database_ready": bool(SessionLocal and engine)
     }
 
 @app.post("/telegram_webhook")
@@ -558,6 +566,8 @@ async def setup_bot_webhook():
     try:
         application = bot_instance.setup_bot()
         if application:
+            # Initialize the application properly
+            await application.initialize()
             webhook_url = os.getenv('TELEGRAM_WEBHOOK_URL')
             if webhook_url:
                 await application.bot.set_webhook(f"{webhook_url}/telegram_webhook")
