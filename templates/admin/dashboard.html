@@ -572,6 +572,16 @@
         async function updateBotStatus() {
             try {
                 const response = await fetch('/admin/bot-status');
+                
+                // Check if session expired
+                if (response.status === 401) {
+                    const errorData = await response.json();
+                    if (errorData.redirect) {
+                        window.location.href = errorData.redirect;
+                        return;
+                    }
+                }
+                
                 const data = await response.json();
                 
                 if (data.success && data.bot_health && data.bot_stats) {

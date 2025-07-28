@@ -18,6 +18,7 @@ from functools import wraps
 
 # FastAPI and web components
 from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile, Depends
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -105,6 +106,22 @@ app = FastAPI(title="EzyAssist Unified System", version="1.0.0")
 # Setup templates and static files
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Custom exception handler for 401 errors (session expired)
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 401 and "session" in str(exc.detail).lower():
+        # Check if this is an AJAX/API request
+        if request.headers.get("accept") == "application/json" or "/admin/bot-status" in str(request.url):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Session expired", "redirect": "/admin/session-expired"}
+            )
+        # For regular page requests, redirect to session expired page
+        return RedirectResponse(url="/admin/session-expired", status_code=302)
+    
+    # For all other HTTP exceptions, use default handler
+    return await http_exception_handler(request, exc)
 
 # Database setup
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -974,6 +991,13 @@ async def api_register_user(payload: RegistrationPayload):
 # =============================================================================
 # ADMIN DASHBOARD ROUTES
 # =============================================================================
+
+@app.get("/admin/session-expired", response_class=HTMLResponse)
+async def admin_session_expired(request: Request):
+    """Session expired page"""
+    return templates.TemplateResponse("admin/session_expired.html", {
+        "request": request
+    })
 
 @app.get("/admin/login", response_class=HTMLResponse)
 async def admin_login_page(request: Request):
