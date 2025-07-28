@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-lg border-0 registration-card">
+            <div class="card-header">
+                <h1 class="mb-0">{{ translations.title }}</h1>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="/submit" enctype="multipart/form-data">
+                    <!-- Hidden Fields -->
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
+                    <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
+                    <input type="hidden" name="language" value="ms">
+                    <input type="hidden" name="form_hash" value="{{ form_hash }}">
+                    
+                    <!-- Personal Information -->
+                    <h5 class="mb-4 text-primary">Maklumat Diri</h5>
+                    
+                    <div class="mb-4">
+                        <label for="full_name" class="form-label">
+                            Nama Penuh <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user fa-sm"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="full_name" name="full_name" 
+                                   placeholder="Masukkan nama penuh anda" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="email" class="form-label">
+                            Alamat Email <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope fa-sm"></i></span>
+                            <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                   placeholder="nama@example.com" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="phone_number" class="form-label">
+                            Nombor Telefon <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone fa-sm"></i></span>
+                            <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
+                                   placeholder="01234567890" required>
+                        </div>
+                    </div>
+
+                    <!-- Brokerage Information -->
+                    <h5 class="mb-4 text-primary mt-5">Info Brokerage & Deposit</h5>
+                    
+                    <div class="mb-4">
+                        <label for="brokerage_name" class="form-label">
+                            Nama Broker <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-building fa-sm"></i></span>
+                            <select class="form-select form-control-lg" id="brokerage_name" name="brokerage_name" required>
+                                <option value="">Pilih broker awak...</option>
+                                <option value="OctaFX">OctaFX</option>
+                                <option value="Velatex">Velatex</option>
+                                <option value="HFM">HFM</option>
+                                <option value="DollarsMarkets">DollarsMarkets</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="deposit_amount" class="form-label">
+                            Jumlah Deposit (dalam $) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-money-bill-wave fa-sm"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="deposit_amount" name="deposit_amount" 
+                                   placeholder="contoh: 100" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="client_id" class="form-label">
+                            Client ID <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-id-card fa-sm"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="client_id" name="client_id" 
+                                   placeholder="ID pelanggan dari broker" required>
+                        </div>
+                    </div>
+
+                    <!-- File Uploads (Optional) -->
+                    <h5 class="mb-4 text-primary mt-5">Upload Bukti Deposit <small class="text-muted">(opsional)</small></h5>
+                    
+                    <div class="mb-3">
+                        <label for="deposit_proof_1" class="form-label">File 1</label>
+                        <input type="file" class="form-control" id="deposit_proof_1" name="deposit_proof_1" 
+                               accept="image/*,.pdf">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="deposit_proof_2" class="form-label">File 2</label>
+                        <input type="file" class="form-control" id="deposit_proof_2" name="deposit_proof_2" 
+                               accept="image/*,.pdf">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="deposit_proof_3" class="form-label">File 3</label>
+                        <input type="file" class="form-control" id="deposit_proof_3" name="deposit_proof_3" 
+                               accept="image/*,.pdf">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold">
+                            {{ translations.submit }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

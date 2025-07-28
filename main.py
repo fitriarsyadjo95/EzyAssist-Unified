@@ -344,7 +344,7 @@ async def registration_form(request: Request, token: str = None):
                 })
     
     form_hash = generate_form_hash()
-    return templates.TemplateResponse("index.html", {
+    return templates.TemplateResponse("simple_form.html", {
         "request": request,
         "telegram_id": telegram_id,
         "telegram_username": telegram_username,
@@ -369,6 +369,15 @@ async def submit_registration(
 ):
     """Process registration form submission"""
     logger.info("🚨 Registration form submitted")
+    
+    # Debug: Log received form data
+    logger.info(f"Received token: {token if token else 'MISSING'}")
+    logger.info(f"Received full_name: {full_name if full_name else 'MISSING'}")
+    logger.info(f"Received email: {email if email else 'MISSING'}")
+    logger.info(f"Received phone_number: {phone_number if phone_number else 'MISSING'}")
+    logger.info(f"Received brokerage_name: {brokerage_name if brokerage_name else 'MISSING'}")
+    logger.info(f"Received deposit_amount: {deposit_amount if deposit_amount else 'MISSING'}")
+    logger.info(f"Received client_id: {client_id if client_id else 'MISSING'}")
     
     # Verify token
     telegram_id, telegram_username = verify_registration_token(token)
