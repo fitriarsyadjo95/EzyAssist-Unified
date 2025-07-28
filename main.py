@@ -1006,6 +1006,39 @@ async def reject_registration(
     finally:
         db.close()
 
+@app.post("/admin/registrations/delete-all")
+async def delete_all_registrations(admin = Depends(get_current_admin)):
+    """Delete all registration records (admin only)"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Get count before deletion
+        count_before = db.query(VipRegistration).count()
+        
+        # Delete all registrations
+        db.query(VipRegistration).delete()
+        db.commit()
+        
+        logger.info(f"✅ All registrations deleted by {admin.get('username')} - {count_before} records removed")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"All {count_before} registration records have been deleted",
+            "deleted_count": count_before
+        })
+        
+    except Exception as e:
+        logger.error(f"Error deleting all registrations: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to delete registrations")
+    finally:
+        db.close()
+
 # Bot initialization on startup
 async def setup_bot_webhook():
     """Setup bot webhook on startup"""
@@ -1066,19 +1099,19 @@ async def migrate_database():
             if 'status' not in existing_status_columns:
                 conn.execute(text("""
                     ALTER TABLE vip_registrations 
-                    ADD COLUMN status VARCHAR DEFAULT 'pending'
+                    ADD COLUMN status VARCHAR DEFAULT 'PENDING'
                 """))
                 conn.commit()
                 logger.info("✅ Added column: status")
                 
-                # Set existing registrations to pending
+                # Set existing registrations to pending (using enum values)
                 conn.execute(text("""
                     UPDATE vip_registrations 
-                    SET status = 'pending' 
-                    WHERE status IS NULL
+                    SET status = 'PENDING' 
+                    WHERE status IS NULL OR status = 'pending'
                 """))
                 conn.commit()
-                logger.info("✅ Set existing registrations to pending status")
+                logger.info("✅ Set existing registrations to PENDING status")
             
             # Add status_updated_at column if missing
             if 'status_updated_at' not in existing_status_columns:
@@ -1097,6 +1130,20 @@ async def migrate_database():
                 """))
                 conn.commit()
                 logger.info("✅ Added column: updated_by_admin")
+            
+            # Fix any existing lowercase enum values
+            conn.execute(text("""
+                UPDATE vip_registrations 
+                SET status = CASE 
+                    WHEN status = 'pending' THEN 'PENDING'
+                    WHEN status = 'verified' THEN 'VERIFIED' 
+                    WHEN status = 'rejected' THEN 'REJECTED'
+                    ELSE status
+                END
+                WHERE status IN ('pending', 'verified', 'rejected')
+            """))
+            conn.commit()
+            logger.info("✅ Fixed enum values to uppercase")
                     
     except Exception as e:
         logger.error(f"Database migration failed: {e}")
