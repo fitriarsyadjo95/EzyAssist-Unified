@@ -28,7 +28,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, or_, func
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, or_, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import jwt
@@ -842,6 +842,41 @@ async def setup_bot_webhook():
     except Exception as e:
         logger.error(f"Failed to setup webhook: {e}")
 
+async def migrate_database():
+    """Migrate database schema for new file upload columns"""
+    if not engine:
+        return
+    
+    try:
+        with engine.connect() as conn:
+            # Check if new columns exist
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name IN ('deposit_proof_1_path', 'deposit_proof_2_path', 'deposit_proof_3_path')
+            """))
+            existing_columns = [row[0] for row in result]
+            
+            # Add missing columns
+            columns_to_add = [
+                'deposit_proof_1_path',
+                'deposit_proof_2_path', 
+                'deposit_proof_3_path'
+            ]
+            
+            for column in columns_to_add:
+                if column not in existing_columns:
+                    conn.execute(text(f"""
+                        ALTER TABLE vip_registrations 
+                        ADD COLUMN {column} VARCHAR
+                    """))
+                    conn.commit()
+                    logger.info(f"✅ Added column: {column}")
+                    
+    except Exception as e:
+        logger.error(f"Database migration failed: {e}")
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and bot on startup"""
@@ -850,6 +885,10 @@ async def startup_event():
         try:
             Base.metadata.create_all(bind=engine)
             logger.info("✅ Database tables created")
+            
+            # Run migrations
+            await migrate_database()
+            
         except Exception as e:
             logger.error(f"Database setup failed: {e}")
     
