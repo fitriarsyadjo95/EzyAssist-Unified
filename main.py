@@ -361,7 +361,8 @@ async def submit_registration(
     email: str = Form(...),
     phone_number: str = Form(...),
     brokerage_name: str = Form(...),
-    deposit_amount: str = Form(...)
+    deposit_amount: str = Form(...),
+    client_id: str = Form(...)
 ):
     """Process registration form submission"""
     logger.info("🚨 Registration form submitted")
@@ -376,7 +377,7 @@ async def submit_registration(
         })
     
     # Validate required fields
-    if not all([full_name.strip(), email.strip(), phone_number.strip(), brokerage_name.strip(), deposit_amount.strip()]):
+    if not all([full_name.strip(), email.strip(), phone_number.strip(), brokerage_name.strip(), deposit_amount.strip(), client_id.strip()]):
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Sila lengkapkan semua medan yang diperlukan",
@@ -396,7 +397,7 @@ async def submit_registration(
                     phone_number=phone_number.strip(),
                     brokerage_name=brokerage_name.strip(),
                     deposit_amount=deposit_amount.strip(),
-                    client_id=request.client.host,
+                    client_id=client_id.strip(),
                     ip_address=request.client.host,
                     user_agent=request.headers.get('User-Agent', '')
                 )
