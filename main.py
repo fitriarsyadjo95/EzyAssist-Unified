@@ -28,7 +28,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, or_, func, text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, or_, func, text, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import jwt
@@ -36,9 +36,16 @@ import phonenumbers
 from email_validator import validate_email, EmailNotValidError
 import requests
 import uvicorn
+import enum
 
 # AI and conversation
 from conversation_engine import ConversationEngine
+
+# Registration status enum
+class RegistrationStatus(enum.Enum):
+    PENDING = "pending"
+    VERIFIED = "verified"
+    REJECTED = "rejected"
 from admin_auth import (
     authenticate_admin, create_admin_session, delete_admin_session,
     get_current_admin, admin_login_required
@@ -128,6 +135,9 @@ if Base:
         deposit_proof_1_path = Column(String, nullable=True)
         deposit_proof_2_path = Column(String, nullable=True)
         deposit_proof_3_path = Column(String, nullable=True)
+        status = Column(Enum(RegistrationStatus), default=RegistrationStatus.PENDING, nullable=False)
+        status_updated_at = Column(DateTime, nullable=True)
+        updated_by_admin = Column(String, nullable=True)
         ip_address = Column(String, nullable=True)
         user_agent = Column(Text, nullable=True)
         created_at = Column(DateTime, default=datetime.utcnow)
@@ -146,6 +156,9 @@ if Base:
                 'deposit_proof_1_path': self.deposit_proof_1_path,
                 'deposit_proof_2_path': self.deposit_proof_2_path,
                 'deposit_proof_3_path': self.deposit_proof_3_path,
+                'status': self.status.value if self.status else 'pending',
+                'status_updated_at': self.status_updated_at.isoformat() if self.status_updated_at else None,
+                'updated_by_admin': self.updated_by_admin,
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
@@ -465,8 +478,8 @@ async def submit_registration(
                 db.commit()
                 logger.info(f"✅ Registration saved for {full_name}")
                 
-                # Send notification to user via bot
-                await send_registration_confirmation(telegram_id, new_registration.to_dict())
+                # Send pending notification to user via bot
+                await send_registration_pending(telegram_id, new_registration.to_dict())
                 
                 # Notify admin
                 await send_admin_notification(new_registration.to_dict())
@@ -564,42 +577,91 @@ async def handle_telegram_webhook(request: Request):
         return JSONResponse(content={'error': 'Server error'}, status_code=500)
 
 # Helper functions for notifications
-async def send_registration_confirmation(telegram_id: str, registration_data: dict):
-    """Send confirmation message to user"""
+async def send_registration_pending(telegram_id: str, registration_data: dict):
+    """Send pending review message to user"""
     try:
         if bot_instance and bot_instance.application:
-            success_message = (
-                f"🎉 Pendaftaran VIP berjaya!\n\n"
-                f"Terima kasih {registration_data['full_name']}!\n"
-                f"Team kami akan hubungi anda dalam 24 jam.\n\n"
-                f"📋 Detail pendaftaran:\n"
-                f"• Broker: {registration_data.get('brokerage_name', 'N/A')}\n"
-                f"• Deposit: ${registration_data.get('deposit_amount', 'N/A')}\n"
-                f"• Client ID: {registration_data.get('client_id', 'N/A')}\n\n"
-                f"📱 Pastikan phone {registration_data.get('phone_number', 'N/A')} aktif!"
+            pending_message = (
+                f"📝 Pendaftaran VIP Diterima!\n\n"
+                f"Terima kasih {registration_data['full_name']}!\n\n"
+                f"🔍 Pendaftaran anda sedang dalam semakan oleh team kami.\n"
+                f"📋 Kami akan semak semua maklumat dan dokumen yang dihantar.\n\n"
+                f"⏰ Status akan dikemaskini dalam masa 24-48 jam.\n"
+                f"📱 Pastikan phone {registration_data.get('phone_number', 'N/A')} aktif untuk makluman!\n\n"
+                f"🙏 Terima kasih atas kesabaran anda."
             )
             
             await bot_instance.application.bot.send_message(
                 chat_id=telegram_id, 
-                text=success_message
+                text=pending_message
             )
-            logger.info(f"✅ Confirmation sent to {telegram_id}")
+            logger.info(f"✅ Pending notification sent to {telegram_id}")
     except Exception as e:
-        logger.error(f"Failed to send confirmation: {e}")
+        logger.error(f"Failed to send pending notification: {e}")
+
+async def send_vip_access_granted(telegram_id: str, registration_data: dict):
+    """Send VIP access granted message to user"""
+    try:
+        if bot_instance and bot_instance.application:
+            vip_message = (
+                f"🎉 SELAMAT! VIP Access Diluluskan!\n\n"
+                f"Hai {registration_data['full_name']},\n\n"
+                f"✅ Pendaftaran VIP anda telah DILULUSKAN!\n"
+                f"🔥 Anda kini boleh akses semua content VIP kami.\n\n"
+                f"🔗 VIP Link: https://mock-vip-link.com/access\n"
+                f"📱 Telegram VIP Group: https://t.me/ezyassist_vip\n\n"
+                f"💎 Selamat menikmati perkhidmatan VIP EzyAssist!\n"
+                f"📞 Jika ada soalan, hubungi team support kami."
+            )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=telegram_id, 
+                text=vip_message
+            )
+            logger.info(f"✅ VIP access granted message sent to {telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send VIP access message: {e}")
+
+async def send_registration_rejected(telegram_id: str, registration_data: dict):
+    """Send registration rejected message to user"""
+    try:
+        if bot_instance and bot_instance.application:
+            rejected_message = (
+                f"⚠️ Pendaftaran VIP - Tindakan Diperlukan\n\n"
+                f"Hai {registration_data['full_name']},\n\n"
+                f"🔍 Setelah semakan, kami dapati ada beberapa isu dengan pendaftaran anda yang perlu diselesaikan.\n\n"
+                f"📞 Team kami akan hubungi anda dalam masa 24 jam untuk:\n"
+                f"• Menjelaskan isu yang ditemui\n"
+                f"• Membantu menyelesaikan masalah\n"
+                f"• Meneruskan proses pendaftaran\n\n"
+                f"📱 Pastikan phone {registration_data.get('phone_number', 'N/A')} aktif!\n\n"
+                f"🙏 Terima kasih atas kesabaran anda."
+            )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=telegram_id, 
+                text=rejected_message
+            )
+            logger.info(f"✅ Registration rejected message sent to {telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send rejection message: {e}")
 
 async def send_admin_notification(registration_data: dict):
     """Send notification to admin"""
     try:
         if bot_instance and bot_instance.admin_id and bot_instance.application:
             admin_message = (
-                f"🔔 NEW VIP REGISTRATION\n\n"
-                f"Name: {registration_data.get('full_name', 'N/A')}\n"
-                f"Email: {registration_data.get('email', 'N/A')}\n"
-                f"Phone: {registration_data.get('phone_number', 'N/A')}\n"
-                f"Broker: {registration_data.get('brokerage_name', 'N/A')}\n"
-                f"Deposit: ${registration_data.get('deposit_amount', 'N/A')}\n"
-                f"Client ID: {registration_data.get('client_id', 'N/A')}\n"
-                f"Telegram ID: {registration_data.get('telegram_id', 'N/A')}"
+                f"🔔 NEW VIP REGISTRATION - REVIEW REQUIRED\n\n"
+                f"📋 Registration #{registration_data.get('id', 'N/A')}\n"
+                f"👤 Name: {registration_data.get('full_name', 'N/A')}\n"
+                f"📧 Email: {registration_data.get('email', 'N/A')}\n"
+                f"📱 Phone: {registration_data.get('phone_number', 'N/A')}\n"
+                f"🏢 Broker: {registration_data.get('brokerage_name', 'N/A')}\n"
+                f"💰 Deposit: ${registration_data.get('deposit_amount', 'N/A')}\n"
+                f"🆔 Client ID: {registration_data.get('client_id', 'N/A')}\n"
+                f"📲 Telegram: {registration_data.get('telegram_id', 'N/A')}\n\n"
+                f"⚠️ Status: PENDING REVIEW\n"
+                f"🔗 Admin Panel: /admin/registrations/{registration_data.get('id', '')}"
             )
             
             await bot_instance.application.bot.send_message(
@@ -706,6 +768,17 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     VipRegistration.created_at >= week_ago
                 ).count()
                 
+                # Status statistics
+                pending_count = db.query(VipRegistration).filter(
+                    VipRegistration.status == RegistrationStatus.PENDING
+                ).count()
+                verified_count = db.query(VipRegistration).filter(
+                    VipRegistration.status == RegistrationStatus.VERIFIED
+                ).count()
+                rejected_count = db.query(VipRegistration).filter(
+                    VipRegistration.status == RegistrationStatus.REJECTED
+                ).count()
+                
                 # Registrations by broker
                 broker_stats = db.query(
                     VipRegistration.brokerage_name,
@@ -715,6 +788,9 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                 stats = {
                     "total_registrations": total_registrations,
                     "recent_registrations": recent_registrations,
+                    "pending_count": pending_count,
+                    "verified_count": verified_count,
+                    "rejected_count": rejected_count,
                     "broker_stats": broker_stats
                 }
             except Exception as e:
@@ -734,6 +810,7 @@ async def admin_registrations_list(
     request: Request, 
     page: int = 1, 
     search: str = "",
+    status: str = "",
     admin = Depends(get_current_admin)
 ):
     """Admin registrations list with pagination and search"""
@@ -765,6 +842,15 @@ async def admin_registrations_list(
                         )
                     )
                 
+                # Add status filter
+                if status:
+                    if status == "pending":
+                        query = query.filter(VipRegistration.status == RegistrationStatus.PENDING)
+                    elif status == "verified":
+                        query = query.filter(VipRegistration.status == RegistrationStatus.VERIFIED)
+                    elif status == "rejected":
+                        query = query.filter(VipRegistration.status == RegistrationStatus.REJECTED)
+                
                 # Get total count
                 total_count = query.count()
                 
@@ -790,7 +876,8 @@ async def admin_registrations_list(
         "current_page": page,
         "total_pages": total_pages,
         "total_count": total_count,
-        "search": search
+        "search": search,
+        "status": status
     })
 
 @app.get("/admin/registrations/{registration_id}", response_class=HTMLResponse)
@@ -826,6 +913,98 @@ async def admin_registration_detail(
         "admin": admin,
         "registration": registration
     })
+
+@app.post("/admin/registrations/{registration_id}/verify")
+async def verify_registration(
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Verify a registration and grant VIP access"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Get registration
+        registration = db.query(VipRegistration).filter(
+            VipRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Update status
+        registration.status = RegistrationStatus.VERIFIED
+        registration.status_updated_at = datetime.utcnow()
+        registration.updated_by_admin = admin.get('username', 'admin')
+        
+        db.commit()
+        
+        # Send VIP access message to user
+        await send_vip_access_granted(registration.telegram_id, registration.to_dict())
+        
+        logger.info(f"✅ Registration {registration_id} verified by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Registration verified and VIP access granted"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error verifying registration {registration_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to verify registration")
+    finally:
+        db.close()
+
+@app.post("/admin/registrations/{registration_id}/reject")
+async def reject_registration(
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Reject a registration and send follow-up message"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Get registration
+        registration = db.query(VipRegistration).filter(
+            VipRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Update status
+        registration.status = RegistrationStatus.REJECTED
+        registration.status_updated_at = datetime.utcnow()
+        registration.updated_by_admin = admin.get('username', 'admin')
+        
+        db.commit()
+        
+        # Send rejection message to user
+        await send_registration_rejected(registration.telegram_id, registration.to_dict())
+        
+        logger.info(f"✅ Registration {registration_id} rejected by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Registration rejected and user notified"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error rejecting registration {registration_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to reject registration")
+    finally:
+        db.close()
 
 # Bot initialization on startup
 async def setup_bot_webhook():
@@ -873,6 +1052,51 @@ async def migrate_database():
                     """))
                     conn.commit()
                     logger.info(f"✅ Added column: {column}")
+            
+            # Check for status-related columns
+            status_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name IN ('status', 'status_updated_at', 'updated_by_admin')
+            """))
+            existing_status_columns = [row[0] for row in status_result]
+            
+            # Add status column if missing
+            if 'status' not in existing_status_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN status VARCHAR DEFAULT 'pending'
+                """))
+                conn.commit()
+                logger.info("✅ Added column: status")
+                
+                # Set existing registrations to pending
+                conn.execute(text("""
+                    UPDATE vip_registrations 
+                    SET status = 'pending' 
+                    WHERE status IS NULL
+                """))
+                conn.commit()
+                logger.info("✅ Set existing registrations to pending status")
+            
+            # Add status_updated_at column if missing
+            if 'status_updated_at' not in existing_status_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN status_updated_at TIMESTAMP
+                """))
+                conn.commit()
+                logger.info("✅ Added column: status_updated_at")
+            
+            # Add updated_by_admin column if missing
+            if 'updated_by_admin' not in existing_status_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN updated_by_admin VARCHAR
+                """))
+                conn.commit()
+                logger.info("✅ Added column: updated_by_admin")
                     
     except Exception as e:
         logger.error(f"Database migration failed: {e}")

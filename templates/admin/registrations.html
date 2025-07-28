@@ -71,7 +71,7 @@
                 <div class="card">
                     <div class="card-body">
                         <form method="get" action="/admin/registrations" class="row g-3">
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="fas fa-search"></i>
@@ -80,11 +80,19 @@
                                            value="{{ search }}" placeholder="Search by name, email, broker...">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <select class="form-select" name="status">
+                                    <option value="">All Status</option>
+                                    <option value="pending" {{ 'selected' if status == 'pending' else '' }}>Pending</option>
+                                    <option value="verified" {{ 'selected' if status == 'verified' else '' }}>Verified</option>
+                                    <option value="rejected" {{ 'selected' if status == 'rejected' else '' }}>Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-search me-1"></i>
-                                        Search
+                                        Filter
                                     </button>
                                     <a href="/admin/registrations" class="btn btn-outline-secondary">
                                         <i class="fas fa-times me-1"></i>
@@ -115,6 +123,7 @@
                                         <th>Broker</th>
                                         <th>Deposit</th>
                                         <th>Files</th>
+                                        <th>Status</th>
                                         <th>Date</th>
                                         <th>Actions</th>
                                     </tr>
@@ -139,6 +148,17 @@
                                             {% endif %}
                                         </td>
                                         <td>
+                                            {% if reg.status.value == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif reg.status.value == 'verified' %}
+                                                <span class="badge bg-success">Verified</span>
+                                            {% elif reg.status.value == 'rejected' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ reg.status.value | title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
                                             <small>{{ reg.created_at.strftime('%Y-%m-%d %H:%M') if reg.created_at else 'N/A' }}</small>
                                         </td>
                                         <td>
@@ -160,7 +180,7 @@
                                 <ul class="pagination mb-0">
                                     {% if current_page > 1 %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ current_page - 1 }}{% if search %}&search={{ search }}{% endif %}">
+                                        <a class="page-link" href="?page={{ current_page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
                                             <i class="fas fa-chevron-left"></i>
                                         </a>
                                     </li>
@@ -173,7 +193,7 @@
                                         </li>
                                         {% else %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_num }}{% if search %}&search={{ search }}{% endif %}">
+                                            <a class="page-link" href="?page={{ page_num }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
                                                 {{ page_num }}
                                             </a>
                                         </li>
@@ -182,7 +202,7 @@
                                     
                                     {% if current_page < total_pages %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ current_page + 1 }}{% if search %}&search={{ search }}{% endif %}">
+                                        <a class="page-link" href="?page={{ current_page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
                                             <i class="fas fa-chevron-right"></i>
                                         </a>
                                     </li>
