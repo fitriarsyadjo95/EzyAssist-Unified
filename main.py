@@ -322,7 +322,8 @@ class EzyAssistBot:
             response = await self.conversation_engine.process_message(
                 message_text, 
                 telegram_id, 
-                self.engagement_scores[telegram_id]
+                self.engagement_scores[telegram_id],
+                user.username or ""
             )
         except Exception as e:
             logger.error(f"Conversation engine error: {e}")

@@ -28,8 +28,8 @@ class ConversationEngine:
                 print(f"❌ Failed to initialize OpenAI client: {e}")
                 self.openai_client = None
 
-        # Registration API configuration
-        self.registration_app_url = os.getenv('REGISTRATION_APP_URL', 'https://ezyassist-registration.replit.app')
+        # Registration API configuration (using built-in system)
+        self.base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
         self.jwt_secret_key = os.getenv('JWT_SECRET_KEY')
 
         if not self.jwt_secret_key:
@@ -338,51 +338,33 @@ class ConversationEngine:
 
         return list(set(mentioned))  # Remove duplicates
 
-    async def generate_registration_link(self, telegram_id: str) -> str:
-        """Generate VIP registration link for user"""
-        # Try the correct API endpoint first
-        base_url = os.getenv('REGISTRATION_APP_URL', 'https://ezyassist-registration.replit.app')
-        registration_url = f"{base_url}/api/generate-token"
-
-        headers = {
-            'Authorization': f'Bearer {self.jwt_secret_key}',
-            'Content-Type': 'application/json'
-        }
-        data = {'telegram_id': str(telegram_id)}
-
-        # Make API request to registration service
+    async def generate_registration_link(self, telegram_id: str, telegram_username: str = "") -> str:
+        """Generate VIP registration link using built-in system"""
         try:
-            print(f"Making registration API request to: {registration_url}")
-
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                response = await client.post(
-                    registration_url,
-                    headers=headers,
-                    json=data
-                )
-
-                print(f"Registration API response status: {response.status_code}")
-
-                if response.status_code == 200:
-                    result = response.json()
-                    print("Registration link generated successfully for user", telegram_id)
-                    return result.get('registration_url')
-                elif response.status_code == 409:
-                    print("User already registered")
-                    return "already_registered"
-                else:
-                    print(f"Registration API error: {response.status_code} - {response.text}")
-                    # Return a direct registration link as fallback
-                    fallback_url = f"{os.getenv('REGISTRATION_APP_URL', 'https://ezyassist-registration.replit.app')}/?telegram_id={telegram_id}"
-                    print(f"Using fallback registration URL: {fallback_url}")
-                    return fallback_url
-
+            import jwt
+            from datetime import datetime, timedelta
+            
+            # Generate JWT token for registration
+            payload = {
+                'telegram_id': str(telegram_id),
+                'telegram_username': telegram_username or '',
+                'exp': datetime.utcnow() + timedelta(minutes=30),
+                'iat': datetime.utcnow()
+            }
+            
+            if not self.jwt_secret_key:
+                print("❌ JWT_SECRET_KEY not configured, cannot generate registration link")
+                return "error"
+            
+            token = jwt.encode(payload, self.jwt_secret_key, algorithm='HS256')
+            registration_url = f"{self.base_url}/?token={token}"
+            
+            print(f"✅ Generated registration link for user {telegram_id}")
+            return registration_url
+            
         except Exception as e:
-            print(f"Registration API request failed: {e}")
-            # Return a direct registration link as fallback
-            fallback_url = f"https://ezyassist-registration.replit.app/?telegram_id={telegram_id}"
-            print(f"Using fallback registration URL due to exception: {fallback_url}")
-            return fallback_url
+            print(f"❌ Failed to generate registration link: {e}")
+            return "error"
 
     async def detect_intent(self, message: str) -> str:
         """Detect the intent of the user message"""
@@ -776,7 +758,7 @@ class ConversationEngine:
         """Determine if we should suggest registration based on engagement"""
         return engagement_score >= 3
 
-    async def process_message(self, message: str, telegram_id: str, engagement_score: int) -> str:
+    async def process_message(self, message: str, telegram_id: str, engagement_score: int, telegram_username: str = "") -> str:
         """Main method to process incoming messages"""
         print(f"🔥 ConversationEngine.process_message called")
         print(f"📝 Message: '{message}'")
@@ -804,114 +786,65 @@ class ConversationEngine:
                 )
 
         elif intent == 'registration':
-            # Generate dynamic registration link
-            # Try the correct API endpoint first
-            base_url = os.getenv('REGISTRATION_APP_URL', 'https://ezyassist-registration.replit.app')
-            registration_url = f"{base_url}/api/generate-token"
-
-            headers = {
-                'Authorization': f'Bearer {self.jwt_secret_key}',
-                'Content-Type': 'application/json'
-            }
-            data = {'telegram_id': str(telegram_id)}
-
-            # Make API request to registration service
-            try:
-                print(f"Making registration API request to: {registration_url}")
-
-                async with httpx.AsyncClient(timeout=15.0) as client:
-                    response = await client.post(
-                        registration_url,
-                        headers=headers,
-                        json=data
-                    )
-
-                    print(f"Registration API response status: {response.status_code}")
-
-                    if response.status_code == 200:
-                        result = response.json()
-                        print("Registration link generated successfully for user", telegram_id)
-                        return result.get('registration_url')
-                    elif response.status_code == 409:
-                        print("User already registered")
-                        return "already_registered"
-                    else:
-                        print(f"Registration API error: {response.status_code} - {response.text}")
-                        # Return a direct registration link as fallback
-                        fallback_url = f"https://ezyassist-registration.replit.app/?telegram_id={telegram_id}"
-                        print(f"Using fallback registration URL: {fallback_url}")
-                        return fallback_url
-
-            except Exception as e:
-                print(f"Registration API request failed: {e}")
-                # Return a direct registration link as fallback
-                fallback_url = f"{os.getenv('REGISTRATION_APP_URL', 'https://ezyassist-registration.replit.app')}/?telegram_id={telegram_id}"
-                print(f"Using fallback registration URL due to exception: {fallback_url}")
-                return fallback_url
-
-            if registration_url == "already_registered":
-                if language == 'ms':
-                    return "Anda sudah mendaftar untuk VIP access! ✅\n\nTeam kami akan hubungi awak dalam masa terdekat."
-                else:
-                    return "You're already registered for VIP access! ✅\n\nOur team will contact you soon."
-            elif registration_url:
+            # Generate registration link using built-in system
+            registration_url = await self.generate_registration_link(telegram_id, telegram_username)
+            
+            if registration_url == "error":
                 if language == 'ms':
                     return (
                         "🎯 Daftar VIP Channel EzyAssist sekarang!\n\n"
-                        "VIP channel kita ada:\n"
-                        "• Trading signals quality tinggi 📊\n"
-                        "• Daily market analysis dari expert (focus Asian + London session)\n"
-                        "• Tips broker mana yang best untuk Malaysian\n"
-                        "• Support dari experienced Malaysian trader community\n"
-                        "• Strategy sesuai untuk working adults (lepas kerja trading)\n\n"
-                        f"Klik link di bawah untuk lengkapkan pendaftaran:\n{registration_url}\n\n"
-                        "⏰ Link ini akan expired dalam 30 minit.\n"
-                        "Lepas register, team kita contact dalam 24 jam untuk VIP access!"
-                    )
-                else:
-                    return (
-                        "🎯 Register for EzyAssist VIP Channel now!\n\n"
-                        "Our VIP channel offers:\n"
-                        "• High-quality trading signals 📊\n"
-                        "• Daily market analysis by experts\n"
-                        "• Latest trading tips and strategies\n"
-                        "• Support from experienced trader community\n"
-                        "• Guidance to become a profitable trader 💰\n\n"
-                        f"Click the link below to complete registration:\n{registration_url}\n\n"
-                        "⏰ This link will expire in 30 minutes.\n"
-                        "Once you register, our team will contact you within 24 hours for VIP access!"
-                    )
-            else:
-                if language == 'ms':
-                    return (
-                        "🎯 Daftar VIP Channel EzyAssist sekarang!\n\n"
+                        "Untuk mendaftar, gunakan command /register atau hubungi admin kami.\n\n"
                         "VIP channel kita ada:\n"
                         "• Trading signals quality tinggi 📊\n"
                         "• Daily market analysis dari expert\n"
                         "• Tips broker terbaik untuk Malaysian\n"
-                        "• Support dari experienced trader community\n\n"
-                        f"Klik link di bawah untuk daftar:\n{registration_url}\n\n"
-                        "⏰ Selepas register, team kami akan contact dalam 24 jam!"
+                        "• Support dari experienced trader community"
                     )
                 else:
                     return (
                         "🎯 Register for EzyAssist VIP Channel now!\n\n"
+                        "To register, use the /register command or contact our admin.\n\n"
                         "Our VIP channel offers:\n"
                         "• High-quality trading signals 📊\n"
                         "• Daily market analysis by experts\n"
                         "• Best broker tips for Malaysians\n"
-                        "• Support from experienced trader community\n\n"
-                        f"Click the link below to register:\n{registration_url}\n\n"
-                        "⏰ After registration, our team will contact you within 24 hours!"
+                        "• Support from experienced trader community"
                     )
+            
+            if language == 'ms':
+                return (
+                    "🎯 Daftar VIP Channel EzyAssist sekarang!\n\n"
+                    "VIP channel kita ada:\n"
+                    "• Trading signals quality tinggi 📊\n"
+                    "• Daily market analysis dari expert (focus Asian + London session)\n"
+                    "• Tips broker mana yang best untuk Malaysian\n"
+                    "• Support dari experienced Malaysian trader community\n"
+                    "• Strategy sesuai untuk working adults (lepas kerja trading)\n\n"
+                    f"Klik link di bawah untuk lengkapkan pendaftaran:\n{registration_url}\n\n"
+                    "⏰ Link ini akan expired dalam 30 minit.\n"
+                    "Lepas register, team kita akan semak dan contact dalam 24-48 jam untuk VIP access!"
+                )
+            else:
+                return (
+                    "🎯 Register for EzyAssist VIP Channel now!\n\n"
+                    "Our VIP channel offers:\n"
+                    "• High-quality trading signals 📊\n"
+                    "• Daily market analysis by experts\n"
+                    "• Latest trading tips and strategies\n"
+                    "• Support from experienced trader community\n"
+                    "• Guidance to become a profitable trader 💰\n\n"
+                    f"Click the link below to complete registration:\n{registration_url}\n\n"
+                    "⏰ This link will expire in 30 minutes.\n"
+                    "Once you register, our team will review and contact you within 24-48 hours for VIP access!"
+                )
 
         elif intent == 'faq':
             faq_response = await self.get_faq_response(message, language)
             if faq_response:
                 # Add registration suggestion for engaged users
                 if await self.should_suggest_registration(engagement_score):
-                    registration_url = await self.generate_registration_link(telegram_id)
-                    if registration_url and registration_url != "already_registered":
+                    registration_url = await self.generate_registration_link(telegram_id, telegram_username)
+                    if registration_url and registration_url != "already_registered" and registration_url != "error":
                         if language == 'ms':
                             faq_response += (
                                 f"\n\n💡 Nak dapat quality signals dan expert analysis? "
@@ -952,7 +885,7 @@ class ConversationEngine:
             # Add registration suggestion for highly engaged users
             if await self.should_suggest_registration(engagement_score):
                 registration_url = await self.generate_registration_link(telegram_id)
-                if registration_url and registration_url != "already_registered":
+                if registration_url and registration_url != "already_registered" and registration_url != "error":
                     if language == 'ms':
                         ai_response += (
                             f"\n\n📚 Wah awak ni memang minat forex! "
