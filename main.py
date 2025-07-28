@@ -1018,7 +1018,7 @@ async def admin_login(request: Request, username: str = Form(...), password: str
         response.set_cookie(
             key="admin_session",
             value=session_token,
-            max_age=86400,  # 24 hours
+            max_age=3600,   # 1 hour
             httponly=True,
             secure=False  # Set to True in production with HTTPS
         )

@@ -49,8 +49,8 @@ def verify_admin_session(session_token: Optional[str]) -> Optional[dict]:
     
     session_data = admin_sessions[session_token]
     
-    # Check if session is expired (24 hours)
-    if datetime.utcnow() - session_data["created_at"] > timedelta(hours=24):
+    # Check if session is expired (1 hour)
+    if datetime.utcnow() - session_data["created_at"] > timedelta(hours=1):
         del admin_sessions[session_token]
         return None
     
