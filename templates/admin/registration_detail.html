@@ -100,6 +100,42 @@
             font-size: 14px;
             font-weight: 500;
         }
+        .btn-outline-primary {
+            color: #2563EB;
+            border-color: #2563EB;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-outline-primary:hover {
+            background: #2563EB;
+            border-color: #2563EB;
+            color: white;
+        }
+        .btn-outline-success {
+            color: #22C55E;
+            border-color: #22C55E;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-outline-success:hover {
+            background: #22C55E;
+            border-color: #22C55E;
+            color: white;
+        }
+        .btn-outline-info {
+            color: #3B82F6;
+            border-color: #3B82F6;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-outline-info:hover {
+            background: #3B82F6;
+            border-color: #3B82F6;
+            color: white;
+        }
         .detail-card {
             background: #FFFFFF;
             border-radius: 8px;
@@ -290,7 +326,16 @@
                                     <div class="info-row">
                                         <div class="info-label">Email Address</div>
                                         <div class="info-value">
-                                            <a href="mailto:{{ registration.email }}">{{ registration.email or 'N/A' }}</a>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ registration.email or 'N/A' }}</span>
+                                                {% if registration.email %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="mailto:{{ registration.email }}" class="btn btn-outline-primary btn-sm" title="Send Email">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -301,7 +346,19 @@
                                     <div class="info-row">
                                         <div class="info-label">Phone Number</div>
                                         <div class="info-value">
-                                            <a href="tel:{{ registration.phone_number }}">{{ registration.phone_number or 'N/A' }}</a>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ registration.phone_number or 'N/A' }}</span>
+                                                {% if registration.phone_number %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="tel:{{ registration.phone_number }}" class="btn btn-outline-success btn-sm" title="Call">
+                                                        <i class="fas fa-phone"></i>
+                                                    </a>
+                                                    <a href="https://wa.me/{{ registration.phone_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '') }}" target="_blank" class="btn btn-outline-success btn-sm" title="WhatsApp">
+                                                        <i class="fab fa-whatsapp"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -356,18 +413,40 @@
                                 <div class="col-md-6">
                                     <div class="info-row">
                                         <div class="info-label">Telegram ID</div>
-                                        <div class="info-value">{{ registration.telegram_id or 'N/A' }}</div>
+                                        <div class="info-value">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ registration.telegram_id or 'N/A' }}</span>
+                                                {% if registration.telegram_id %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="tg://user?id={{ registration.telegram_id }}" class="btn btn-outline-info btn-sm" title="Open in Telegram">
+                                                        <i class="fab fa-telegram"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="info-row">
                                         <div class="info-label">Telegram Username</div>
                                         <div class="info-value">
-                                            {% if registration.telegram_username %}
-                                                @{{ registration.telegram_username }}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    {% if registration.telegram_username %}
+                                                        @{{ registration.telegram_username }}
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </span>
+                                                {% if registration.telegram_username %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="https://t.me/{{ registration.telegram_username }}" target="_blank" class="btn btn-outline-info btn-sm" title="Chat on Telegram">
+                                                        <i class="fas fa-comments"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

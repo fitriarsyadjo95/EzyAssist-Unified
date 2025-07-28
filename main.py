@@ -175,6 +175,13 @@ TRANSLATIONS = {
         'submit': 'Hantar Pendaftaran',
         'success_title': 'Pendaftaran Berjaya!',
         'success_message': 'Terima kasih! Pendaftaran VIP anda telah berjaya.',
+        'success_next_steps': 'Langkah Seterusnya',
+        'success_step1': 'Pendaftaran anda sedang dalam semakan oleh admin kami',
+        'success_step2': 'Anda akan menerima notifikasi dalam Telegram dalam masa 24 jam',
+        'success_step3': 'Akses VIP akan diberikan setelah pendaftaran diluluskan',
+        'back_to_telegram': 'Kembali ke Telegram',
+        'registration_ref': 'Rujukan Pendaftaran',
+        'keep_reference': 'Simpan rujukan ini untuk rekod anda',
         'error_title': 'Ralat Pendaftaran',
         'required_fields': 'Sila lengkapkan semua medan yang diperlukan',
         'invalid_token': 'Token tidak sah atau telah tamat tempoh'
@@ -240,11 +247,28 @@ class EzyAssistBot:
         self.conversation_engine = ConversationEngine()
         self.engagement_scores = {}
         self.application = None
+        
+        # Bot activity tracking
+        self.start_time = datetime.utcnow()
+        self.message_count = 0
+        self.user_sessions = {}
+        self.command_usage = {
+            'start': 0,
+            'register': 0,
+            'clear': 0
+        }
+        self.last_activity = None
+        self.error_count = 0
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /start command"""
         user = update.effective_user
         telegram_id = str(user.id)
+        
+        # Track activity
+        self.command_usage['start'] += 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
         
         # Initialize engagement score
         self.engagement_scores[telegram_id] = 0
@@ -263,6 +287,11 @@ class EzyAssistBot:
         user = update.effective_user
         telegram_id = str(user.id)
         telegram_username = user.username or ""
+        
+        # Track activity
+        self.command_usage['register'] += 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
         
         try:
             # Generate registration token
@@ -294,6 +323,11 @@ class EzyAssistBot:
         user = update.effective_user
         telegram_id = str(user.id)
         
+        # Track activity
+        self.command_usage['clear'] += 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
+        
         # Reset engagement score
         self.engagement_scores[telegram_id] = 0
         
@@ -309,6 +343,11 @@ class EzyAssistBot:
         user = update.effective_user
         telegram_id = str(user.id)
         message_text = update.message.text
+
+        # Track activity
+        self.message_count += 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
 
         # Update engagement score
         if telegram_id not in self.engagement_scores:
@@ -340,7 +379,76 @@ class EzyAssistBot:
 
     async def error_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle errors"""
+        self.error_count += 1
         logger.error(f"Update {update} caused error {context.error}")
+
+    def get_bot_statistics(self):
+        """Get comprehensive bot statistics"""
+        current_time = datetime.utcnow()
+        
+        # Calculate uptime
+        uptime_delta = current_time - self.start_time
+        uptime_hours = uptime_delta.total_seconds() / 3600
+        
+        # Get active users (users who interacted in last 30 minutes)
+        active_threshold = current_time - timedelta(minutes=30)
+        active_users = sum(1 for last_seen in self.user_sessions.values() 
+                          if last_seen and last_seen > active_threshold)
+        
+        # Get messages today
+        if self.last_activity:
+            today = current_time.date()
+            if self.last_activity.date() == today:
+                messages_today = self.message_count
+            else:
+                messages_today = 0
+        else:
+            messages_today = 0
+        
+        # Calculate response rate (messages - errors)
+        total_interactions = sum(self.command_usage.values()) + self.message_count
+        success_rate = ((total_interactions - self.error_count) / max(total_interactions, 1)) * 100
+        
+        return {
+            'bot_status': 'online' if self.application and hasattr(self.application, 'running') else 'offline',
+            'uptime_hours': round(uptime_hours, 1),
+            'total_users': len(self.user_sessions),
+            'active_users': active_users,
+            'total_messages': self.message_count,
+            'messages_today': messages_today,
+            'command_usage': self.command_usage.copy(),
+            'success_rate': round(success_rate, 1),
+            'error_count': self.error_count,
+            'last_activity': self.last_activity.isoformat() if self.last_activity else None,
+            'engagement_scores': dict(list(sorted(self.engagement_scores.items(), 
+                                                key=lambda x: x[1], reverse=True))[:5])
+        }
+
+    def get_bot_health(self):
+        """Get bot health status"""
+        try:
+            is_running = bool(self.application and self.token)
+            webhook_status = 'connected' if is_running else 'disconnected'
+            
+            current_time = datetime.utcnow()
+            uptime_delta = current_time - self.start_time
+            
+            return {
+                'status': 'healthy' if is_running else 'unhealthy',
+                'uptime': str(uptime_delta).split('.')[0],  # Remove microseconds
+                'webhook_status': webhook_status,
+                'last_activity': self.last_activity.strftime('%Y-%m-%d %H:%M:%S UTC') if self.last_activity else 'Never',
+                'error_rate': round((self.error_count / max(self.message_count, 1)) * 100, 1)
+            }
+        except Exception as e:
+            logger.error(f"Error getting bot health: {e}")
+            return {
+                'status': 'error',
+                'uptime': '0:00:00',
+                'webhook_status': 'error',
+                'last_activity': 'Error',
+                'error_rate': 100.0
+            }
 
     def setup_bot(self):
         """Setup the Telegram bot"""
@@ -500,10 +608,19 @@ async def submit_registration(
 @app.get("/success", response_class=HTMLResponse)
 async def success_page(request: Request, token: str = None):
     """Registration success page"""
+    telegram_id = None
+    telegram_username = None
+    
+    if token:
+        telegram_id, telegram_username = verify_registration_token(token)
+    
     return templates.TemplateResponse("success.html", {
         "request": request,
         "translations": TRANSLATIONS['ms'],
-        "token": token
+        "token": token,
+        "telegram_id": telegram_id,
+        "telegram_username": telegram_username,
+        "lang": "ms"
     })
 
 @app.get("/health")
@@ -800,11 +917,49 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
             finally:
                 db.close()
     
+    # Get bot statistics
+    bot_stats = {}
+    bot_health = {}
+    try:
+        if bot_instance:
+            bot_stats = bot_instance.get_bot_statistics()
+            bot_health = bot_instance.get_bot_health()
+    except Exception as e:
+        logger.error(f"Error getting bot stats: {e}")
+        bot_stats = {"error": "Could not load bot statistics"}
+        bot_health = {"status": "error", "uptime": "Unknown"}
+
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
         "admin": admin,
-        "stats": stats
+        "stats": stats,
+        "bot_stats": bot_stats,
+        "bot_health": bot_health
     })
+
+@app.get("/admin/bot-status")
+async def get_bot_status(admin = Depends(get_current_admin)):
+    """API endpoint for real-time bot status"""
+    try:
+        if bot_instance:
+            bot_stats = bot_instance.get_bot_statistics()
+            bot_health = bot_instance.get_bot_health()
+            return {
+                "success": True,
+                "bot_stats": bot_stats,
+                "bot_health": bot_health
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Bot instance not available"
+            }
+    except Exception as e:
+        logger.error(f"Error in bot status endpoint: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 @app.get("/admin/registrations", response_class=HTMLResponse)
 async def admin_registrations_list(

@@ -222,6 +222,77 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bot Status Section -->
+        <div class="row mb-4" id="bot-status-section">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header" style="background: #F9FAFB; color: #374151; font-weight: 600; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-robot me-2"></i>
+                            Bot Status
+                            <span id="bot-status-badge" class="badge ms-2" 
+                                  style="background: {% if bot_health.status == 'healthy' %}#22C55E{% elif bot_health.status == 'error' %}#EF5350{% else %}#F59E0B{% endif %} !important; font-size: 10px;">
+                                {% if bot_health.status == 'healthy' %}ONLINE{% elif bot_health.status == 'error' %}ERROR{% else %}OFFLINE{% endif %}
+                            </span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Status</span>
+                            <strong id="bot-health-status" style="color: {% if bot_health.status == 'healthy' %}#22C55E{% elif bot_health.status == 'error' %}#EF5350{% else %}#F59E0B{% endif %};">
+                                {{ bot_health.status|title }}
+                            </strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Uptime</span>
+                            <strong id="bot-uptime">{{ bot_health.uptime or 'Unknown' }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Webhook</span>
+                            <strong id="bot-webhook" style="color: {% if bot_health.webhook_status == 'connected' %}#22C55E{% else %}#EF5350{% endif %};">
+                                {{ bot_health.webhook_status|title }}
+                            </strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Last Activity</span>
+                            <strong id="bot-last-activity">{{ bot_health.last_activity or 'Never' }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header" style="background: #F9FAFB; color: #374151; font-weight: 600; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Bot Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Active Users</span>
+                            <strong id="bot-active-users">{{ bot_stats.active_users or 0 }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Users</span>
+                            <strong id="bot-total-users">{{ bot_stats.total_users or 0 }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Messages Today</span>
+                            <strong id="bot-messages-today">{{ bot_stats.messages_today or 0 }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Success Rate</span>
+                            <strong id="bot-success-rate" style="color: {% if bot_stats.success_rate >= 90 %}#22C55E{% elif bot_stats.success_rate >= 70 %}#F59E0B{% else %}#EF5350{% endif %};">
+                                {{ bot_stats.success_rate or 0 }}%
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Recent Activity Card -->
         <div class="row mb-4">
@@ -389,6 +460,74 @@
                 alert('❌ Error: ' + error.message);
             }
         }
+
+        // Real-time bot status updates
+        async function updateBotStatus() {
+            try {
+                const response = await fetch('/admin/bot-status');
+                const data = await response.json();
+                
+                if (data.success && data.bot_health && data.bot_stats) {
+                    const health = data.bot_health;
+                    const stats = data.bot_stats;
+                    
+                    // Update bot health status
+                    const statusBadge = document.getElementById('bot-status-badge');
+                    const healthStatus = document.getElementById('bot-health-status');
+                    
+                    if (health.status === 'healthy') {
+                        statusBadge.textContent = 'ONLINE';
+                        statusBadge.style.background = '#22C55E';
+                        healthStatus.textContent = 'Healthy';
+                        healthStatus.style.color = '#22C55E';
+                    } else if (health.status === 'error') {
+                        statusBadge.textContent = 'ERROR';
+                        statusBadge.style.background = '#EF5350';
+                        healthStatus.textContent = 'Error';
+                        healthStatus.style.color = '#EF5350';
+                    } else {
+                        statusBadge.textContent = 'OFFLINE';
+                        statusBadge.style.background = '#F59E0B';
+                        healthStatus.textContent = 'Offline';
+                        healthStatus.style.color = '#F59E0B';
+                    }
+                    
+                    // Update other bot health fields
+                    document.getElementById('bot-uptime').textContent = health.uptime || 'Unknown';
+                    
+                    const webhookElement = document.getElementById('bot-webhook');
+                    webhookElement.textContent = health.webhook_status ? health.webhook_status.charAt(0).toUpperCase() + health.webhook_status.slice(1) : 'Unknown';
+                    webhookElement.style.color = health.webhook_status === 'connected' ? '#22C55E' : '#EF5350';
+                    
+                    document.getElementById('bot-last-activity').textContent = health.last_activity || 'Never';
+                    
+                    // Update bot statistics
+                    document.getElementById('bot-active-users').textContent = stats.active_users || 0;
+                    document.getElementById('bot-total-users').textContent = stats.total_users || 0;
+                    document.getElementById('bot-messages-today').textContent = stats.messages_today || 0;
+                    
+                    const successRateElement = document.getElementById('bot-success-rate');
+                    const successRate = stats.success_rate || 0;
+                    successRateElement.textContent = successRate + '%';
+                    
+                    if (successRate >= 90) {
+                        successRateElement.style.color = '#22C55E';
+                    } else if (successRate >= 70) {
+                        successRateElement.style.color = '#F59E0B';
+                    } else {
+                        successRateElement.style.color = '#EF5350';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating bot status:', error);
+            }
+        }
+
+        // Update bot status every 30 seconds
+        setInterval(updateBotStatus, 30000);
+        
+        // Initial update after 2 seconds
+        setTimeout(updateBotStatus, 2000);
     </script>
 </body>
 </html>
