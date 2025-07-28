@@ -11,11 +11,14 @@ from typing import Optional
 import secrets
 import hashlib
 import time
+import uuid
+import shutil
+from pathlib import Path
 from functools import wraps
 
 # FastAPI and web components
 from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -36,6 +39,10 @@ import uvicorn
 
 # AI and conversation
 from conversation_engine import ConversationEngine
+from admin_auth import (
+    authenticate_admin, create_admin_session, delete_admin_session,
+    get_current_admin, admin_login_required
+)
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -47,6 +54,43 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# File upload configuration
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pdf', '.gif'}
+
+async def save_uploaded_file(upload_file: UploadFile) -> Optional[str]:
+    """Save uploaded file and return the file path"""
+    if not upload_file or not upload_file.filename:
+        return None
+    
+    # Check file extension
+    file_extension = Path(upload_file.filename).suffix.lower()
+    if file_extension not in ALLOWED_EXTENSIONS:
+        logger.warning(f"Invalid file extension: {file_extension}")
+        return None
+    
+    # Check file size
+    content = await upload_file.read()
+    if len(content) > MAX_FILE_SIZE:
+        logger.warning(f"File too large: {len(content)} bytes")
+        return None
+    
+    # Generate unique filename
+    unique_filename = f"{uuid.uuid4()}_{int(time.time())}{file_extension}"
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # Save file
+    try:
+        with open(file_path, "wb") as f:
+            f.write(content)
+        logger.info(f"File saved: {file_path}")
+        return str(file_path)
+    except Exception as e:
+        logger.error(f"Error saving file: {e}")
+        return None
 
 # Initialize FastAPI app
 app = FastAPI(title="EzyAssist Unified System", version="1.0.0")
@@ -81,6 +125,9 @@ if Base:
         brokerage_name = Column(String, nullable=True)
         deposit_amount = Column(String, nullable=True)
         client_id = Column(String, nullable=True)
+        deposit_proof_1_path = Column(String, nullable=True)
+        deposit_proof_2_path = Column(String, nullable=True)
+        deposit_proof_3_path = Column(String, nullable=True)
         ip_address = Column(String, nullable=True)
         user_agent = Column(Text, nullable=True)
         created_at = Column(DateTime, default=datetime.utcnow)
@@ -96,6 +143,9 @@ if Base:
                 'brokerage_name': self.brokerage_name,
                 'deposit_amount': self.deposit_amount,
                 'client_id': self.client_id,
+                'deposit_proof_1_path': self.deposit_proof_1_path,
+                'deposit_proof_2_path': self.deposit_proof_2_path,
+                'deposit_proof_3_path': self.deposit_proof_3_path,
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
@@ -387,6 +437,13 @@ async def submit_registration(
             "translations": TRANSLATIONS['ms']
         })
     
+    # Process file uploads
+    deposit_proof_1_path = await save_uploaded_file(deposit_proof_1)
+    deposit_proof_2_path = await save_uploaded_file(deposit_proof_2)
+    deposit_proof_3_path = await save_uploaded_file(deposit_proof_3)
+    
+    logger.info(f"Files saved: {deposit_proof_1_path}, {deposit_proof_2_path}, {deposit_proof_3_path}")
+    
     # Save to database if available
     if SessionLocal:
         db = get_db()
@@ -401,6 +458,9 @@ async def submit_registration(
                     brokerage_name=brokerage_name.strip(),
                     deposit_amount=deposit_amount.strip(),
                     client_id=client_id.strip(),
+                    deposit_proof_1_path=deposit_proof_1_path,
+                    deposit_proof_2_path=deposit_proof_2_path,
+                    deposit_proof_3_path=deposit_proof_3_path,
                     ip_address=request.client.host,
                     user_agent=request.headers.get('User-Agent', '')
                 )
@@ -454,6 +514,39 @@ async def health_check():
         "bot_ready": bot_ready,
         "database_ready": bool(SessionLocal and engine)
     }
+
+@app.get("/uploads/{filename}")
+async def serve_uploaded_file(filename: str):
+    """Serve uploaded files (with basic security check)"""
+    file_path = UPLOAD_DIR / filename
+    
+    # Security check: ensure file exists and is within upload directory
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Additional security: ensure file is within uploads directory
+    try:
+        file_path.resolve().relative_to(UPLOAD_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Determine media type based on file extension
+    media_type = "application/octet-stream"
+    suffix = file_path.suffix.lower()
+    if suffix in ['.jpg', '.jpeg']:
+        media_type = "image/jpeg"
+    elif suffix == '.png':
+        media_type = "image/png"
+    elif suffix == '.gif':
+        media_type = "image/gif"
+    elif suffix == '.pdf':
+        media_type = "application/pdf"
+    
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        filename=filename
+    )
 
 @app.post("/telegram_webhook")
 async def handle_telegram_webhook(request: Request):
@@ -551,6 +644,186 @@ async def api_register_user(payload: RegistrationPayload):
     except Exception as e:
         logger.error(f"API registration error: {e}")
         raise HTTPException(status_code=500, detail="Registration failed")
+
+# =============================================================================
+# ADMIN DASHBOARD ROUTES
+# =============================================================================
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def admin_login_page(request: Request):
+    """Admin login page"""
+    return templates.TemplateResponse("admin/login.html", {
+        "request": request
+    })
+
+@app.post("/admin/login")
+async def admin_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    """Process admin login"""
+    if authenticate_admin(username, password):
+        session_token = create_admin_session(username)
+        response = RedirectResponse(url="/admin/", status_code=302)
+        response.set_cookie(
+            key="admin_session",
+            value=session_token,
+            max_age=86400,  # 24 hours
+            httponly=True,
+            secure=False  # Set to True in production with HTTPS
+        )
+        return response
+    else:
+        return templates.TemplateResponse("admin/login.html", {
+            "request": request,
+            "error": "Invalid username or password"
+        })
+
+@app.get("/admin/logout")
+async def admin_logout(request: Request):
+    """Admin logout"""
+    admin_session = request.cookies.get("admin_session")
+    if admin_session:
+        delete_admin_session(admin_session)
+    
+    response = RedirectResponse(url="/admin/login", status_code=302)
+    response.delete_cookie(key="admin_session")
+    return response
+
+@app.get("/admin/", response_class=HTMLResponse)
+async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
+    """Admin dashboard overview"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    # Get statistics
+    stats = {}
+    if SessionLocal:
+        db = get_db()
+        if db:
+            try:
+                # Total registrations
+                total_registrations = db.query(VipRegistration).count()
+                
+                # Recent registrations (last 7 days)
+                week_ago = datetime.utcnow() - timedelta(days=7)
+                recent_registrations = db.query(VipRegistration).filter(
+                    VipRegistration.created_at >= week_ago
+                ).count()
+                
+                # Registrations by broker
+                broker_stats = db.query(
+                    VipRegistration.brokerage_name,
+                    db.func.count(VipRegistration.id).label('count')
+                ).group_by(VipRegistration.brokerage_name).all()
+                
+                stats = {
+                    "total_registrations": total_registrations,
+                    "recent_registrations": recent_registrations,
+                    "broker_stats": broker_stats
+                }
+            except Exception as e:
+                logger.error(f"Error getting admin stats: {e}")
+                stats = {"error": "Could not load statistics"}
+    
+    return templates.TemplateResponse("admin/dashboard.html", {
+        "request": request,
+        "admin": admin,
+        "stats": stats
+    })
+
+@app.get("/admin/registrations", response_class=HTMLResponse)
+async def admin_registrations_list(
+    request: Request, 
+    page: int = 1, 
+    search: str = "",
+    admin = Depends(get_current_admin)
+):
+    """Admin registrations list with pagination and search"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    registrations = []
+    total_pages = 1
+    total_count = 0
+    
+    if SessionLocal:
+        db = get_db()
+        if db:
+            try:
+                # Base query
+                query = db.query(VipRegistration)
+                
+                # Add search filter
+                if search:
+                    search_filter = f"%{search}%"
+                    query = query.filter(
+                        db.or_(
+                            VipRegistration.full_name.ilike(search_filter),
+                            VipRegistration.email.ilike(search_filter),
+                            VipRegistration.brokerage_name.ilike(search_filter),
+                            VipRegistration.telegram_username.ilike(search_filter)
+                        )
+                    )
+                
+                # Get total count
+                total_count = query.count()
+                
+                # Pagination
+                per_page = 20
+                total_pages = (total_count + per_page - 1) // per_page
+                offset = (page - 1) * per_page
+                
+                # Get registrations
+                registrations = query.order_by(
+                    VipRegistration.created_at.desc()
+                ).offset(offset).limit(per_page).all()
+                
+            except Exception as e:
+                logger.error(f"Error getting registrations: {e}")
+    
+    return templates.TemplateResponse("admin/registrations.html", {
+        "request": request,
+        "admin": admin,
+        "registrations": registrations,
+        "current_page": page,
+        "total_pages": total_pages,
+        "total_count": total_count,
+        "search": search
+    })
+
+@app.get("/admin/registrations/{registration_id}", response_class=HTMLResponse)
+async def admin_registration_detail(
+    request: Request, 
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Admin registration detail page"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    registration = None
+    if SessionLocal:
+        db = get_db()
+        if db:
+            try:
+                registration = db.query(VipRegistration).filter(
+                    VipRegistration.id == registration_id
+                ).first()
+            except Exception as e:
+                logger.error(f"Error getting registration {registration_id}: {e}")
+    
+    if not registration:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    
+    return templates.TemplateResponse("admin/registration_detail.html", {
+        "request": request,
+        "admin": admin,
+        "registration": registration
+    })
 
 # Bot initialization on startup
 async def setup_bot_webhook():

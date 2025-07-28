@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration #{{ registration.id }} - EzyAssist Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+        .navbar-admin {
+            background: linear-gradient(135deg, #4a1a47 0%, #2d0f2b 100%);
+        }
+        .detail-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .detail-header {
+            background: linear-gradient(135deg, #4a1a47 0%, #2d0f2b 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        .info-row {
+            border-bottom: 1px solid #f1f3f4;
+            padding: 15px 0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            color: #212529;
+        }
+        .file-download {
+            display: inline-block;
+            margin: 5px 10px 5px 0;
+        }
+        .badge-status {
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-admin">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/">
+                <i class="fas fa-shield-alt me-2"></i>
+                EzyAssist Admin
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin/">
+                    <i class="fas fa-tachometer-alt me-1"></i>
+                    Dashboard
+                </a>
+                <a class="nav-link" href="/admin/registrations">
+                    <i class="fas fa-users me-1"></i>
+                    Registrations
+                </a>
+                <a class="nav-link" href="/admin/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="fas fa-user-circle me-2"></i>
+                            Registration Details
+                        </h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/admin/">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="/admin/registrations">Registrations</a></li>
+                                <li class="breadcrumb-item active">#{{ registration.id }}</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a href="/admin/registrations" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Details Card -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card detail-card">
+                    <div class="card-header detail-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-id-card me-2"></i>
+                            Registration #{{ registration.id }}
+                        </h4>
+                        <small class="opacity-75">
+                            Submitted: {{ registration.created_at.strftime('%B %d, %Y at %I:%M %p') if registration.created_at else 'N/A' }}
+                        </small>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Personal Information -->
+                        <div class="p-4">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-user me-2"></i>
+                                Personal Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Full Name</div>
+                                        <div class="info-value">{{ registration.full_name or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Email Address</div>
+                                        <div class="info-value">
+                                            <a href="mailto:{{ registration.email }}">{{ registration.email or 'N/A' }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Phone Number</div>
+                                        <div class="info-value">
+                                            <a href="tel:{{ registration.phone_number }}">{{ registration.phone_number or 'N/A' }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Client ID</div>
+                                        <div class="info-value">{{ registration.client_id or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-0">
+
+                        <!-- Trading Information -->
+                        <div class="p-4">
+                            <h5 class="text-success mb-3">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Trading Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Brokerage Name</div>
+                                        <div class="info-value">
+                                            <span class="badge bg-info">{{ registration.brokerage_name or 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Deposit Amount</div>
+                                        <div class="info-value">
+                                            <strong class="text-success">${{ registration.deposit_amount or 'N/A' }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-0">
+
+                        <!-- Telegram Information -->
+                        <div class="p-4">
+                            <h5 class="text-info mb-3">
+                                <i class="fab fa-telegram me-2"></i>
+                                Telegram Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Telegram ID</div>
+                                        <div class="info-value">{{ registration.telegram_id or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Telegram Username</div>
+                                        <div class="info-value">
+                                            {% if registration.telegram_username %}
+                                                @{{ registration.telegram_username }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Files and Metadata -->
+            <div class="col-lg-4">
+                <!-- Uploaded Files -->
+                <div class="card detail-card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-upload me-2"></i>
+                            Deposit Proof Files
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% set file_paths = [registration.deposit_proof_1_path, registration.deposit_proof_2_path, registration.deposit_proof_3_path] %}
+                        {% set has_files = file_paths | select | list | length > 0 %}
+                        
+                        {% if has_files %}
+                            {% for file_path in file_paths %}
+                                {% if file_path %}
+                                    {% set filename = file_path.split('/')[-1] %}
+                                    <div class="file-download">
+                                        <a href="/uploads/{{ filename }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-download me-1"></i>
+                                            File {{ loop.index }}
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {{ file_paths | select | list | length }} file(s) uploaded
+                                </small>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-file-times fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">No files uploaded</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Technical Metadata -->
+                <div class="card detail-card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Technical Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <div class="info-label">Registration ID</div>
+                            <div class="info-value">
+                                <code>#{{ registration.id }}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">IP Address</div>
+                            <div class="info-value">
+                                <code>{{ registration.ip_address or 'N/A' }}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">User Agent</div>
+                            <div class="info-value">
+                                <small class="text-muted">{{ registration.user_agent or 'N/A' }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">Registration Date</div>
+                            <div class="info-value">
+                                {{ registration.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if registration.created_at else 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
