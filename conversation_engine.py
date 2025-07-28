@@ -34,15 +34,25 @@ class ConversationEngine:
 
         if not self.jwt_secret_key:
             print("WARNING: JWT_SECRET_KEY not found in environment variables")
-        self.registration_keywords = [
-            'register', 'registration', 'sign up', 'join', 'enroll', 
-            'course', 'program', 'learn more', 'interested', 'vip',
-            'daftar', 'pendaftaran', 'mendaftar', 'sertai', 'kursus', 
-            'program', 'berminat', 'ingin join', 'nak join', 'vip channel',
-            'belajar vip', 'jadi vip', 'become vip', 'want vip', 'nak vip',
-            'vip member', 'vip group', 'premium', 'upgrade', 'daftar vip',
-            'register vip', 'nak tahu pasal vip', 'tahu pasal vip', 'about vip',
-            'info vip', 'maklumat vip', 'vip info', 'vip details'
+        # VIP-specific registration keywords (direct triggers)
+        self.vip_registration_keywords = [
+            'vip', 'vip channel', 'belajar vip', 'jadi vip', 'become vip', 
+            'want vip', 'nak vip', 'vip member', 'vip group', 'premium', 
+            'upgrade', 'daftar vip', 'register vip', 'nak tahu pasal vip', 
+            'tahu pasal vip', 'about vip', 'info vip', 'maklumat vip', 
+            'vip info', 'vip details'
+        ]
+        
+        # Action keywords that need to be combined with VIP
+        self.action_keywords = [
+            'register', 'registration', 'sign up', 'join', 'enroll',
+            'daftar', 'pendaftaran', 'mendaftar', 'sertai', 'berminat',
+            'ingin join', 'nak join'
+        ]
+        
+        # General interest keywords (less specific)
+        self.interest_keywords = [
+            'course', 'program', 'learn more', 'interested', 'kursus'
         ]
         self.greeting_keywords = [
             'hello', 'hi', 'hey', 'good morning', 'good evening', 
@@ -374,8 +384,20 @@ class ConversationEngine:
         if any(keyword in message_lower for keyword in self.greeting_keywords):
             return 'greeting'
 
-        # Check for registration interest
-        if any(keyword in message_lower for keyword in self.registration_keywords):
+        # Check for VIP registration interest with improved logic
+        # 1. Direct VIP keywords (immediate trigger)
+        if any(keyword in message_lower for keyword in self.vip_registration_keywords):
+            return 'registration'
+        
+        # 2. Action keywords combined with VIP mention
+        has_action = any(keyword in message_lower for keyword in self.action_keywords)
+        has_vip = 'vip' in message_lower
+        if has_action and has_vip:
+            return 'registration'
+        
+        # 3. Interest keywords combined with VIP (less direct)
+        has_interest = any(keyword in message_lower for keyword in self.interest_keywords)
+        if has_interest and has_vip:
             return 'registration'
 
         # Check for FAQ topics in both languages
