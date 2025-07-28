@@ -17,7 +17,7 @@ from pathlib import Path
 from functools import wraps
 
 # FastAPI and web components
-from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile
+from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -28,7 +28,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, or_, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import jwt
@@ -217,11 +217,7 @@ def generate_form_hash() -> str:
 def get_db():
     if not SessionLocal:
         return None
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        db.close()
+    return SessionLocal()
 
 # Telegram Bot Class
 class EzyAssistBot:
@@ -713,7 +709,7 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                 # Registrations by broker
                 broker_stats = db.query(
                     VipRegistration.brokerage_name,
-                    db.func.count(VipRegistration.id).label('count')
+                    func.count(VipRegistration.id).label('count')
                 ).group_by(VipRegistration.brokerage_name).all()
                 
                 stats = {
@@ -724,6 +720,8 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
             except Exception as e:
                 logger.error(f"Error getting admin stats: {e}")
                 stats = {"error": "Could not load statistics"}
+            finally:
+                db.close()
     
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
@@ -759,7 +757,7 @@ async def admin_registrations_list(
                 if search:
                     search_filter = f"%{search}%"
                     query = query.filter(
-                        db.or_(
+                        or_(
                             VipRegistration.full_name.ilike(search_filter),
                             VipRegistration.email.ilike(search_filter),
                             VipRegistration.brokerage_name.ilike(search_filter),
@@ -782,6 +780,8 @@ async def admin_registrations_list(
                 
             except Exception as e:
                 logger.error(f"Error getting registrations: {e}")
+            finally:
+                db.close()
     
     return templates.TemplateResponse("admin/registrations.html", {
         "request": request,
@@ -815,6 +815,8 @@ async def admin_registration_detail(
                 ).first()
             except Exception as e:
                 logger.error(f"Error getting registration {registration_id}: {e}")
+            finally:
+                db.close()
     
     if not registration:
         raise HTTPException(status_code=404, detail="Registration not found")
