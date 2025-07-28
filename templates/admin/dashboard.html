@@ -6,29 +6,130 @@
     <title>Admin Dashboard - EzyAssist</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background: #f8f9fa;
+            background: #F3F4F6;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
         }
         .navbar-admin {
-            background: linear-gradient(135deg, #4a1a47 0%, #2d0f2b 100%);
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .navbar-admin .navbar-brand {
+            color: #111827 !important;
+            font-weight: 600;
+            font-size: 20px;
+        }
+        .navbar-admin .nav-link {
+            color: #4B5563 !important;
+            font-weight: 500;
+        }
+        .navbar-admin .nav-link:hover {
+            color: #2563EB !important;
+            background: #E5E7EB;
+            border-radius: 6px;
         }
         .stat-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 16px;
+            transition: all 0.2s ease;
+            border: 1px solid #E5E7EB;
         }
         .stat-card:hover {
-            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
         }
         .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        .stat-icon.bg-primary {
+            background: #2563EB !important;
+        }
+        .stat-icon.bg-warning {
+            background: #F59E0B !important;
+        }
+        .stat-icon.bg-success {
+            background: #22C55E !important;
+        }
+        .stat-icon.bg-danger {
+            background: #EF5350 !important;
+        }
+        .card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+        }
+        .card-header {
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 600;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .btn-primary {
+            background: #2563EB;
+            border-color: #2563EB;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #1D4ED8;
+            border-color: #1D4ED8;
+        }
+        .btn-warning {
+            background: #F59E0B;
+            border-color: #F59E0B;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-warning:hover {
+            background: #D97706;
+            border-color: #D97706;
+        }
+        .btn-danger {
+            background: #EF5350;
+            border-color: #EF5350;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-danger:hover {
+            background: #E53E3E;
+            border-color: #E53E3E;
+        }
+        .table {
+            color: #374151;
+        }
+        .table thead th {
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 600;
+            border-color: #E5E7EB;
+        }
+        .table tbody tr:hover {
+            background: #F3F4F6;
+        }
+        .table td, .table th {
+            border-color: #E5E7EB;
+        }
+        .progress-bar {
+            background: #2563EB;
+        }
+        h2, h3, h4, h5 {
+            color: #111827;
+            font-weight: 600;
+        }
+        .text-warning {
+            color: #F59E0B !important;
         }
     </style>
 </head>
