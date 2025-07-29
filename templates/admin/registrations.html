@@ -296,6 +296,15 @@
         <!-- Registrations Content -->
         <div class="container-fluid p-4">
 
+            <!-- Export Message Alert -->
+            {% if request.query_params.get('message') == 'use_export_button' %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Export Tip:</strong> To export registrations, please use the "Export" button below to set your filters and date range.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
             <!-- Search and Export Form -->
             <div class="row mb-4">
             <div class="col-12">

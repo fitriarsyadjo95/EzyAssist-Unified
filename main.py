@@ -1251,6 +1251,7 @@ async def admin_registrations_list(
 
 @app.get("/admin/registrations/export")
 async def export_registrations(
+    request: Request,
     start_date: str = None,
     end_date: str = None,
     status: str = "",
@@ -1258,6 +1259,12 @@ async def export_registrations(
     admin = Depends(get_current_admin)
 ):
     """Export registrations to CSV with optional date and status filtering"""
+    
+    # Check if this is a direct browser request (not AJAX) and redirect to registrations page
+    accept_header = request.headers.get("accept", "")
+    if "text/html" in accept_header and "application/json" not in accept_header:
+        # This is a direct browser request, redirect to registrations page with message
+        return RedirectResponse(url="/admin/registrations?message=use_export_button", status_code=302)
     if not SessionLocal:
         raise HTTPException(status_code=500, detail="Database not available")
     
