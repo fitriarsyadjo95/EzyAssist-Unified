@@ -34,263 +34,16 @@ class ConversationEngine:
 
         if not self.jwt_secret_key:
             print("WARNING: JWT_SECRET_KEY not found in environment variables")
-        # VIP-specific registration keywords (direct triggers)
-        self.vip_registration_keywords = [
-            'vip', 'vip channel', 'belajar vip', 'jadi vip', 'become vip', 
-            'want vip', 'nak vip', 'vip member', 'vip group', 'premium', 
-            'upgrade', 'daftar vip', 'register vip', 'nak tahu pasal vip', 
-            'tahu pasal vip', 'about vip', 'info vip', 'maklumat vip', 
-            'vip info', 'vip details'
-        ]
-        
-        # Action keywords that need to be combined with VIP
-        self.action_keywords = [
-            'register', 'registration', 'sign up', 'join', 'enroll',
-            'daftar', 'pendaftaran', 'mendaftar', 'sertai', 'berminat',
-            'ingin join', 'nak join'
-        ]
-        
-        # General interest keywords (less specific)
-        self.interest_keywords = [
-            'course', 'program', 'learn more', 'interested', 'kursus'
-        ]
-        self.greeting_keywords = [
-            'hello', 'hi', 'hey', 'good morning', 'good evening', 
-            'good afternoon', 'greetings',
-            'hai', 'halo', 'selamat pagi', 'selamat petang', 
-            'selamat malam', 'apa khabar', 'assalamualaikum'
-        ]
-        self.malay_keywords = [
-            'apa', 'bagaimana', 'kenapa', 'bila', 'di mana', 'siapa',
-            'boleh', 'saya', 'tidak', 'ya', 'baik', 'terima kasih',
-            'forex', 'perdagangan', 'mata wang', 'analisis', 'strategi'
-        ]
+        # Only keep broker keywords for broker inquiry detection
         self.broker_keywords = [
             'octafx', 'octa', 'hfm', 'hotforex', 'valetax', 'dollars markets',
             'broker', 'brokers', 'compare', 'comparison', 'review', 'regulation',
             'spread', 'leverage', 'minimum deposit', 'platform', 'mt4', 'mt5',
             'cysec', 'fca', 'fsc', 'regulated', 'withdrawal', 'deposit'
         ]
-        self.faq_responses_en = {
-            'what is forex': (
-                "Forex (Foreign Exchange) is the global marketplace for trading currencies. "
-                "It's the largest financial market in the world, with over $6 trillion traded daily. "
-                "In forex trading, you buy one currency while selling another."
-            ),
-            'how to start trading': (
-                "To start forex trading:\n"
-                "1. Learn the basics of forex markets\n"
-                "2. Choose a reliable broker\n"
-                "3. Open a demo account to practice\n"
-                "4. Develop a trading strategy\n"
-                "5. Start with small amounts\n"
-                "6. Keep learning and improving"
-            ),
-            'risk management': (
-                "Risk management is crucial in forex trading:\n"
-                "• Never risk more than 1-2% of your account per trade\n"
-                "• Use stop-loss orders\n"
-                "• Diversify your trades\n"
-                "• Don't trade with emotions\n"
-                "• Have a clear trading plan"
-            ),
-            'trading hours': (
-                "Forex markets are open 24 hours a day, 5 days a week:\n"
-                "• Sydney: 10 PM - 7 AM GMT\n"
-                "• Tokyo: 12 AM - 9 AM GMT\n"
-                "• London: 8 AM - 5 PM GMT\n"
-                "• New York: 1 PM - 10 PM GMT"
-            ),
-            'currency pairs': (
-                "Currency pairs are divided into three categories:\n"
-                "• Major Pairs: EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD, NZD/USD\n"
-                "• Minor Pairs: EUR/GBP, EUR/JPY, GBP/JPY, CHF/JPY\n"
-                "• Exotic Pairs: USD/SGD, USD/HKD, EUR/TRY\n"
-                "Major pairs have the highest liquidity and lowest spreads."
-            ),
-            'pip': (
-                "A pip (percentage in point) is the smallest price move in a currency pair:\n"
-                "• For most pairs: 0.0001 (4th decimal place)\n"
-                "• For JPY pairs: 0.01 (2nd decimal place)\n"
-                "• Example: EUR/USD moves from 1.1250 to 1.1251 = 1 pip\n"
-                "Pips are used to measure profits and losses."
-            ),
-            'spread': (
-                "The spread is the difference between bid and ask prices:\n"
-                "• Bid: Price you can sell at\n"
-                "• Ask: Price you can buy at\n"
-                "• Spread = Ask - Bid\n"
-                "Lower spreads mean lower trading costs. Major pairs typically have tighter spreads."
-            ),
-            'leverage': (
-                "Leverage allows you to control larger positions with smaller capital:\n"
-                "• 1:100 leverage means $1 controls $100\n"
-                "• Higher leverage = Higher risk and potential reward\n"
-                "• Common ratios: 1:50, 1:100, 1:200, 1:500\n"
-                "⚠️ Use leverage carefully - it can amplify losses!"
-            ),
-            'margin': (
-                "Margin is the deposit required to open a leveraged position:\n"
-                "• Required margin = Position size ÷ Leverage\n"
-                "• Free margin = Account balance - Used margin\n"
-                "• Margin call occurs when equity falls below required margin\n"
-                "Always monitor your margin levels to avoid forced closure."
-            ),
-            'technical analysis': (
-                "Technical analysis uses charts and indicators to predict prices:\n"
-                "• Support & Resistance levels\n"
-                "• Moving Averages (MA, EMA)\n"
-                "• RSI, MACD, Bollinger Bands\n"
-                "• Candlestick patterns\n"
-                "• Trend lines and chart patterns"
-            ),
-            'fundamental analysis': (
-                "Fundamental analysis examines economic factors affecting currencies:\n"
-                "• Interest rates and central bank policies\n"
-                "• Economic indicators (GDP, inflation, employment)\n"
-                "• Political stability and news events\n"
-                "• Trade balances and current accounts\n"
-                "• Market sentiment and risk appetite"
-            ),
-            'trading strategy': (
-                "Common forex trading strategies:\n"
-                "• Scalping: Very short-term (minutes)\n"
-                "• Day Trading: Positions closed same day\n"
-                "• Swing Trading: Hold for days to weeks\n"
-                "• Position Trading: Long-term (months)\n"
-                "Choose based on your time, risk tolerance, and experience."
-            ),
-            'stop loss': (
-                "Stop loss is an order to close a losing trade automatically:\n"
-                "• Limits your maximum loss per trade\n"
-                "• Should be set before entering trade\n"
-                "• Place below support (buy) or above resistance (sell)\n"
-                "• Risk 1-2% of account per trade maximum\n"
-                "Never trade without a stop loss!"
-            ),
-            'take profit': (
-                "Take profit automatically closes winning trades:\n"
-                "• Secures profits at predetermined levels\n"
-                "• Risk-reward ratio should be at least 1:2\n"
-                "• Place at resistance (buy) or support (sell)\n"
-                "• Can use trailing stops to capture more profit\n"
-                "Don't be greedy - take profits when available!"
-            )
-        }
+        # FAQ responses removed - now handled by AI for natural conversation
 
-        self.faq_responses_ms = {
-            'apa itu forex': (
-                "OK, saya explain ye! Forex ni short form untuk Foreign Exchange - basically tempat orang trade mata wang lah. "
-                "Memang pasaran paling besar dalam dunia ni, lebih RM25 trilion trade setiap hari! "
-                "Cara kerja dia senang je - macam kita tukar RM ke USD ke, tapi untuk profit. "
-                "Contoh: Kalau USD/MYR naik, maksudnya USD kuat, ringgit lemah. Kita boleh trade pair ni untuk profit."
-            ),
-            'bagaimana mula trading': (
-                "Nak start forex trading? Boleh je! Ni step-step yang kena buat:\n"
-                "1. Belajar basic dulu - jangan main campak je\n"
-                "2. Cari broker yang okay dan boleh percaya (pastikan ada support BM)\n"
-                "3. Buka demo account dulu, practice free\n"
-                "4. Deposit minimum start dengan RM100-500 je dulu\n"
-                "5. Pilih broker yang accept Malaysian payment method (online banking, eWallet)\n"
-                "6. Keep learning lah - forex ni tak pernah berhenti belajar"
-            ),
-            'pengurusan risiko': (
-                "Risk management ni memang penting betul dalam forex:\n"
-                "• Jangan main ALL IN - max 1-2% je per trade (kalau account RM1000, risk RM10-20 je)\n"
-                "• Mesti guna stop-loss, jangan kedekut\n"
-                "• Jangan letak semua telur dalam satu bakul\n"
-                "• Trading dengan kepala sejuk, bukan dengan hati\n"
-                "• Trade dengan duit extra je, jangan sampai affect EPF atau emergency fund\n"
-                "• Kena ada plan yang clear sebelum masuk market"
-            ),
-            'waktu trading': (
-                "Market forex ni buka 24 jam, 5 hari seminggu je:\n"
-                "• Sydney: 6 AM - 3 PM Malaysian time (pagi kita lah)\n"
-                "• Tokyo: 8 AM - 5 PM Malaysian time (best untuk USD/JPY, AUD/JPY)\n"
-                "• London: 4 PM - 1 AM Malaysian time (session paling best ni!)\n"
-                "• New York: 9 PM - 6 AM Malaysian time (overlap dengan London)\n"
-                "Best time untuk kita: 4 PM - 1 AM (London session) - volume tinggi, movement bagus!\n"
-                "Weekend je tutup, so boleh trade lepas kerja pun!"
-            ),
-            'pasangan mata wang': (
-                "Currency pairs ni ada 3 jenis lah:\n"
-                "• Major pairs: EUR/USD, GBP/USD, USD/JPY - ni yang popular, spread rendah\n"
-                "• Minor pairs: EUR/GBP, EUR/JPY, GBP/JPY - tak de USD tapi okay jugak\n"
-                "• Exotic pairs: USD/SGD, USD/MYR, EUR/TRY - ni yang jarang orang main\n"
-                "Kalau nak senang, main major pairs je dulu. Liquidity tinggi, spread pun murah."
-            ),
-            'pip': (
-                "Pip ni macam unit kecik untuk measure pergerakan harga:\n"
-                "• Most pairs: 0.0001 (4 decimal places)\n"
-                "• JPY pairs: 0.01 (2 decimal places je)\n"
-                "• Contoh: EUR/USD naik dari 1.1250 ke 1.1251 = 1 pip lah\n"
-                "Pip ni penting sebab dia tentukan profit/loss kita. Lagi banyak pip, lagi besar untung rugi."
-            ),
-            'spread': (
-                "Spread ni gap antara harga beli dengan harga jual:\n"
-                "• Bid: Harga kita boleh jual\n"
-                "• Ask: Harga kita boleh beli\n"
-                "• Spread = Ask - Bid (selisih dia lah)\n"
-                "Lagi kecik spread, lagi murah cost trading kita. Macam commission broker tu."
-            ),
-            'leverage': (
-                "Leverage ni macam pinjam wang dari broker untuk trade besar:\n"
-                "• Leverage 1:100 = RM1 kita boleh control RM100\n"
-                "• Lagi tinggi leverage = Lagi besar risk DAN profit\n"
-                "• Yang biasa: 1:30, 1:50, 1:100 (Bank Negara ada guidelines)\n"
-                "• Contoh: Account RM500, leverage 1:100, boleh trade position RM50,000\n"
-                "⚠️ Jangan main-main dengan leverage tinggi - boleh margin call, habis duit!"
-            ),
-            'margin': (
-                "Margin ni deposit yang kena bayar untuk buka position leverage:\n"
-                "• Formula: Position size ÷ Leverage = Margin required\n"
-                "• Free margin = Balance - Margin yang dah guna\n"
-                "• Kalau equity jatuh, broker call margin - tutup position paksa\n"
-                "Kena monitor selalu ni, jangan sampai kena force close."
-            ),
-            'analisis teknikal': (
-                "Technical analysis ni pakai chart dan indicator untuk predict harga:\n"
-                "• Support & Resistance levels - tempat harga bounce\n"
-                "• Moving Average (MA, EMA) - trend line\n"
-                "• RSI, MACD, Bollinger Bands - indicator popular\n"
-                "• Candlestick patterns - bentuk lilin tu\n"
-                "• Trend lines dan chart patterns - corak harga\n"
-                "Senang je, tengok chart dan cari pattern!"
-            ),
-            'analisis fundamental': (
-                "Fundamental analysis ni tengok economic factors yang affect mata wang:\n"
-                "• Interest rates - kalau naik, mata wang kuat\n"
-                "• Economic data - GDP, inflation, employment\n"
-                "• Political stability - kalau tak stable, mata wang drop\n"
-                "• Trade balance - import vs export\n"
-                "• Market sentiment - orang optimistic ke tak\n"
-                "Basically tengok kesihatan ekonomi negara tu lah."
-            ),
-            'strategi trading': (
-                "Trading strategy ni macam-macam, pilih yang sesuai:\n"
-                "• Scalping: Cepat masuk keluar, dalam minit je\n"
-                "• Day Trading: Buka tutup dalam hari yang sama\n"
-                "• Swing Trading: Hold few days sampai few weeks\n"
-                "• Position Trading: Long term, bulan-bulan\n"
-                "Pilih ikut masa free kita, risk appetite, dan experience level."
-            ),
-            'stop loss': (
-                "Stop loss ni auto close position kalau rugi:\n"
-                "• Set limit berapa max boleh rugi per trade\n"
-                "• Kena set SEBELUM masuk trade, jangan last minute\n"
-                "• Letak below support (buy) atau above resistance (sell)\n"
-                "• Max risk 1-2% account balance je per trade\n"
-                "Golden rule: JANGAN PERNAH trade tanpa stop loss!"
-            ),
-            'take profit': (
-                "Take profit ni auto close position kalau dah profit:\n"
-                "• Lock in keuntungan pada level yang kita target\n"
-                "• Risk-reward ratio minimum 1:2 (risk RM1, target RM2)\n"
-                "• Set kat resistance (buy) atau support (sell)\n"
-                "• Boleh pakai trailing stop untuk maximum profit\n"
-                "Jangan tamak sangat - ada untung ambil je lah!"
-            )
-        }
+        # Malay FAQ responses also removed - handled by AI
 
     def detect_language(self, message: str) -> str:
         """Always return Bahasa Melayu - bot responds only in Malay"""
@@ -377,123 +130,28 @@ class ConversationEngine:
             return "error"
 
     async def detect_intent(self, message: str) -> str:
-        """Detect the intent of the user message"""
+        """Simplified intent detection - only 3 core intents"""
         message_lower = message.lower()
-
-        # Check for greeting
-        if any(keyword in message_lower for keyword in self.greeting_keywords):
-            return 'greeting'
-
-        # Check for VIP registration interest with improved logic
-        # 1. Direct VIP keywords (immediate trigger)
-        if any(keyword in message_lower for keyword in self.vip_registration_keywords):
+        
+        # Priority 1: Check for registration intent
+        registration_keywords = [
+            'register', 'daftar', 'join', 'signup', 'sign up', 'masuk', 'sertai',
+            'vip', 'channel', 'premium', 'member', 'membership', 'ahli'
+        ]
+        
+        if any(keyword in message_lower for keyword in registration_keywords):
             return 'registration'
         
-        # 2. Action keywords combined with VIP mention
-        has_action = any(keyword in message_lower for keyword in self.action_keywords)
-        has_vip = 'vip' in message_lower
-        if has_action and has_vip:
-            return 'registration'
-        
-        # 3. Interest keywords combined with VIP (less direct)
-        has_interest = any(keyword in message_lower for keyword in self.interest_keywords)
-        if has_interest and has_vip:
-            return 'registration'
-
-        # Check for FAQ topics in both languages
-        for faq_key in self.faq_responses_en.keys():
-            if any(word in message_lower for word in faq_key.split()):
-                return 'faq'
-
-        for faq_key in self.faq_responses_ms.keys():
-            if any(word in message_lower for word in faq_key.split()):
-                return 'faq'
-
-        # Check for broker-specific inquiries
+        # Priority 2: Check for specific broker inquiries with multiple brokers mentioned
         if self.is_broker_inquiry(message):
-            return 'broker_inquiry'
+            mentioned_brokers = self.get_mentioned_brokers(message)
+            if len(mentioned_brokers) >= 1:  # If any specific broker is mentioned
+                return 'broker_inquiry'
+        
+        # Priority 3: Everything else goes to AI conversation (includes greetings, FAQ, forex, general)
+        return 'ai_conversation'
 
-        # Check if forex-related for general forex inquiry
-        if self.is_forex_related(message):
-            return 'forex_general'
-
-        # Default to general (non-forex) inquiry
-        return 'general'
-
-    async def get_faq_response(self, message: str, language: str = 'en') -> str:
-        """Get FAQ response based on message content and language"""
-        message_lower = message.lower()
-
-        # Choose appropriate FAQ responses based on language
-        faq_responses = self.faq_responses_ms if language == 'ms' else self.faq_responses_en
-
-        # Step 1: Check for exact phrase matches first (most precise)
-        for faq_key, response in faq_responses.items():
-            if faq_key in message_lower:
-                return response
-
-        # Step 2: Check for specific keyword combinations
-        # Handle specific "stop loss" questions in Malay
-        if any(phrase in message_lower for phrase in ['stop loss', 'stoploss', 'apa itu stop loss', 'apakah stop loss']):
-            if 'stop loss' in faq_responses:
-                return faq_responses['stop loss']
-
-        # Handle specific "take profit" questions in Malay  
-        if any(phrase in message_lower for phrase in ['take profit', 'takeprofit', 'apa itu take profit', 'apakah take profit']):
-            if 'take profit' in faq_responses:
-                return faq_responses['take profit']
-
-        # Handle "apa itu forex" specifically (prevent false matches)
-        if any(phrase in message_lower for phrase in ['apa itu forex', 'apakah forex', 'what is forex']):
-            if 'apa itu forex' in faq_responses:
-                return faq_responses['apa itu forex']
-            elif 'what is forex' in faq_responses:
-                return faq_responses['what is forex']
-
-        # Step 3: Multi-word matching with better logic
-        for faq_key, response in faq_responses.items():
-            faq_words = faq_key.split()
-
-            # For multi-word FAQ keys, require ALL important words to match
-            if len(faq_words) >= 2:
-                # Skip common words when matching
-                important_words = [word for word in faq_words if word not in ['apa', 'itu', 'what', 'is', 'the', 'how', 'to']]
-
-                if len(important_words) >= 1:
-                    # All important words must be present
-                    matching_words = sum(1 for word in important_words if word in message_lower)
-                    if matching_words == len(important_words):
-                        return response
-
-            # For single word FAQ keys, only match specific trading terms
-            elif len(faq_words) == 1:
-                word = faq_words[0]
-                if word in ['forex', 'leverage', 'margin', 'spread', 'pip'] and word in message_lower:
-                    # Make sure it's not part of a longer phrase
-                    if f"apa itu {word}" not in message_lower and f"what is {word}" not in message_lower:
-                        return response
-
-        # Step 4: Try other language with same logic
-        other_faq = self.faq_responses_en if language == 'ms' else self.faq_responses_ms
-
-        # Exact matches in other language
-        for faq_key, response in other_faq.items():
-            if faq_key in message_lower:
-                return response
-
-        # Multi-word matching in other language
-        for faq_key, response in other_faq.items():
-            faq_words = faq_key.split()
-
-            if len(faq_words) >= 2:
-                important_words = [word for word in faq_words if word not in ['apa', 'itu', 'what', 'is', 'the', 'how', 'to']]
-
-                if len(important_words) >= 1:
-                    matching_words = sum(1 for word in important_words if word in message_lower)
-                    if matching_words == len(important_words):
-                        return response
-
-        return None
+    # FAQ handling removed - now handled by AI for natural conversation
 
     def get_specific_broker_answer(self, broker: str, query_type: str, language: str = 'en') -> str:
         """Get specific answer for broker queries"""
@@ -631,10 +289,10 @@ class ConversationEngine:
             return ("I can help you with information about brokers like OctaFX, HFM, Valetax, and Dollars Markets. "
                    "Ask me about spreads, leverage, regulation, or compare these brokers!")
 
-    async def generate_ai_response(self, message: str, context: str = "", language: str = 'en', is_forex: bool = True) -> str:
+    async def generate_ai_response(self, message: str, conversation_context: str = "", language: str = 'en') -> str:
         """Generate AI response using OpenAI GPT-4o"""
         try:
-            print(f"🤖 Generating AI response for: {message[:50]}... | Language: {language} | Is Forex: {is_forex}")
+            print(f"🤖 Generating AI response for: {message[:50]}... | Language: {language}")
 
             # Check if OpenAI client is properly initialized
             if not self.openai_client:
@@ -659,55 +317,109 @@ class ConversationEngine:
                 else:
                     return "Sorry, I'm having technical issues. Please try again later."
 
-            if is_forex:
-                if language == 'ms':
-                    system_prompt = (
-                        "Kau ni EzyAssist - forex trading assistant yang friendly gila! "
-                        "Jawab dalam Bahasa Malaysia yang conversational macam cakap dengan kawan. "
-                        "Pakai 'awak', 'lah', 'je', 'kan', 'tak' dalam ayat naturally. "
-                        "Explain forex dalam cara yang senang faham, especially untuk M40/B40 yang nak start trading dengan budget limited. "
-                        "CONTEXT MALAYSIA: Guna contoh RM (ringgit), sebut payment method local macam online banking, Touch 'n Go eWallet. "
-                        "Consider Malaysian trading hours dan market overlap. Bila sebut regulation, mention Bank Negara Malaysia. "
-                        "Guna Malaysian-relevant examples macam EPF, salary ranges (RM2k-5k), living costs. "
-                        "Consider different income levels dan financial priorities. Encouraging tapi realistic pasal trading risks. "
-                        "SAMPLE PHRASES: 'Kalau awak nak start trading ni...', 'Broker mana yang sesuai untuk awak?', 'Deposit minimum berapa ek?', "
-                        "'Spread dia okay tak?', 'Boleh withdraw cepat tak?', 'Ada support Bahasa Malaysia tak?' "
-                        "Selalu remind pasal safe trading dan risk management - jangan bagi advice yang bahaya. "
-                        "Kalau tanya pasal register atau signals, promote VIP channel dengan quality signals dan expert analysis. "
-                        "Guna mix BM dengan English terms bila perlu (macam 'leverage', 'spread', 'profit'). "
-                        "Tone kena friendly, helpful, macam kawan yang experienced nak tolong."
+            # Smart context detection
+            is_greeting = any(word in message.lower() for word in ['hello', 'hi', 'hai', 'good morning', 'assalamualaikum', 'selamat', 'start'])
+            is_forex_related = self.is_forex_related(message)
+            mentioned_brokers = self.get_mentioned_brokers(message)
+            
+            # Build context-aware prompts
+            if language == 'ms':
+                system_prompt = (
+                    "Kau ni EzyAssist - forex trading assistant yang sangat friendly dan expert! "
+                    "Jawab dalam Bahasa Malaysia yang natural macam cakap dengan kawan baik. "
+                    "Pakai 'awak', 'lah', 'je', 'kan', 'tak' naturally dalam conversation. "
+                    
+                    "PERSONALITY: Friendly, knowledgeable, helpful, encouraging tapi realistic pasal risks. "
+                    "CONTEXT MALAYSIA: "
+                    "- Guna RM (ringgit) sebagai currency reference "
+                    "- Sebut payment methods local: online banking, TNG eWallet, FPX "
+                    "- Malaysian trading hours: 4PM-1AM (London session terbaik) "
+                    "- Bank Negara Malaysia untuk regulation reference "
+                    "- EPF, KWSP, salary ranges RM2k-5k untuk relatable examples "
+                    "- Consider M40/B40 income levels dan priorities "
+                    
+                    "TRADING APPROACH: "
+                    "- Start small (RM100-500 untuk beginner) "
+                    "- Risk management FIRST (max 1-2% per trade) "
+                    "- Demo account practice essential "
+                    "- Selalu mention importance of stop loss "
+                    "- Broker selection based on regulation, spread, support BM "
+                    
+                    "CONVERSATION STYLE: "
+                    "- Jawab soalan dengan detail yang helpful "
+                    "- Guna examples yang relatable untuk Malaysian context "
+                    "- Mix BM dengan common English trading terms naturally "
+                    "- If tanya complex stuff, break down step by step "
+                    "- Always end dengan encouragement atau follow-up question "
+                )
+                
+                # Add specific context based on message content
+                if is_greeting:
+                    system_prompt += (
+                        "\nUSER CONTEXT: First interaction - be welcoming and introduce capabilities naturally. "
+                        "Mention you can help with forex basics, broker selection, trading strategies, risk management. "
+                    )
+                elif is_forex_related and mentioned_brokers:
+                    system_prompt += (
+                        f"\nUSER CONTEXT: Asking about specific brokers: {', '.join(mentioned_brokers)}. "
+                        "Give detailed comparison with Malaysian perspective (regulation, spreads, support, deposit methods). "
+                    )
+                elif is_forex_related:
+                    system_prompt += (
+                        "\nUSER CONTEXT: Forex-related question. Give comprehensive answer with Malaysian context. "
+                        "Include practical examples, risk warnings, and encourage learning step by step. "
                     )
                 else:
-                    system_prompt = (
-                        "You are EzyAssist, a helpful forex trading assistant. "
-                        "Provide clear, educational responses about forex trading. "
-                        "Keep responses concise but informative. "
-                        "Always encourage safe trading practices and proper risk management. "
-                        "If asked about registration or signals, mention that you offer a VIP channel with high-quality trading signals and expert analysis to help them become profitable traders."
+                    system_prompt += (
+                        "\nUSER CONTEXT: Non-forex question. Answer helpfully first, then naturally mention "
+                        "your forex expertise if relevant. Don't force the transition. "
                     )
+                    
             else:
-                # For general non-forex questions
-                if language == 'ms':
-                    system_prompt = (
-                        "Kau ni EzyAssist - AI assistant yang friendly gila! "
-                        "Jawab soalan user dalam Bahasa Malaysia yang natural macam cakap dengan kawan baik. "
-                        "Pakai 'awak', 'lah', 'je', 'kan', 'tak' naturally dalam conversation. "
-                        "Jawab soalan dia dengan helpful dan accurate. Kalau dia tanya pasal apa-apa pun, "
-                        "try to give useful answer. After jawab, mention secara natural yang kau actually "
-                        "expert dalam forex trading jugak kalau awak berminat nak belajar. "
-                        "Tone kena friendly, warm, dan helpful macam kawan yang experienced."
+                system_prompt = (
+                    "You are EzyAssist, an expert forex trading assistant with a friendly, conversational style. "
+                    "You have deep knowledge of forex markets, brokers, trading strategies, and risk management. "
+                    
+                    "PERSONALITY: Helpful, knowledgeable, encouraging but realistic about trading risks. "
+                    "APPROACH: "
+                    "- Give comprehensive but concise answers "
+                    "- Use practical examples and analogies "
+                    "- Always emphasize proper risk management "
+                    "- Encourage safe learning progression "
+                    "- Be supportive but honest about trading challenges "
+                    
+                    "TRADING PRINCIPLES: "
+                    "- Start with demo accounts and small amounts "
+                    "- Never risk more than 1-2% per trade "
+                    "- Choose regulated brokers with good support "
+                    "- Focus on education before big investments "
+                    "- Stop losses are mandatory, not optional "
+                )
+                
+                # Add specific context based on message content  
+                if is_greeting:
+                    system_prompt += (
+                        "\nUSER CONTEXT: First interaction - welcome them and naturally introduce your forex expertise. "
+                        "Mention you can help with trading basics, broker selection, strategies, and risk management. "
+                    )
+                elif is_forex_related and mentioned_brokers:
+                    system_prompt += (
+                        f"\nUSER CONTEXT: Asking about specific brokers: {', '.join(mentioned_brokers)}. "
+                        "Provide detailed comparison including regulation, spreads, platforms, and user experience. "
+                    )
+                elif is_forex_related:
+                    system_prompt += (
+                        "\nUSER CONTEXT: Forex-related question. Give thorough answer with practical examples. "
+                        "Include risk warnings and encourage gradual learning approach. "
                     )
                 else:
-                    system_prompt = (
-                        "You are EzyAssist, a friendly and helpful AI assistant. "
-                        "Answer the user's question clearly, accurately and helpfully regardless of the topic. "
-                        "Be conversational and warm in your response. Keep responses informative but not too long. "
-                        "After answering their question, naturally mention that you also specialize in forex trading "
-                        "and can help with that if they're interested. Be helpful first, promotional second."
+                    system_prompt += (
+                        "\nUSER CONTEXT: Non-forex question. Answer their question first, then naturally "
+                        "mention your forex specialization if there's a relevant connection. "
                     )
 
-            if context:
-                system_prompt += f"\nContext: {context}"
+            if conversation_context:
+                system_prompt += f"\nAdditional Context: {conversation_context}"
 
             print(f"Making OpenAI API call with model: gpt-4o")
             print(f"System prompt length: {len(system_prompt)}")
@@ -781,7 +493,7 @@ class ConversationEngine:
         return engagement_score >= 3
 
     async def process_message(self, message: str, telegram_id: str, engagement_score: int, telegram_username: str = "") -> str:
-        """Main method to process incoming messages"""
+        """Simplified main method to process incoming messages"""
         print(f"🔥 ConversationEngine.process_message called")
         print(f"📝 Message: '{message}'")
         print(f"👤 User: {telegram_id}")
@@ -794,20 +506,7 @@ class ConversationEngine:
         intent = await self.detect_intent(message)
         print(f"🎯 Detected intent: {intent}")
 
-        if intent == 'greeting':
-            if language == 'ms':
-                return (
-                    "Hai awak! 👋 Welcome to EzyAssist! Saya sini nak tolong awak belajar pasal forex trading. "
-                    "Boleh tanya pasal broker mana yang sesuai untuk Malaysian, deposit minimum berapa, atau apa-apa soalan trading. "
-                    "Saya faham context kita - dari payment method sampai la Islamic account pun ada!"
-                )
-            else:
-                return (
-                    "Hello! 👋 Welcome to EzyAssist. I'm here to help you learn about forex trading. "
-                    "Feel free to ask me any questions about forex markets, trading strategies, or risk management!"
-                )
-
-        elif intent == 'registration':
+        if intent == 'registration':
             # Generate registration link using built-in system
             registration_url = await self.generate_registration_link(telegram_id, telegram_username)
             
@@ -860,73 +559,46 @@ class ConversationEngine:
                     "Once you register, our team will review and contact you within 24-48 hours for VIP access!"
                 )
 
-        elif intent == 'faq':
-            faq_response = await self.get_faq_response(message, language)
-            if faq_response:
-                # Add registration suggestion for engaged users
-                if await self.should_suggest_registration(engagement_score):
-                    registration_url = await self.generate_registration_link(telegram_id, telegram_username)
-                    if registration_url and registration_url != "already_registered" and registration_url != "error":
-                        if language == 'ms':
-                            faq_response += (
-                                f"\n\n💡 Nak dapat quality signals dan expert analysis? "
-                                f"Join VIP channel kita: {registration_url}"
-                            )
-                        else:
-                            faq_response += (
-                                f"\n\n💡 Want high-quality signals and expert analysis? "
-                                f"Join our VIP channel: {registration_url}"
-                            )
-                return faq_response
-
         elif intent == 'broker_inquiry':
-            # Handle broker-specific inquiries
+            # Handle broker-specific inquiries with structured data
             return await self.handle_broker_inquiry(message, language)
 
-        elif intent == 'forex_general':
-            # For forex-related general inquiries, use AI with forex context
+        else:  # intent == 'ai_conversation'
+            # All other conversations go to enhanced AI with smart context detection
             context = f"User engagement score: {engagement_score}"
-            ai_response = await self.generate_ai_response(message, context, language, is_forex=True)
+            ai_response = await self.generate_ai_response(message, context, language)
 
             # Check if AI response is empty and provide fallback
             if not ai_response or ai_response.strip() == "":
-                print(f"Empty AI response for forex question: {message[:50]}")
+                print(f"Empty AI response for question: {message[:50]}")
                 if language == 'ms':
                     ai_response = (
-                        "Soalan forex yang bagus tu! Saya tengah ada masalah sikit nak process properly. "
-                        "Boleh awak try tanya dengan cara lain? Atau boleh tanya pasal broker recommendation, "
-                        "risk management, atau trading strategy yang specific."
+                        "Maaf, saya ada masalah sikit nak process soalan awak tu. "
+                        "Boleh try tanya dengan cara lain? Atau awak boleh tanya pasal "
+                        "forex basics, broker recommendation, atau trading strategy!"
                     )
                 else:
                     ai_response = (
-                        "That's a great forex question! I'm having trouble processing it properly right now. "
-                        "Could you try asking it differently? Or ask about broker recommendations, "
-                        "risk management, or specific trading strategies."
+                        "Sorry, I'm having trouble processing your question right now. "
+                        "Could you try asking it differently? Or ask about "
+                        "forex basics, broker recommendations, or trading strategies!"
                     )
 
-            # Add registration suggestion for highly engaged users
+            # Add registration suggestion for highly engaged users (applies to all AI conversations)
             if await self.should_suggest_registration(engagement_score):
-                registration_url = await self.generate_registration_link(telegram_id)
+                registration_url = await self.generate_registration_link(telegram_id, telegram_username)
                 if registration_url and registration_url != "already_registered" and registration_url != "error":
                     if language == 'ms':
                         ai_response += (
-                            f"\n\n📚 Wah awak ni memang minat forex! "
-                            f"Nak dapat quality trading signals dan expert analysis tak? "
-                            f"Join VIP channel kita: {registration_url}"
+                            f"\n\n💡 Awak ni memang active bertanya! "
+                            f"Nak join VIP channel untuk quality signals dan expert analysis? "
+                            f"Klik sini: {registration_url}"
                         )
                     else:
                         ai_response += (
-                            f"\n\n📚 You seem really interested in forex! "
-                            f"Want to get high-quality trading signals and expert analysis? "
-                            f"Join our VIP channel: {registration_url}"
+                            f"\n\n💡 You're really engaged with learning! "
+                            f"Want to join our VIP channel for quality signals and expert analysis? "
+                            f"Click here: {registration_url}"
                         )
 
-            return ai_response
-
-        # For general non-forex inquiries, use AI with general context
-        # The AI will handle gentle forex redirection as part of its system prompt
-        else:
-            print(f"Processing general question: {message[:50]}...")
-            context = f"User engagement score: {engagement_score}, Non-forex general question"
-            ai_response = await self.generate_ai_response(message, context, language, is_forex=False)
             return ai_response
