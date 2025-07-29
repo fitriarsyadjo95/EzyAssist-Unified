@@ -12,14 +12,14 @@ from fastapi import Request, HTTPException, status, Depends, Cookie
 from fastapi.responses import RedirectResponse
 
 # Admin credentials from environment variables
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin@ezymeta.global")
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")  # Should be set in production
 
 # If no hash is set, create one for default password "Password123!"
 if not ADMIN_PASSWORD_HASH:
     ADMIN_PASSWORD_HASH = hashlib.sha256("Password123!".encode()).hexdigest()
     print(f"⚠️  Using default admin password. Set ADMIN_PASSWORD_HASH environment variable.")
-    print(f"Default login: username=admin, password=Password123!")
+    print(f"Default login: username=admin@ezymeta.global, password=Password123!")
 
 # Session storage (in production, use Redis or database)
 admin_sessions = {}
