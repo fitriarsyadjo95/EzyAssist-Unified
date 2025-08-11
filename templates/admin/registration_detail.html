@@ -441,18 +441,7 @@
                                 <div class="col-md-6">
                                     <div class="info-row">
                                         <div class="info-label">Telegram ID</div>
-                                        <div class="info-value">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>{{ registration.telegram_id or 'N/A' }}</span>
-                                                {% if registration.telegram_id %}
-                                                <div class="btn-group" role="group">
-                                                    <a href="tg://user?id={{ registration.telegram_id }}" class="btn btn-outline-info btn-sm" title="Open in Telegram">
-                                                        <i class="fab fa-telegram"></i>
-                                                    </a>
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
+                                        <div class="info-value">{{ registration.telegram_id or 'N/A' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
