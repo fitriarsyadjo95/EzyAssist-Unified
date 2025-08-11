@@ -246,6 +246,28 @@ if Base:
                 'timestamp': self.timestamp.isoformat() if self.timestamp else None
             }
 
+    class ConversationLog(Base):
+        __tablename__ = "conversation_logs"
+        
+        id = Column(Integer, primary_key=True, index=True)
+        telegram_id = Column(String, nullable=False, index=True)
+        user_message = Column(Text, nullable=False)
+        bot_response = Column(Text, nullable=False)
+        message_type = Column(String, default="chat")  # 'chat', 'command', 'registration'
+        timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+        registration_id = Column(Integer, nullable=True, index=True)  # Link to registration if exists
+        
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'telegram_id': self.telegram_id,
+                'user_message': self.user_message,
+                'bot_response': self.bot_response,
+                'message_type': self.message_type,
+                'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+                'registration_id': self.registration_id
+            }
+
 # Admin Settings Model
 class AdminSettings(Base):
     __tablename__ = "admin_settings"
@@ -788,6 +810,9 @@ class EzyAssistBot:
         )
         
         await update.message.reply_text(welcome_message)
+        
+        # Log command to database
+        self.log_conversation(telegram_id, "/start", welcome_message, "command")
 
     async def register_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /register command"""
@@ -823,11 +848,16 @@ class EzyAssistBot:
             await update.message.reply_text(register_message)
             logger.info(f"Registration token sent to {telegram_id}")
             
+            # Log command to database
+            self.log_conversation(telegram_id, "/register", register_message, "command")
+            
         except Exception as e:
             logger.error(f"Registration command error: {e}")
-            await update.message.reply_text(
-                "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
-            )
+            error_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+            await update.message.reply_text(error_message)
+            
+            # Log error command to database
+            self.log_conversation(telegram_id, "/register", error_message, "command")
 
     async def clear_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /clear command"""
@@ -852,6 +882,41 @@ class EzyAssistBot:
         )
         
         await update.message.reply_text(clear_message)
+        
+        # Log command to database
+        self.log_conversation(telegram_id, "/clear", clear_message, "command")
+
+    def log_conversation(self, telegram_id: str, user_message: str, bot_response: str, message_type: str = "chat"):
+        """Log conversation to database"""
+        if not SessionLocal:
+            return
+        
+        try:
+            db = get_db()
+            if db:
+                # Try to find matching registration
+                registration = db.query(VipRegistration).filter(
+                    VipRegistration.telegram_id == telegram_id
+                ).first()
+                
+                # Create conversation log entry
+                conversation_log = ConversationLog(
+                    telegram_id=telegram_id,
+                    user_message=user_message,
+                    bot_response=bot_response,
+                    message_type=message_type,
+                    registration_id=registration.id if registration else None
+                )
+                
+                db.add(conversation_log)
+                db.commit()
+                db.close()
+                logger.debug(f"✅ Conversation logged for {telegram_id}")
+        except Exception as e:
+            logger.error(f"Failed to log conversation: {e}")
+            if 'db' in locals():
+                db.rollback()
+                db.close()
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle incoming messages"""
@@ -898,6 +963,9 @@ class EzyAssistBot:
             )
 
         await update.message.reply_text(response)
+        
+        # Log conversation to database
+        self.log_conversation(telegram_id, message_text, response, "chat")
 
     async def error_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle errors"""
@@ -1986,6 +2054,57 @@ async def create_audit_logs_endpoint(admin = Depends(get_current_admin)):
     except Exception as e:
         logger.error(f"Error creating initial audit logs: {e}")
         raise HTTPException(status_code=500, detail="Failed to create initial audit logs")
+
+@app.get("/admin/conversations/{registration_id}", response_class=HTMLResponse)
+async def view_conversations(
+    request: Request, 
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """View conversation history for a specific registration"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not configured")
+    
+    try:
+        db = get_db()
+        
+        # Get registration details
+        registration = db.query(VipRegistration).filter(
+            VipRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Get conversation history
+        conversations = db.query(ConversationLog).filter(
+            or_(
+                ConversationLog.registration_id == registration_id,
+                ConversationLog.telegram_id == registration.telegram_id
+            )
+        ).order_by(ConversationLog.timestamp.asc()).all()
+        
+        db.close()
+        
+        return templates.TemplateResponse("admin/conversations.html", {
+            "request": request,
+            "registration": registration,
+            "conversations": conversations,
+            "conversation_count": len(conversations)
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting conversations for registration {registration_id}: {e}")
+        if 'db' in locals():
+            db.close()
+        raise HTTPException(status_code=500, detail="Failed to retrieve conversations")
 
 @app.get("/admin/settings", response_class=HTMLResponse)
 async def admin_settings_page(request: Request, admin = Depends(get_current_admin)):
