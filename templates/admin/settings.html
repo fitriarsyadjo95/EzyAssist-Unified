@@ -274,15 +274,32 @@
                                 <div class="setting-group">
                                     <div class="setting-label">Admin Notifications</div>
                                     <div class="setting-description">
-                                        Enable notifications for new registration submissions
+                                        Configure notifications for new registration submissions
                                     </div>
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="admin_notification_enabled" 
                                                name="admin_notification_enabled" 
                                                {{ 'checked' if settings.get('admin_notification_enabled') == 'true' else '' }}>
                                         <label class="form-check-label" for="admin_notification_enabled">
                                             Send notifications for new registrations
                                         </label>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="notification_recipient" class="form-label" style="font-weight: 500; color: #374151; font-size: 13px;">
+                                            Notification Recipient
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fab fa-telegram-plane"></i>
+                                            </span>
+                                            <input type="text" class="form-control" id="notification_recipient" name="notification_recipient" 
+                                                   placeholder="@username or chat_id" 
+                                                   value="{{ settings.get('notification_recipient', '@admin') }}">
+                                        </div>
+                                        <div class="form-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Enter Telegram username (with @) or chat ID to receive registration notifications
+                                        </div>
                                     </div>
                                 </div>
 
@@ -338,7 +355,7 @@
                             <div class="mb-3">
                                 <strong>Admin Notifications</strong>
                                 <p class="text-muted mb-0" style="font-size: 12px;">
-                                    When enabled, admins will receive notifications for new registration submissions.
+                                    When enabled, notifications for new registration submissions will be sent to the configured recipient.
                                 </p>
                             </div>
                             <div class="mb-0">

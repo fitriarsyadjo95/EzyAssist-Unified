@@ -1405,7 +1405,23 @@ async def send_registration_on_hold(telegram_id: str, registration_data: dict, c
 async def send_admin_notification(registration_data: dict):
     """Send notification to admin"""
     try:
-        if bot_instance and bot_instance.admin_id and bot_instance.application:
+        # Check if notifications are enabled
+        if get_admin_setting('admin_notification_enabled', 'false') != 'true':
+            logger.info("Admin notifications are disabled")
+            return
+            
+        # Get notification recipient from settings
+        notification_recipient = get_admin_setting('notification_recipient', None)
+        
+        # Fall back to default admin_id if no recipient configured
+        if not notification_recipient:
+            if bot_instance and bot_instance.admin_id:
+                notification_recipient = bot_instance.admin_id
+            else:
+                logger.warning("No notification recipient configured")
+                return
+        
+        if bot_instance and bot_instance.application:
             admin_message = (
                 f"🔔 NEW VIP REGISTRATION - REVIEW REQUIRED\n\n"
                 f"📋 Registration #{registration_data.get('id', 'N/A')}\n"
@@ -1420,11 +1436,24 @@ async def send_admin_notification(registration_data: dict):
                 f"🔗 Admin Panel: /admin/registrations/{registration_data.get('id', '')}"
             )
             
+            # Handle both username and chat_id formats
+            chat_id = notification_recipient
+            if notification_recipient.startswith('@'):
+                # For usernames, we need to use the username as-is
+                chat_id = notification_recipient
+            else:
+                # For numeric chat IDs, ensure it's an integer
+                try:
+                    chat_id = int(notification_recipient)
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid chat_id format: {notification_recipient}")
+                    return
+            
             await bot_instance.application.bot.send_message(
-                chat_id=bot_instance.admin_id, 
+                chat_id=chat_id, 
                 text=admin_message
             )
-            logger.info("✅ Admin notification sent")
+            logger.info(f"✅ Admin notification sent to {notification_recipient}")
     except Exception as e:
         logger.error(f"Failed to send admin notification: {e}")
 
