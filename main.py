@@ -32,7 +32,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Text, or_, func, text, Enum, Float
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Text, or_, func, text, Enum, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import jwt
@@ -129,14 +129,15 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 # Database setup
 DATABASE_URL = os.getenv("DATABASE_URL")
+# Always create Base for model definitions
+Base = declarative_base()
+
 if DATABASE_URL:
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base = declarative_base()
 else:
     engine = None
     SessionLocal = None
-    Base = None
     logger.warning("Database URL not configured - running without database")
 
 # Database Models
@@ -377,7 +378,7 @@ def get_db():
 def add_audit_log(registration_id: int, action: str, old_value: str = None, new_value: str = None, 
                   admin_user: str = None, details: str = None):
     """Add an entry to the registration audit log"""
-    if not SessionLocal or not Base:
+    if not SessionLocal:
         return
     
     try:
@@ -402,7 +403,7 @@ def add_audit_log(registration_id: int, action: str, old_value: str = None, new_
 
 def create_initial_audit_logs():
     """Create initial audit log entries for existing registrations"""
-    if not SessionLocal or not Base:
+    if not SessionLocal:
         return
     
     try:
