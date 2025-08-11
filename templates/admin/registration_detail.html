@@ -579,6 +579,26 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- Audit Log Card -->
+                <div class="card detail-card mt-4">
+                    <div class="card-header" style="background: #8B5CF6; color: white; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-history me-2"></i>
+                            Activity Log
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="auditLogContainer">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted mb-0">Loading activity log...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             </div>
         </div>
@@ -668,7 +688,9 @@
                 
                 if (response.ok) {
                     alert('Registration verified successfully! User has been granted VIP access.');
-                    location.reload();
+                    // Refresh audit logs before page reload
+                    await loadAuditLogs();
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     alert('Error: ' + result.detail);
                 }
@@ -694,7 +716,9 @@
                 
                 if (response.ok) {
                     alert('Registration rejected. User has been notified that our team will contact them.');
-                    location.reload();
+                    // Refresh audit logs before page reload
+                    await loadAuditLogs();
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     alert('Error: ' + result.detail);
                 }
@@ -769,7 +793,9 @@
                 
                 if (response.ok) {
                     alert('Registration put on hold successfully. User has been notified with your custom message.');
-                    location.reload();
+                    // Refresh audit logs before page reload
+                    await loadAuditLogs();
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     alert('Error: ' + (result.detail || 'An error occurred'));
                 }
@@ -811,6 +837,125 @@
             }
         }
         
+        // Audit Log Functions
+        async function loadAuditLogs() {
+            const registrationId = {{ registration.id }};
+            const container = document.getElementById('auditLogContainer');
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/audit-logs`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayAuditLogs(data.audit_logs);
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                            <p class="text-muted mb-0">Failed to load activity log</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted mb-0">Error loading activity log</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayAuditLogs(logs) {
+            const container = document.getElementById('auditLogContainer');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No activity recorded yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="audit-logs">';
+            
+            logs.forEach(log => {
+                const actionIcon = getActionIcon(log.action);
+                const actionColor = getActionColor(log.action);
+                const actionLabel = getActionLabel(log.action);
+                
+                html += `
+                    <div class="audit-log-entry" style="border-left: 3px solid ${actionColor}; padding: 12px; margin-bottom: 12px; background: #f8f9fa; border-radius: 0 6px 6px 0;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="${actionIcon} me-2" style="color: ${actionColor}; font-size: 14px;"></i>
+                                    <strong style="color: #374151; font-size: 14px;">${actionLabel}</strong>
+                                </div>
+                                ${log.details ? `<div style="color: #6B7280; font-size: 13px; margin-bottom: 8px;">${log.details}</div>` : ''}
+                                ${log.old_value && log.new_value ? `
+                                    <div style="font-size: 12px; color: #6B7280;">
+                                        <span style="background: #FEE2E2; color: #DC2626; padding: 2px 6px; border-radius: 3px; margin-right: 8px;">${log.old_value}</span>
+                                        <i class="fas fa-arrow-right mx-2" style="color: #9CA3AF;"></i>
+                                        <span style="background: #D1FAE5; color: #059669; padding: 2px 6px; border-radius: 3px;">${log.new_value}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="text-end" style="min-width: 120px;">
+                                <div style="color: #9CA3AF; font-size: 11px;">${log.timestamp}</div>
+                                ${log.admin_user ? `<div style="color: #6B7280; font-size: 12px; font-weight: 500;">${log.admin_user}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function getActionIcon(action) {
+            switch (action) {
+                case 'STATUS_CHANGE':
+                    return 'fas fa-exchange-alt';
+                case 'CUSTOM_MESSAGE':
+                    return 'fas fa-comment-dots';
+                case 'REGISTRATION_CREATED':
+                    return 'fas fa-plus-circle';
+                default:
+                    return 'fas fa-info-circle';
+            }
+        }
+        
+        function getActionColor(action) {
+            switch (action) {
+                case 'STATUS_CHANGE':
+                    return '#3B82F6';
+                case 'CUSTOM_MESSAGE':
+                    return '#F59E0B';
+                case 'REGISTRATION_CREATED':
+                    return '#22C55E';
+                default:
+                    return '#6B7280';
+            }
+        }
+        
+        function getActionLabel(action) {
+            switch (action) {
+                case 'STATUS_CHANGE':
+                    return 'Status Changed';
+                case 'CUSTOM_MESSAGE':
+                    return 'Custom Message Updated';
+                case 'REGISTRATION_CREATED':
+                    return 'Registration Created';
+                default:
+                    return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            }
+        }
+        
         // Event listeners for real-time updates
         document.addEventListener('DOMContentLoaded', function() {
             const textarea = document.getElementById('customMessage');
@@ -818,6 +963,9 @@
                 updateCharCount();
                 updateMessagePreview();
             });
+            
+            // Load audit logs when page loads
+            loadAuditLogs();
         });
     </script>
 </body>

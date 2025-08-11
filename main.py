@@ -221,6 +221,30 @@ if Base:
                 'updated_at': self.updated_at.isoformat() if self.updated_at else None
             }
 
+    class RegistrationAuditLog(Base):
+        __tablename__ = "registration_audit_logs"
+        
+        id = Column(Integer, primary_key=True, index=True)
+        registration_id = Column(Integer, nullable=False, index=True)
+        action = Column(String, nullable=False)  # 'status_change', 'created', 'updated', 'message_sent'
+        old_value = Column(String, nullable=True)
+        new_value = Column(String, nullable=True)
+        admin_user = Column(String, nullable=True)
+        details = Column(Text, nullable=True)  # JSON or text with additional details
+        timestamp = Column(DateTime, default=datetime.utcnow)
+        
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'registration_id': self.registration_id,
+                'action': self.action,
+                'old_value': self.old_value,
+                'new_value': self.new_value,
+                'admin_user': self.admin_user,
+                'details': self.details,
+                'timestamp': self.timestamp.isoformat() if self.timestamp else None
+            }
+
 # Language translations
 TRANSLATIONS = {
     'ms': {
@@ -298,6 +322,84 @@ def get_db():
     if not SessionLocal:
         return None
     return SessionLocal()
+
+def add_audit_log(registration_id: int, action: str, old_value: str = None, new_value: str = None, 
+                  admin_user: str = None, details: str = None):
+    """Add an entry to the registration audit log"""
+    if not SessionLocal or not Base:
+        return
+    
+    try:
+        db = get_db()
+        if db:
+            audit_entry = RegistrationAuditLog(
+                registration_id=registration_id,
+                action=action,
+                old_value=old_value,
+                new_value=new_value,
+                admin_user=admin_user,
+                details=details
+            )
+            db.add(audit_entry)
+            db.commit()
+            logger.info(f"✅ Audit log added: {action} for registration {registration_id}")
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to add audit log: {e}")
+        if db:
+            db.close()
+
+def create_initial_audit_logs():
+    """Create initial audit log entries for existing registrations"""
+    if not SessionLocal or not Base:
+        return
+    
+    try:
+        db = get_db()
+        if db:
+            # Get all registrations that don't have any audit logs yet
+            registrations = db.query(VipRegistration).all()
+            
+            for registration in registrations:
+                # Check if this registration already has audit logs
+                existing_logs = db.query(RegistrationAuditLog).filter(
+                    RegistrationAuditLog.registration_id == registration.id
+                ).count()
+                
+                if existing_logs == 0:
+                    # Add creation log
+                    creation_entry = RegistrationAuditLog(
+                        registration_id=registration.id,
+                        action="REGISTRATION_CREATED",
+                        old_value=None,
+                        new_value="pending",
+                        admin_user="system",
+                        details=f"Registration created by {registration.full_name}",
+                        timestamp=registration.created_at or datetime.utcnow()
+                    )
+                    db.add(creation_entry)
+                    
+                    # If registration has been updated, add status change log
+                    if registration.status != RegistrationStatus.PENDING and registration.status_updated_at:
+                        status_entry = RegistrationAuditLog(
+                            registration_id=registration.id,
+                            action="STATUS_CHANGE",
+                            old_value="pending",
+                            new_value=registration.status.value,
+                            admin_user=registration.updated_by_admin or "admin",
+                            details=f"Registration status changed to {registration.status.value}",
+                            timestamp=registration.status_updated_at
+                        )
+                        db.add(status_entry)
+            
+            db.commit()
+            logger.info("✅ Initial audit logs created for existing registrations")
+            db.close()
+    except Exception as e:
+        logger.error(f"Error creating initial audit logs: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
 
 # Telegram Bot Class
 class EzyAssistBot:
@@ -1460,6 +1562,67 @@ async def admin_registration_detail(
         "registration": registration
     })
 
+@app.get("/admin/registrations/{registration_id}/audit-logs")
+async def get_registration_audit_logs(
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Get audit logs for a specific registration"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Verify registration exists
+        registration = db.query(VipRegistration).filter(
+            VipRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Get audit logs for this registration
+        audit_logs = db.query(RegistrationAuditLog).filter(
+            RegistrationAuditLog.registration_id == registration_id
+        ).order_by(RegistrationAuditLog.timestamp.desc()).all()
+        
+        # Convert to dict format
+        logs_data = []
+        for log in audit_logs:
+            logs_data.append({
+                "id": log.id,
+                "action": log.action,
+                "old_value": log.old_value,
+                "new_value": log.new_value,
+                "admin_user": log.admin_user,
+                "details": log.details,
+                "timestamp": log.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") if log.timestamp else None
+            })
+        
+        return JSONResponse(content={"audit_logs": logs_data})
+        
+    except Exception as e:
+        logger.error(f"Error getting audit logs for registration {registration_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve audit logs")
+    finally:
+        db.close()
+
+@app.post("/admin/create-initial-audit-logs")
+async def create_audit_logs_endpoint(admin = Depends(get_current_admin)):
+    """Create initial audit logs for existing registrations - Admin endpoint"""
+    try:
+        create_initial_audit_logs()
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Initial audit logs created successfully"
+        })
+    except Exception as e:
+        logger.error(f"Error creating initial audit logs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create initial audit logs")
+
 @app.post("/admin/registrations/{registration_id}/verify")
 async def verify_registration(
     registration_id: int,
@@ -1482,12 +1645,25 @@ async def verify_registration(
         if not registration:
             raise HTTPException(status_code=404, detail="Registration not found")
         
+        # Store old status for audit log
+        old_status = registration.status.value if registration.status else 'unknown'
+        
         # Update status
         registration.status = RegistrationStatus.VERIFIED
         registration.status_updated_at = datetime.utcnow()
         registration.updated_by_admin = admin.get('username', 'admin')
         
         db.commit()
+        
+        # Add audit log entry
+        add_audit_log(
+            registration_id=registration_id,
+            action="STATUS_CHANGE",
+            old_value=old_status,
+            new_value="verified",
+            admin_user=admin.get('username', 'admin'),
+            details="Registration verified and VIP access granted"
+        )
         
         # Send VIP access message to user
         await send_vip_access_granted(registration.telegram_id, registration.to_dict())
@@ -1528,12 +1704,25 @@ async def reject_registration(
         if not registration:
             raise HTTPException(status_code=404, detail="Registration not found")
         
+        # Store old status for audit log
+        old_status = registration.status.value if registration.status else 'unknown'
+        
         # Update status
         registration.status = RegistrationStatus.REJECTED
         registration.status_updated_at = datetime.utcnow()
         registration.updated_by_admin = admin.get('username', 'admin')
         
         db.commit()
+        
+        # Add audit log entry
+        add_audit_log(
+            registration_id=registration_id,
+            action="STATUS_CHANGE",
+            old_value=old_status,
+            new_value="rejected",
+            admin_user=admin.get('username', 'admin'),
+            details="Registration rejected and user notified"
+        )
         
         # Send rejection message to user
         await send_registration_rejected(registration.telegram_id, registration.to_dict())
@@ -1589,6 +1778,11 @@ async def hold_registration(
         if not registration:
             raise HTTPException(status_code=404, detail="Registration not found")
         
+        # Store old values for audit log
+        old_status = registration.status.value if registration.status else 'unknown'
+        old_message = registration.custom_message or ''
+        old_reason = registration.on_hold_reason or ''
+        
         # Update status
         registration.status = RegistrationStatus.ON_HOLD
         registration.status_updated_at = datetime.utcnow()
@@ -1597,6 +1791,25 @@ async def hold_registration(
         registration.on_hold_reason = request.hold_reason.strip() if request.hold_reason else None
         
         db.commit()
+        
+        # Add audit log entries
+        add_audit_log(
+            registration_id=registration_id,
+            action="STATUS_CHANGE",
+            old_value=old_status,
+            new_value="on_hold",
+            admin_user=admin.get('username', 'admin'),
+            details=f"Registration put on hold. Reason: {request.hold_reason or 'None'}"
+        )
+        
+        add_audit_log(
+            registration_id=registration_id,
+            action="CUSTOM_MESSAGE",
+            old_value=old_message,
+            new_value=request.custom_message.strip(),
+            admin_user=admin.get('username', 'admin'),
+            details="Custom message updated for user notification"
+        )
         
         # Send on hold message to user
         await send_registration_on_hold(
@@ -1956,6 +2169,35 @@ async def migrate_database():
             """))
             conn.commit()
             logger.info("✅ Fixed enum values to uppercase")
+            
+            # Check if audit log table exists
+            audit_table_result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'registration_audit_logs'
+                )
+            """))
+            audit_table_exists = audit_table_result.scalar()
+            
+            if not audit_table_exists:
+                conn.execute(text("""
+                    CREATE TABLE registration_audit_logs (
+                        id SERIAL PRIMARY KEY,
+                        registration_id INTEGER NOT NULL,
+                        action VARCHAR NOT NULL,
+                        old_value VARCHAR,
+                        new_value VARCHAR,
+                        admin_user VARCHAR,
+                        details TEXT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                conn.execute(text("""
+                    CREATE INDEX idx_registration_audit_logs_registration_id 
+                    ON registration_audit_logs(registration_id)
+                """))
+                conn.commit()
+                logger.info("✅ Created registration_audit_logs table")
                     
     except Exception as e:
         logger.error(f"Database migration failed: {e}")
