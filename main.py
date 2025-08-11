@@ -245,6 +245,29 @@ if Base:
                 'timestamp': self.timestamp.isoformat() if self.timestamp else None
             }
 
+# Admin Settings Model
+class AdminSettings(Base):
+    __tablename__ = "admin_settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    setting_key = Column(String, unique=True, nullable=False, index=True)
+    setting_value = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(String, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'setting_key': self.setting_key,
+            'setting_value': self.setting_value,
+            'description': self.description,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'updated_by': self.updated_by
+        }
+
 # Language translations
 TRANSLATIONS = {
     'ms': {
@@ -400,6 +423,97 @@ def create_initial_audit_logs():
         if 'db' in locals():
             db.rollback()
             db.close()
+
+# Admin Settings Helper Functions
+def get_admin_setting(key: str, default_value: str = None):
+    """Get admin setting value by key"""
+    if not SessionLocal:
+        return default_value
+    
+    try:
+        db = get_db()
+        if db:
+            setting = db.query(AdminSettings).filter(
+                AdminSettings.setting_key == key
+            ).first()
+            db.close()
+            return setting.setting_value if setting else default_value
+    except Exception as e:
+        logger.error(f"Error getting admin setting {key}: {e}")
+        if 'db' in locals():
+            db.close()
+        return default_value
+
+def set_admin_setting(key: str, value: str, description: str = None, admin_user: str = None):
+    """Set admin setting value"""
+    if not SessionLocal:
+        return False
+    
+    try:
+        db = get_db()
+        if db:
+            # Try to get existing setting
+            setting = db.query(AdminSettings).filter(
+                AdminSettings.setting_key == key
+            ).first()
+            
+            if setting:
+                # Update existing setting
+                setting.setting_value = value
+                setting.updated_at = datetime.utcnow()
+                setting.updated_by = admin_user
+                if description:
+                    setting.description = description
+            else:
+                # Create new setting
+                setting = AdminSettings(
+                    setting_key=key,
+                    setting_value=value,
+                    description=description,
+                    updated_by=admin_user
+                )
+                db.add(setting)
+            
+            db.commit()
+            db.close()
+            logger.info(f"✅ Admin setting updated: {key} = {value}")
+            return True
+    except Exception as e:
+        logger.error(f"Error setting admin setting {key}: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        return False
+
+def initialize_default_settings():
+    """Initialize default admin settings"""
+    default_settings = [
+        {
+            'key': 'vip_group_link',
+            'value': 'https://t.me/+VIPGroupDefault',
+            'description': 'VIP Telegram group link for verified users'
+        },
+        {
+            'key': 'admin_notification_enabled',
+            'value': 'true',
+            'description': 'Enable admin notifications for new registrations'
+        },
+        {
+            'key': 'auto_approval_enabled',
+            'value': 'false',
+            'description': 'Enable automatic approval of registrations'
+        }
+    ]
+    
+    for setting in default_settings:
+        # Only set if doesn't exist
+        if get_admin_setting(setting['key']) is None:
+            set_admin_setting(
+                setting['key'],
+                setting['value'],
+                setting['description'],
+                'system'
+            )
 
 # Telegram Bot Class
 class EzyAssistBot:
@@ -1000,13 +1114,15 @@ async def send_vip_access_granted(telegram_id: str, registration_data: dict):
     """Send VIP access granted message to user"""
     try:
         if bot_instance and bot_instance.application:
+            # Get VIP group link from settings
+            vip_group_link = get_admin_setting('vip_group_link', 'https://t.me/ezyassist_vip')
+            
             vip_message = (
                 f"🎉 SELAMAT! VIP Access Diluluskan!\n\n"
                 f"Hai {registration_data['full_name']},\n\n"
                 f"✅ Pendaftaran VIP anda telah DILULUSKAN!\n"
                 f"🔥 Anda kini boleh akses semua content VIP kami.\n\n"
-                f"🔗 VIP Link: https://mock-vip-link.com/access\n"
-                f"📱 Telegram VIP Group: https://t.me/ezyassist_vip\n\n"
+                f"📱 Telegram VIP Group: {vip_group_link}\n\n"
                 f"💎 Selamat menikmati perkhidmatan VIP EzyAssist!\n"
                 f"📞 Jika ada soalan, hubungi team support kami."
             )
@@ -1623,6 +1739,79 @@ async def create_audit_logs_endpoint(admin = Depends(get_current_admin)):
         logger.error(f"Error creating initial audit logs: {e}")
         raise HTTPException(status_code=500, detail="Failed to create initial audit logs")
 
+@app.get("/admin/settings", response_class=HTMLResponse)
+async def admin_settings_page(request: Request, admin = Depends(get_current_admin)):
+    """Admin settings page"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    # Get current settings
+    settings = {}
+    if SessionLocal:
+        try:
+            db = get_db()
+            if db:
+                all_settings = db.query(AdminSettings).all()
+                for setting in all_settings:
+                    settings[setting.setting_key] = setting.setting_value
+                db.close()
+        except Exception as e:
+            logger.error(f"Error getting settings: {e}")
+            if 'db' in locals():
+                db.close()
+    
+    return templates.TemplateResponse("admin/settings.html", {
+        "request": request,
+        "admin": admin,
+        "settings": settings
+    })
+
+@app.post("/admin/settings/save")
+async def save_admin_settings(
+    request: Request,
+    admin = Depends(get_current_admin)
+):
+    """Save admin settings"""
+    try:
+        # Get request body
+        body = await request.json()
+        admin_username = admin.get('username', 'admin')
+        
+        # Define allowed settings with their descriptions
+        allowed_settings = {
+            'vip_group_link': 'VIP Telegram group link for verified users',
+            'admin_notification_enabled': 'Enable admin notifications for new registrations',
+            'auto_approval_enabled': 'Enable automatic approval of registrations'
+        }
+        
+        success_count = 0
+        for key, value in body.items():
+            if key in allowed_settings:
+                if set_admin_setting(key, str(value), allowed_settings[key], admin_username):
+                    success_count += 1
+                else:
+                    logger.error(f"Failed to save setting: {key}")
+        
+        if success_count == len(body):
+            return JSONResponse(content={
+                "status": "success",
+                "message": f"All {success_count} settings saved successfully"
+            })
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": f"Only {success_count} out of {len(body)} settings were saved"
+                }
+            )
+            
+    except Exception as e:
+        logger.error(f"Error saving admin settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save settings")
+
 @app.post("/admin/registrations/{registration_id}/verify")
 async def verify_registration(
     registration_id: int,
@@ -2213,6 +2402,9 @@ async def startup_event():
             
             # Run migrations
             await migrate_database()
+            
+            # Initialize default settings
+            initialize_default_settings()
             
         except Exception as e:
             logger.error(f"Database setup failed: {e}")
