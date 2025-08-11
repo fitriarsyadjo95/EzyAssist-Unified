@@ -50,6 +50,7 @@ class RegistrationStatus(enum.Enum):
     PENDING = "pending"
     VERIFIED = "verified"
     REJECTED = "rejected"
+    ON_HOLD = "on_hold"
 from admin_auth import (
     authenticate_admin, create_admin_session, delete_admin_session,
     get_current_admin, admin_login_required
@@ -158,6 +159,8 @@ if Base:
         status = Column(Enum(RegistrationStatus), default=RegistrationStatus.PENDING, nullable=False)
         status_updated_at = Column(DateTime, nullable=True)
         updated_by_admin = Column(String, nullable=True)
+        custom_message = Column(Text, nullable=True)
+        on_hold_reason = Column(String, nullable=True)
         ip_address = Column(String, nullable=True)
         user_agent = Column(Text, nullable=True)
         created_at = Column(DateTime, default=datetime.utcnow)
@@ -179,6 +182,8 @@ if Base:
                 'status': self.status.value if self.status else 'pending',
                 'status_updated_at': self.status_updated_at.isoformat() if self.status_updated_at else None,
                 'updated_by_admin': self.updated_by_admin,
+                'custom_message': self.custom_message,
+                'on_hold_reason': self.on_hold_reason,
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
@@ -934,6 +939,35 @@ async def send_registration_rejected(telegram_id: str, registration_data: dict):
     except Exception as e:
         logger.error(f"Failed to send rejection message: {e}")
 
+async def send_registration_on_hold(telegram_id: str, registration_data: dict, custom_message: str, hold_reason: str = None):
+    """Send registration on hold message with custom admin message"""
+    try:
+        if bot_instance and bot_instance.application:
+            on_hold_message = (
+                f"⏸️ Pendaftaran VIP - Tindakan Diperlukan\n\n"
+                f"Hai {registration_data['full_name']},\n\n"
+                f"Pendaftaran VIP anda sedang dalam semakan. Team kami memerlukan maklumat tambahan:\n\n"
+                f"📝 **Mesej daripada Admin:**\n"
+                f"{custom_message}\n\n"
+            )
+            
+            if hold_reason:
+                on_hold_message += f"📋 **Kategori:** {hold_reason}\n\n"
+            
+            on_hold_message += (
+                f"📞 Sila reply message ini atau hubungi kami dalam masa 7 hari untuk meneruskan pendaftaran.\n\n"
+                f"📱 Pastikan phone {registration_data.get('phone_number', 'N/A')} aktif untuk makluman!\n\n"
+                f"🙏 Terima kasih atas kerjasama anda."
+            )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=telegram_id, 
+                text=on_hold_message
+            )
+            logger.info(f"✅ Registration on hold message sent to {telegram_id}")
+    except Exception as e:
+        logger.error(f"Failed to send on hold message: {e}")
+
 async def send_admin_notification(registration_data: dict):
     """Send notification to admin"""
     try:
@@ -1073,6 +1107,9 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                 rejected_count = db.query(VipRegistration).filter(
                     VipRegistration.status == RegistrationStatus.REJECTED
                 ).count()
+                on_hold_count = db.query(VipRegistration).filter(
+                    VipRegistration.status == RegistrationStatus.ON_HOLD
+                ).count()
                 
                 # Registrations by broker
                 broker_stats = db.query(
@@ -1086,6 +1123,7 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     "pending_count": pending_count,
                     "verified_count": verified_count,
                     "rejected_count": rejected_count,
+                    "on_hold_count": on_hold_count,
                     "broker_stats": broker_stats
                 }
             except Exception as e:
@@ -1219,6 +1257,8 @@ async def admin_registrations_list(
                         query = query.filter(VipRegistration.status == RegistrationStatus.VERIFIED)
                     elif status == "rejected":
                         query = query.filter(VipRegistration.status == RegistrationStatus.REJECTED)
+                    elif status == "on_hold":
+                        query = query.filter(VipRegistration.status == RegistrationStatus.ON_HOLD)
                 
                 # Get total count
                 total_count = query.count()
@@ -1299,6 +1339,8 @@ async def export_registrations(
                 query = query.filter(VipRegistration.status == RegistrationStatus.VERIFIED)
             elif status == "rejected":
                 query = query.filter(VipRegistration.status == RegistrationStatus.REJECTED)
+            elif status == "on_hold":
+                query = query.filter(VipRegistration.status == RegistrationStatus.ON_HOLD)
         
         # Get filtered registrations
         registrations = query.order_by(VipRegistration.created_at.desc()).all()
@@ -1505,6 +1547,72 @@ async def reject_registration(
         logger.error(f"Error rejecting registration {registration_id}: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to reject registration")
+    finally:
+        db.close()
+
+# Hold registration request model
+class HoldRegistrationRequest(BaseModel):
+    custom_message: str
+    hold_reason: str = None
+
+@app.post("/admin/registrations/{registration_id}/hold")
+async def hold_registration(
+    registration_id: int,
+    request: HoldRegistrationRequest,
+    admin = Depends(get_current_admin)
+):
+    """Put a registration on hold with custom message"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    # Validate custom message
+    if not request.custom_message or not request.custom_message.strip():
+        raise HTTPException(status_code=400, detail="Custom message is required")
+    
+    if len(request.custom_message.strip()) > 500:
+        raise HTTPException(status_code=400, detail="Custom message must not exceed 500 characters")
+    
+    try:
+        # Get registration
+        registration = db.query(VipRegistration).filter(
+            VipRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Update status
+        registration.status = RegistrationStatus.ON_HOLD
+        registration.status_updated_at = datetime.utcnow()
+        registration.updated_by_admin = admin.get('username', 'admin')
+        registration.custom_message = request.custom_message.strip()
+        registration.on_hold_reason = request.hold_reason.strip() if request.hold_reason else None
+        
+        db.commit()
+        
+        # Send on hold message to user
+        await send_registration_on_hold(
+            registration.telegram_id, 
+            registration.to_dict(), 
+            request.custom_message.strip(),
+            request.hold_reason.strip() if request.hold_reason else None
+        )
+        
+        logger.info(f"✅ Registration {registration_id} put on hold by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Registration put on hold and user notified with custom message"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error holding registration {registration_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to put registration on hold")
     finally:
         db.close()
 
@@ -1803,6 +1911,33 @@ async def migrate_database():
                 conn.commit()
                 logger.info("✅ Added column: updated_by_admin")
             
+            # Check for new ON_HOLD columns
+            on_hold_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name IN ('custom_message', 'on_hold_reason')
+            """))
+            existing_on_hold_columns = [row[0] for row in on_hold_result]
+            
+            # Add custom_message column if missing
+            if 'custom_message' not in existing_on_hold_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN custom_message TEXT
+                """))
+                conn.commit()
+                logger.info("✅ Added column: custom_message")
+            
+            # Add on_hold_reason column if missing
+            if 'on_hold_reason' not in existing_on_hold_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN on_hold_reason VARCHAR
+                """))
+                conn.commit()
+                logger.info("✅ Added column: on_hold_reason")
+            
             # Fix any existing lowercase enum values
             conn.execute(text("""
                 UPDATE vip_registrations 
@@ -1810,9 +1945,10 @@ async def migrate_database():
                     WHEN status = 'pending' THEN 'PENDING'
                     WHEN status = 'verified' THEN 'VERIFIED' 
                     WHEN status = 'rejected' THEN 'REJECTED'
+                    WHEN status = 'on_hold' THEN 'ON_HOLD'
                     ELSE status
                 END
-                WHERE status IN ('pending', 'verified', 'rejected')
+                WHERE status IN ('pending', 'verified', 'rejected', 'on_hold')
             """))
             conn.commit()
             logger.info("✅ Fixed enum values to uppercase")

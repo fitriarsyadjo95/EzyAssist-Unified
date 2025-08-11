@@ -254,6 +254,12 @@
                 </a>
             </div>
             <div class="nav-item">
+                <a href="/admin/registrations?status=on_hold" class="nav-link">
+                    <i class="fas fa-pause"></i>
+                    On Hold
+                </a>
+            </div>
+            <div class="nav-item">
                 <a href="/admin/registrations?status=verified" class="nav-link">
                     <i class="fas fa-check-circle"></i>
                     Verified Users
@@ -324,6 +330,7 @@
                                 <select class="form-select" name="status">
                                     <option value="">All Status</option>
                                     <option value="pending" {{ 'selected' if status == 'pending' else '' }}>Pending</option>
+                                    <option value="on_hold" {{ 'selected' if status == 'on_hold' else '' }}>On Hold</option>
                                     <option value="verified" {{ 'selected' if status == 'verified' else '' }}>Verified</option>
                                     <option value="rejected" {{ 'selected' if status == 'rejected' else '' }}>Rejected</option>
                                 </select>
@@ -379,6 +386,7 @@
                                         <select class="form-select" id="exportStatus" name="status">
                                             <option value="">All Status</option>
                                             <option value="pending">Pending Only</option>
+                                            <option value="on_hold">On Hold Only</option>
                                             <option value="verified">Verified Only</option>
                                             <option value="rejected">Rejected Only</option>
                                         </select>
@@ -457,6 +465,8 @@
                                         <td>
                                             {% if reg.status.value == 'pending' %}
                                                 <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif reg.status.value == 'on_hold' %}
+                                                <span class="badge" style="background-color: #F59E0B; color: white;">On Hold</span>
                                             {% elif reg.status.value == 'verified' %}
                                                 <span class="badge bg-success">Verified</span>
                                             {% elif reg.status.value == 'rejected' %}

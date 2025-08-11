@@ -268,6 +268,23 @@
                                     <i class="fas fa-check me-1"></i>
                                     Verify & Grant VIP
                                 </button>
+                                <button onclick="showHoldModal({{ registration.id }})" class="btn btn-warning me-2" style="background: #F59E0B; border-color: #F59E0B; border-radius: 6px; font-weight: 500; color: white;">
+                                    <i class="fas fa-pause me-1"></i>
+                                    Put On Hold
+                                </button>
+                                <button onclick="rejectRegistration({{ registration.id }})" class="btn btn-danger" style="background: #EF5350; border-color: #EF5350; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-times me-1"></i>
+                                    Reject Registration
+                                </button>
+                            {% elif registration.status.value == 'on_hold' %}
+                                <button onclick="verifyRegistration({{ registration.id }})" class="btn btn-success me-2" style="background: #22C55E; border-color: #22C55E; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-check me-1"></i>
+                                    Verify & Grant VIP
+                                </button>
+                                <button onclick="showHoldModal({{ registration.id }})" class="btn btn-warning me-2" style="background: #F59E0B; border-color: #F59E0B; border-radius: 6px; font-weight: 500; color: white;">
+                                    <i class="fas fa-edit me-1"></i>
+                                    Update Hold Message
+                                </button>
                                 <button onclick="rejectRegistration({{ registration.id }})" class="btn btn-danger" style="background: #EF5350; border-color: #EF5350; border-radius: 6px; font-weight: 500;">
                                     <i class="fas fa-times me-1"></i>
                                     Reject Registration
@@ -308,6 +325,11 @@
                                     <span class="badge" style="background: #EF5350 !important; font-size: 14px; font-weight: 500; padding: 8px 16px;">
                                         <i class="fas fa-times-circle me-1"></i>
                                         REJECTED
+                                    </span>
+                                {% elif registration.status.value == 'on_hold' %}
+                                    <span class="badge" style="background: #F59E0B !important; color: #FFFFFF; font-size: 14px; font-weight: 500; padding: 8px 16px;">
+                                        <i class="fas fa-pause-circle me-1"></i>
+                                        ON HOLD
                                     </span>
                                 {% endif %}
                             </div>
@@ -549,6 +571,8 @@
                                     <span class="badge" style="background: #22C55E !important; font-size: 11px; font-weight: 500; padding: 4px 8px;">Verified</span>
                                 {% elif registration.status.value == 'rejected' %}
                                     <span class="badge" style="background: #EF5350 !important; font-size: 11px; font-weight: 500; padding: 4px 8px;">Rejected</span>
+                                {% elif registration.status.value == 'on_hold' %}
+                                    <span class="badge" style="background: #F59E0B !important; color: #FFFFFF; font-size: 11px; font-weight: 500; padding: 4px 8px;">On Hold</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -567,6 +591,71 @@
                     </div>
                 </div>
             </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hold Registration Modal -->
+    <div class="modal fade" id="holdModal" tabindex="-1" aria-labelledby="holdModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #F59E0B; color: white;">
+                    <h5 class="modal-title" id="holdModalLabel">
+                        <i class="fas fa-pause me-2"></i>
+                        Put Registration On Hold
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: brightness(0) invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="holdForm">
+                        <div class="mb-3">
+                            <label for="holdReason" class="form-label">
+                                <strong>Hold Reason (Optional)</strong>
+                            </label>
+                            <select class="form-select" id="holdReason" name="hold_reason">
+                                <option value="">Select a reason (optional)</option>
+                                <option value="Document verification needed">Document verification needed</option>
+                                <option value="Additional information required">Additional information required</option>
+                                <option value="Deposit proof unclear">Deposit proof unclear</option>
+                                <option value="Brokerage verification pending">Brokerage verification pending</option>
+                                <option value="Identity verification required">Identity verification required</option>
+                                <option value="Contact information needs update">Contact information needs update</option>
+                                <option value="Other - see custom message">Other - see custom message</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="customMessage" class="form-label">
+                                <strong>Custom Message <span class="text-danger">*</span></strong>
+                                <small class="text-muted d-block">This message will be sent to the user via Telegram</small>
+                            </label>
+                            <textarea class="form-control" id="customMessage" name="custom_message" rows="5" required maxlength="500" placeholder="Please provide specific details about what information or action is needed from the user..."></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/500 characters
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Preview of message to user:</strong>
+                            <div class="mt-2" style="font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; border-left: 4px solid #F59E0B;">
+                                ⏸️ <strong>Pendaftaran VIP - Tindakan Diperlukan</strong><br><br>
+                                Hai {{ registration.full_name }},<br><br>
+                                Pendaftaran VIP anda sedang dalam semakan. Team kami memerlukan maklumat tambahan:<br><br>
+                                📝 <strong>Mesej daripada Admin:</strong><br>
+                                <span id="messagePreview" style="color: #2563EB;">[Your custom message will appear here]</span><br><br>
+                                📞 Sila reply message ini atau hubungi kami dalam masa 7 hari untuk meneruskan pendaftaran.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="submitHoldForm()" style="background: #F59E0B; border-color: #F59E0B; color: white;">
+                        <i class="fas fa-pause me-1"></i>
+                        Put On Hold & Send Message
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -624,6 +713,110 @@
                 alert('Error: ' + error.message);
             }
         }
+        
+        function showHoldModal(registrationId) {
+            // Store registration ID for later use
+            document.getElementById('holdModal').dataset.registrationId = registrationId;
+            
+            // Pre-fill existing data if this is an update
+            {% if registration.status.value == 'on_hold' and registration.custom_message %}
+                document.getElementById('customMessage').value = `{{ registration.custom_message|e }}`;
+                {% if registration.on_hold_reason %}
+                    document.getElementById('holdReason').value = `{{ registration.on_hold_reason|e }}`;
+                {% endif %}
+                document.getElementById('holdModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Update Hold Message';
+                updateCharCount();
+                updateMessagePreview();
+            {% else %}
+                // Clear form for new hold
+                document.getElementById('holdForm').reset();
+                document.getElementById('holdModalLabel').innerHTML = '<i class="fas fa-pause me-2"></i>Put Registration On Hold';
+                updateCharCount();
+                updateMessagePreview();
+            {% endif %}
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('holdModal'));
+            modal.show();
+        }
+        
+        async function submitHoldForm() {
+            const registrationId = document.getElementById('holdModal').dataset.registrationId;
+            const customMessage = document.getElementById('customMessage').value.trim();
+            const holdReason = document.getElementById('holdReason').value;
+            
+            // Validate form
+            if (!customMessage) {
+                alert('Please enter a custom message.');
+                return;
+            }
+            
+            if (customMessage.length > 500) {
+                alert('Custom message must not exceed 500 characters.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/hold`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        custom_message: customMessage,
+                        hold_reason: holdReason || null
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Registration put on hold successfully. User has been notified with your custom message.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.detail);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function updateCharCount() {
+            const textarea = document.getElementById('customMessage');
+            const charCount = document.getElementById('charCount');
+            charCount.textContent = textarea.value.length;
+            
+            // Update color based on character count
+            if (textarea.value.length > 450) {
+                charCount.style.color = '#EF5350';
+            } else if (textarea.value.length > 400) {
+                charCount.style.color = '#F59E0B';
+            } else {
+                charCount.style.color = '#4B5563';
+            }
+        }
+        
+        function updateMessagePreview() {
+            const customMessage = document.getElementById('customMessage').value;
+            const preview = document.getElementById('messagePreview');
+            
+            if (customMessage.trim()) {
+                preview.textContent = customMessage;
+                preview.style.fontStyle = 'normal';
+            } else {
+                preview.textContent = '[Your custom message will appear here]';
+                preview.style.fontStyle = 'italic';
+            }
+        }
+        
+        // Event listeners for real-time updates
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('customMessage');
+            textarea.addEventListener('input', function() {
+                updateCharCount();
+                updateMessagePreview();
+            });
+        });
     </script>
 </body>
 </html>
