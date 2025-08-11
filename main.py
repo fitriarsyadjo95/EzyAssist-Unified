@@ -243,7 +243,8 @@ TRANSLATIONS = {
         'keep_reference': 'Simpan rujukan ini untuk rekod anda',
         'error_title': 'Ralat Pendaftaran',
         'required_fields': 'Sila lengkapkan semua medan yang diperlukan',
-        'invalid_token': 'Token tidak sah atau telah tamat tempoh'
+        'invalid_token': 'Token tidak sah atau telah tamat tempoh',
+        'already_registered': 'Eh, awak dah register untuk VIP access dah! 😊 Jangan risau, kami dah ada rekod pendaftaran awak. Kalau ada masalah atau nak tahu status pendaftaran, boleh terus tanya kat bot Telegram atau hubungi team kami ye!'
     }
 }
 
@@ -673,8 +674,9 @@ async def registration_form(request: Request, token: str = None):
             if existing:
                 return templates.TemplateResponse("error.html", {
                     "request": request,
-                    "error_message": "You have already registered for VIP access",
-                    "translations": TRANSLATIONS['ms']
+                    "error_message": TRANSLATIONS['ms']['already_registered'],
+                    "translations": TRANSLATIONS['ms'],
+                    "lang": "ms"
                 })
     
     form_hash = generate_form_hash()
