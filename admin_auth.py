@@ -83,5 +83,17 @@ def admin_login_required(request: Request):
 
 def authenticate_admin(username: str, password: str) -> bool:
     """Authenticate admin user"""
+    # First try to authenticate against database
+    try:
+        from main import authenticate_admin_user
+        db_result = authenticate_admin_user(username, password)
+        if db_result:
+            return True
+    except ImportError:
+        pass  # Database authentication not available
+    except Exception as e:
+        print(f"Database authentication error: {e}")
+    
+    # Fall back to environment variable authentication
     return (username == ADMIN_USERNAME and 
             verify_password(password, ADMIN_PASSWORD_HASH))

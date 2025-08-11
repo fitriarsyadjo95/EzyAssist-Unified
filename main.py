@@ -268,6 +268,34 @@ class AdminSettings(Base):
             'updated_by': self.updated_by
         }
 
+# Admin Users Model
+class AdminUser(Base):
+    __tablename__ = "admin_users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
+    role = Column(String, default="admin")  # "super_admin" or "admin"
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String, nullable=True)
+    last_login = Column(DateTime, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'full_name': self.full_name,
+            'role': self.role,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_by': self.created_by,
+            'last_login': self.last_login.isoformat() if self.last_login else None
+        }
+
 # Language translations
 TRANSLATIONS = {
     'ms': {
@@ -514,6 +542,193 @@ def initialize_default_settings():
                 setting['description'],
                 'system'
             )
+
+# Admin User Management Functions
+def create_admin_user(username: str, email: str, password: str, full_name: str, 
+                     role: str = "admin", created_by: str = None):
+    """Create a new admin user"""
+    if not SessionLocal:
+        return False, "Database not available"
+    
+    try:
+        db = get_db()
+        if db:
+            # Check if username or email already exists
+            existing = db.query(AdminUser).filter(
+                (AdminUser.username == username) | (AdminUser.email == email)
+            ).first()
+            
+            if existing:
+                db.close()
+                return False, "Username or email already exists"
+            
+            # Hash password
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            # Create new admin user
+            admin_user = AdminUser(
+                username=username,
+                email=email,
+                password_hash=password_hash,
+                full_name=full_name,
+                role=role,
+                created_by=created_by
+            )
+            
+            db.add(admin_user)
+            db.commit()
+            db.close()
+            
+            logger.info(f"✅ Admin user created: {username} by {created_by}")
+            return True, "Admin user created successfully"
+            
+    except Exception as e:
+        logger.error(f"Error creating admin user: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        return False, f"Error creating admin user: {str(e)}"
+
+def get_all_admin_users():
+    """Get all admin users"""
+    if not SessionLocal:
+        return []
+    
+    try:
+        db = get_db()
+        if db:
+            admin_users = db.query(AdminUser).order_by(AdminUser.created_at.desc()).all()
+            db.close()
+            return [user.to_dict() for user in admin_users]
+    except Exception as e:
+        logger.error(f"Error getting admin users: {e}")
+        if 'db' in locals():
+            db.close()
+        return []
+
+def update_admin_user(user_id: int, **updates):
+    """Update admin user"""
+    if not SessionLocal:
+        return False, "Database not available"
+    
+    try:
+        db = get_db()
+        if db:
+            admin_user = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+            if not admin_user:
+                db.close()
+                return False, "Admin user not found"
+            
+            # Update fields
+            for key, value in updates.items():
+                if hasattr(admin_user, key):
+                    if key == 'password' and value:
+                        admin_user.password_hash = hashlib.sha256(value.encode()).hexdigest()
+                    else:
+                        setattr(admin_user, key, value)
+            
+            db.commit()
+            db.close()
+            return True, "Admin user updated successfully"
+            
+    except Exception as e:
+        logger.error(f"Error updating admin user: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        return False, f"Error updating admin user: {str(e)}"
+
+def delete_admin_user(user_id: int):
+    """Delete admin user"""
+    if not SessionLocal:
+        return False, "Database not available"
+    
+    try:
+        db = get_db()
+        if db:
+            admin_user = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+            if not admin_user:
+                db.close()
+                return False, "Admin user not found"
+            
+            db.delete(admin_user)
+            db.commit()
+            db.close()
+            return True, "Admin user deleted successfully"
+            
+    except Exception as e:
+        logger.error(f"Error deleting admin user: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        return False, f"Error deleting admin user: {str(e)}"
+
+def authenticate_admin_user(username: str, password: str):
+    """Authenticate admin user against database"""
+    if not SessionLocal:
+        return None
+    
+    try:
+        db = get_db()
+        if db:
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            admin_user = db.query(AdminUser).filter(
+                AdminUser.username == username,
+                AdminUser.password_hash == password_hash,
+                AdminUser.is_active == True
+            ).first()
+            
+            if admin_user:
+                # Update last login
+                admin_user.last_login = datetime.utcnow()
+                db.commit()
+                user_data = admin_user.to_dict()
+                db.close()
+                return user_data
+            
+            db.close()
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error authenticating admin user: {e}")
+        if 'db' in locals():
+            db.close()
+        return None
+
+def initialize_default_admin():
+    """Initialize default super admin if no admin users exist"""
+    if not SessionLocal:
+        return
+    
+    try:
+        db = get_db()
+        if db:
+            # Check if any admin users exist
+            admin_count = db.query(AdminUser).count()
+            
+            if admin_count == 0:
+                # Create default super admin
+                password_hash = hashlib.sha256("Password123!".encode()).hexdigest()
+                default_admin = AdminUser(
+                    username="admin@ezymeta.global",
+                    email="admin@ezymeta.global",
+                    password_hash=password_hash,
+                    full_name="System Administrator",
+                    role="super_admin",
+                    created_by="system"
+                )
+                
+                db.add(default_admin)
+                db.commit()
+                logger.info("✅ Default super admin created: admin@ezymeta.global")
+            
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error creating default admin: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
 
 # Telegram Bot Class
 class EzyAssistBot:
@@ -1118,12 +1333,10 @@ async def send_vip_access_granted(telegram_id: str, registration_data: dict):
             vip_group_link = get_admin_setting('vip_group_link', 'https://t.me/ezyassist_vip')
             
             vip_message = (
-                f"🎉 SELAMAT! VIP Access Diluluskan!\n\n"
+                f"🎉 Berita Baik, VIP akses anda diluluskan!\n\n"
                 f"Hai {registration_data['full_name']},\n\n"
                 f"✅ Pendaftaran VIP anda telah DILULUSKAN!\n"
-                f"🔥 Anda kini boleh akses semua content VIP kami.\n\n"
-                f"📱 Telegram VIP Group: {vip_group_link}\n\n"
-                f"💎 Selamat menikmati perkhidmatan VIP EzyAssist!\n"
+                f"🔥 Anda kini boleh akses group VIP kami.\n\n"
                 f"📞 Jika ada soalan, hubungi team support kami."
             )
             
@@ -1812,6 +2025,135 @@ async def save_admin_settings(
         logger.error(f"Error saving admin settings: {e}")
         raise HTTPException(status_code=500, detail="Failed to save settings")
 
+# Pydantic models for admin user management
+class AdminUserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+    full_name: str
+    role: str = "admin"
+    is_active: bool = True
+
+class AdminUserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@app.get("/admin/admin-users", response_class=HTMLResponse)
+async def admin_users_page(request: Request, admin = Depends(get_current_admin)):
+    """Admin users management page"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    return templates.TemplateResponse("admin/admin_users.html", {
+        "request": request,
+        "admin": admin
+    })
+
+@app.get("/admin/admin-users/list")
+async def list_admin_users(admin = Depends(get_current_admin)):
+    """Get all admin users"""
+    try:
+        admin_users = get_all_admin_users()
+        return JSONResponse(content={"admin_users": admin_users})
+    except Exception as e:
+        logger.error(f"Error getting admin users: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve admin users")
+
+@app.get("/admin/admin-users/{user_id}")
+async def get_admin_user(user_id: int, admin = Depends(get_current_admin)):
+    """Get specific admin user"""
+    try:
+        admin_users = get_all_admin_users()
+        user = next((u for u in admin_users if u['id'] == user_id), None)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="Admin user not found")
+        
+        return JSONResponse(content={"admin_user": user})
+    except Exception as e:
+        logger.error(f"Error getting admin user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve admin user")
+
+@app.post("/admin/admin-users/create")
+async def create_admin_user_endpoint(
+    admin_data: AdminUserCreate,
+    admin = Depends(get_current_admin)
+):
+    """Create new admin user"""
+    try:
+        success, message = create_admin_user(
+            username=admin_data.username,
+            email=admin_data.email,
+            password=admin_data.password,
+            full_name=admin_data.full_name,
+            role=admin_data.role,
+            created_by=admin.get('username', 'admin')
+        )
+        
+        if success:
+            return JSONResponse(content={
+                "status": "success",
+                "message": message
+            })
+        else:
+            raise HTTPException(status_code=400, detail=message)
+            
+    except Exception as e:
+        logger.error(f"Error creating admin user: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create admin user")
+
+@app.put("/admin/admin-users/{user_id}/update")
+async def update_admin_user_endpoint(
+    user_id: int,
+    admin_data: AdminUserUpdate,
+    admin = Depends(get_current_admin)
+):
+    """Update admin user"""
+    try:
+        # Convert to dict and remove None values
+        updates = {k: v for k, v in admin_data.dict().items() if v is not None}
+        
+        success, message = update_admin_user(user_id, **updates)
+        
+        if success:
+            return JSONResponse(content={
+                "status": "success",
+                "message": message
+            })
+        else:
+            raise HTTPException(status_code=400, detail=message)
+            
+    except Exception as e:
+        logger.error(f"Error updating admin user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update admin user")
+
+@app.delete("/admin/admin-users/{user_id}/delete")
+async def delete_admin_user_endpoint(
+    user_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Delete admin user"""
+    try:
+        success, message = delete_admin_user(user_id)
+        
+        if success:
+            return JSONResponse(content={
+                "status": "success",
+                "message": message
+            })
+        else:
+            raise HTTPException(status_code=400, detail=message)
+            
+    except Exception as e:
+        logger.error(f"Error deleting admin user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete admin user")
+
 @app.post("/admin/registrations/{registration_id}/verify")
 async def verify_registration(
     registration_id: int,
@@ -2405,6 +2747,9 @@ async def startup_event():
             
             # Initialize default settings
             initialize_default_settings()
+            
+            # Initialize default admin
+            initialize_default_admin()
             
         except Exception as e:
             logger.error(f"Database setup failed: {e}")
