@@ -528,6 +528,11 @@ def initialize_default_settings():
             'description': 'Enable admin notifications for new registrations'
         },
         {
+            'key': 'notification_recipient',
+            'value': '@admin',
+            'description': 'Telegram username or chat ID to receive notifications'
+        },
+        {
             'key': 'auto_approval_enabled',
             'value': 'false',
             'description': 'Enable automatic approval of registrations'
@@ -2026,6 +2031,7 @@ async def save_admin_settings(
         allowed_settings = {
             'vip_group_link': 'VIP Telegram group link for verified users',
             'admin_notification_enabled': 'Enable admin notifications for new registrations',
+            'notification_recipient': 'Telegram username or chat ID to receive notifications',
             'auto_approval_enabled': 'Enable automatic approval of registrations'
         }
         
