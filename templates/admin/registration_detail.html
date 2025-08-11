@@ -768,16 +768,29 @@
                     })
                 });
                 
+                // Check if response is HTML (authentication redirect)
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('text/html')) {
+                    alert('Your session has expired. Please login again.');
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                
                 const result = await response.json();
                 
                 if (response.ok) {
                     alert('Registration put on hold successfully. User has been notified with your custom message.');
                     location.reload();
                 } else {
-                    alert('Error: ' + result.detail);
+                    alert('Error: ' + (result.detail || 'An error occurred'));
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Hold registration error:', error);
+                if (error.message.includes('Unexpected token')) {
+                    alert('Your session may have expired. Please refresh the page and try again.');
+                } else {
+                    alert('Error: ' + error.message);
+                }
             }
         }
         

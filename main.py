@@ -1555,7 +1555,7 @@ async def reject_registration(
 # Hold registration request model
 class HoldRegistrationRequest(BaseModel):
     custom_message: str
-    hold_reason: str = None
+    hold_reason: Optional[str] = None
 
 @app.post("/admin/registrations/{registration_id}/hold")
 async def hold_registration(
@@ -1564,6 +1564,8 @@ async def hold_registration(
     admin = Depends(get_current_admin)
 ):
     """Put a registration on hold with custom message"""
+    logger.info(f"Hold registration request received for ID: {registration_id}")
+    
     if not SessionLocal:
         raise HTTPException(status_code=500, detail="Database not available")
     
