@@ -71,6 +71,35 @@
             margin-right: 12px;
             text-align: center;
         }
+        .nav-submenu {
+            margin-left: 12px;
+            border-left: 2px solid #E5E7EB;
+            padding-left: 0;
+        }
+        .nav-submenu .nav-item {
+            margin: 2px 0;
+        }
+        .nav-submenu .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #6B7280;
+            margin-left: 8px;
+            border-radius: 4px;
+        }
+        .nav-submenu .nav-link:hover {
+            background: #F3F4F6;
+            color: #374151;
+        }
+        .nav-submenu .nav-link.active {
+            background: #EBF4FF;
+            color: #2563EB;
+            border-left: 3px solid #2563EB;
+        }
+        .nav-submenu .nav-link i {
+            width: 16px;
+            margin-right: 8px;
+            font-size: 12px;
+        }
         .main-content {
             margin-left: 250px;
             min-height: 100vh;
@@ -176,18 +205,26 @@
                     <i class="fas fa-users"></i>
                     Registrations
                 </a>
-            </div>
-            <div class="nav-item">
-                <a href="/admin/registrations?status=pending" class="nav-link">
-                    <i class="fas fa-clock"></i>
-                    Pending Review
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="/admin/registrations?status=verified" class="nav-link">
-                    <i class="fas fa-check-circle"></i>
-                    Verified Users
-                </a>
+                <div class="nav-submenu">
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            Pending Review
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=on_hold" class="nav-link">
+                            <i class="fas fa-pause"></i>
+                            On Hold
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=verified" class="nav-link">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Users
+                        </a>
+                    </div>
+                </div>
             </div>
             <div class="nav-item">
                 <a href="/admin/bot-activity" class="nav-link">
@@ -195,19 +232,22 @@
                     Bot Activity
                 </a>
             </div>
-            <div class="nav-item">
+        </nav>
+        <!-- Settings and Admin Users at bottom -->
+        <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="nav-item" style="margin: 4px 12px;">
                 <a href="/admin/settings" class="nav-link">
                     <i class="fas fa-cog"></i>
                     Settings
                 </a>
             </div>
-            <div class="nav-item">
+            <div class="nav-item" style="margin: 4px 12px;">
                 <a href="/admin/admin-users" class="nav-link active">
                     <i class="fas fa-user-shield"></i>
                     Admin Users
                 </a>
             </div>
-        </nav>
+        </div>
         <!-- Logout button at bottom -->
         <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
             <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">

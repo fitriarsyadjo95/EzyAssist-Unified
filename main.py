@@ -162,6 +162,9 @@ if Base:
         updated_by_admin = Column(String, nullable=True)
         custom_message = Column(Text, nullable=True)
         on_hold_reason = Column(String, nullable=True)
+        admin_notes = Column(Text, nullable=True)
+        notes_updated_at = Column(DateTime, nullable=True)
+        notes_updated_by = Column(String, nullable=True)
         ip_address = Column(String, nullable=True)
         user_agent = Column(Text, nullable=True)
         created_at = Column(DateTime, default=datetime.utcnow)
@@ -185,6 +188,9 @@ if Base:
                 'updated_by_admin': self.updated_by_admin,
                 'custom_message': self.custom_message,
                 'on_hold_reason': self.on_hold_reason,
+                'admin_notes': self.admin_notes,
+                'notes_updated_at': self.notes_updated_at.isoformat() if self.notes_updated_at else None,
+                'notes_updated_by': self.notes_updated_by,
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
@@ -1172,8 +1178,52 @@ bot_instance = EzyAssistBot()
 
 # FastAPI Routes
 @app.get("/", response_class=HTMLResponse)
+async def registration_entry(request: Request, token: str = None):
+    """Registration entry point - redirects to account setup (Step 1)"""
+    if not token:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Redirect to account setup step
+    return RedirectResponse(url=f"/account-setup?token={token}", status_code=302)
+
+@app.get("/account-setup", response_class=HTMLResponse)
+async def account_setup_page(request: Request, token: str = None):
+    """Account setup page (Step 1)"""
+    if not token:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    return templates.TemplateResponse("account_setup.html", {
+        "request": request,
+        "telegram_id": telegram_id,
+        "telegram_username": telegram_username,
+        "token": token,
+        "translations": TRANSLATIONS['ms']
+    })
+
+@app.post("/account-setup/continue")
+async def account_setup_continue(request: Request, token: str = Form(...)):
+    """Continue from account setup to registration form (Step 2)"""
+    return RedirectResponse(url=f"/registration-form?token={token}", status_code=302)
+
+@app.get("/registration-form", response_class=HTMLResponse)
 async def registration_form(request: Request, token: str = None):
-    """Registration form page"""
+    """Registration form page (Step 2)"""
     if not token:
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -1268,8 +1318,12 @@ async def submit_registration(
     is_resubmission = token_type == "resubmission"
     registration_id = token_data.get('registration_id') if token_data else None
     
-    # Validate required fields
-    if not all([full_name.strip(), email.strip(), phone_number.strip(), brokerage_name.strip(), deposit_amount.strip(), client_id.strip()]):
+    # Force brokerage to OctaFX for the new two-step flow
+    brokerage_name = "OctaFX"
+    logger.info(f"✅ Brokerage forced to: {brokerage_name}")
+    
+    # Validate required fields (excluding brokerage since it's auto-set)
+    if not all([full_name.strip(), email.strip(), phone_number.strip(), deposit_amount.strip(), client_id.strip()]):
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Sila lengkapkan semua medan yang diperlukan",
@@ -1387,7 +1441,7 @@ async def success_page(request: Request, token: str = None):
     telegram_username = None
     
     if token:
-        telegram_id, telegram_username = verify_registration_token(token)
+        telegram_id, telegram_username, token_data = verify_registration_token(token)
     
     return templates.TemplateResponse("success.html", {
         "request": request,
@@ -1773,7 +1827,16 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                 }
             except Exception as e:
                 logger.error(f"Error getting admin stats: {e}")
-                stats = {"error": "Could not load statistics"}
+                stats = {
+                    "error": "Could not load statistics",
+                    "total_registrations": 0,
+                    "recent_registrations": 0,
+                    "pending_count": 0,
+                    "verified_count": 0,
+                    "rejected_count": 0,
+                    "on_hold_count": 0,
+                    "broker_stats": []
+                }
             finally:
                 db.close()
     
@@ -2697,6 +2760,70 @@ async def send_resubmission_link(
     finally:
         db.close()
 
+# Pydantic model for admin notes
+class AdminNotesRequest(BaseModel):
+    notes: str
+
+@app.post("/admin/registrations/{registration_id}/notes")
+async def update_admin_notes(
+    registration_id: int,
+    request: AdminNotesRequest,
+    admin = Depends(get_current_admin)
+):
+    """Update admin notes for a registration"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Validate notes length
+        if len(request.notes) > 1000:
+            raise HTTPException(status_code=400, detail="Notes must not exceed 1000 characters")
+        
+        # Get registration
+        registration = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Update notes
+        old_notes = registration.admin_notes
+        registration.admin_notes = request.notes if request.notes.strip() else None
+        registration.notes_updated_at = datetime.utcnow()
+        registration.notes_updated_by = admin.get('username')
+        
+        db.commit()
+        
+        # Create audit log
+        add_audit_log(
+            registration_id=registration_id,
+            action="ADMIN_NOTES_UPDATED",
+            old_value=old_notes[:100] + "..." if old_notes and len(old_notes) > 100 else old_notes,
+            new_value=request.notes[:100] + "..." if len(request.notes) > 100 else request.notes,
+            admin_user=admin.get('username'),
+            details=f"Admin notes {'updated' if old_notes else 'added'} by {admin.get('username')}"
+        )
+        
+        logger.info(f"✅ Admin notes updated for registration {registration_id} by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Admin notes updated successfully",
+            "notes_updated_at": registration.notes_updated_at.isoformat(),
+            "notes_updated_by": registration.notes_updated_by
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating admin notes for registration {registration_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update admin notes")
+    finally:
+        db.close()
+
 @app.post("/admin/registrations/delete-all")
 async def delete_all_registrations(admin = Depends(get_current_admin)):
     """Delete all registration records (admin only)"""
@@ -3018,6 +3145,42 @@ async def migrate_database():
                 """))
                 conn.commit()
                 logger.info("✅ Added column: on_hold_reason")
+            
+            # Check for admin notes columns
+            notes_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name IN ('admin_notes', 'notes_updated_at', 'notes_updated_by')
+            """))
+            existing_notes_columns = [row[0] for row in notes_result]
+            
+            # Add admin_notes column if missing
+            if 'admin_notes' not in existing_notes_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN admin_notes TEXT
+                """))
+                conn.commit()
+                logger.info("✅ Added column: admin_notes")
+            
+            # Add notes_updated_at column if missing
+            if 'notes_updated_at' not in existing_notes_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN notes_updated_at TIMESTAMP
+                """))
+                conn.commit()
+                logger.info("✅ Added column: notes_updated_at")
+            
+            # Add notes_updated_by column if missing
+            if 'notes_updated_by' not in existing_notes_columns:
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN notes_updated_by VARCHAR
+                """))
+                conn.commit()
+                logger.info("✅ Added column: notes_updated_by")
             
             # Fix any existing lowercase enum values
             conn.execute(text("""

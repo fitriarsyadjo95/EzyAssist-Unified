@@ -71,6 +71,35 @@
             margin-right: 12px;
             text-align: center;
         }
+        .nav-submenu {
+            margin-left: 12px;
+            border-left: 2px solid #E5E7EB;
+            padding-left: 0;
+        }
+        .nav-submenu .nav-item {
+            margin: 2px 0;
+        }
+        .nav-submenu .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #6B7280;
+            margin-left: 8px;
+            border-radius: 4px;
+        }
+        .nav-submenu .nav-link:hover {
+            background: #F3F4F6;
+            color: #374151;
+        }
+        .nav-submenu .nav-link.active {
+            background: #EBF4FF;
+            color: #2563EB;
+            border-left: 3px solid #2563EB;
+        }
+        .nav-submenu .nav-link i {
+            width: 16px;
+            margin-right: 8px;
+            font-size: 12px;
+        }
         .main-content {
             margin-left: 250px;
             min-height: 100vh;
@@ -200,18 +229,26 @@
                     <i class="fas fa-users"></i>
                     Registrations
                 </a>
-            </div>
-            <div class="nav-item">
-                <a href="/admin/registrations?status=pending" class="nav-link">
-                    <i class="fas fa-clock"></i>
-                    Pending Review
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="/admin/registrations?status=verified" class="nav-link">
-                    <i class="fas fa-check-circle"></i>
-                    Verified Users
-                </a>
+                <div class="nav-submenu">
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            Pending Review
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=on_hold" class="nav-link">
+                            <i class="fas fa-pause"></i>
+                            On Hold
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=verified" class="nav-link">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Users
+                        </a>
+                    </div>
+                </div>
             </div>
             <div class="nav-item">
                 <a href="/admin/bot-activity" class="nav-link">
@@ -219,19 +256,22 @@
                     Bot Activity
                 </a>
             </div>
-            <div class="nav-item">
+        </nav>
+        <!-- Settings and Admin Users at bottom -->
+        <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="nav-item" style="margin: 4px 12px;">
                 <a href="/admin/settings" class="nav-link">
                     <i class="fas fa-cog"></i>
                     Settings
                 </a>
             </div>
-            <div class="nav-item">
+            <div class="nav-item" style="margin: 4px 12px;">
                 <a href="/admin/admin-users" class="nav-link">
                     <i class="fas fa-user-shield"></i>
                     Admin Users
                 </a>
             </div>
-        </nav>
+        </div>
         <!-- Logout button at bottom -->
         <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
             <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
@@ -495,6 +535,26 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Activity Log Card -->
+                <div class="card detail-card mt-4">
+                    <div class="card-header" style="background: #8B5CF6; color: white; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-history me-2"></i>
+                            Activity Log
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="auditLogContainer">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted mb-0">Loading activity log...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Files and Metadata -->
@@ -604,25 +664,59 @@
                     </div>
                 </div>
 
-                <!-- Audit Log Card -->
+                <!-- Admin Notes Card -->
                 <div class="card detail-card mt-4">
-                    <div class="card-header" style="background: #8B5CF6; color: white; border-bottom: 1px solid #E5E7EB;">
+                    <div class="card-header" style="background: #059669; color: white; border-bottom: 1px solid #E5E7EB;">
                         <h5 class="mb-0" style="font-weight: 600;">
-                            <i class="fas fa-history me-2"></i>
-                            Activity Log
+                            <i class="fas fa-sticky-note me-2"></i>
+                            Admin Notes
+                            {% if registration.admin_notes %}
+                                <span class="badge bg-light text-dark ms-2" style="font-size: 10px;">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                            {% endif %}
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div id="auditLogContainer">
-                            <div class="text-center py-3">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+                        <div class="admin-notes-section">
+                            <textarea 
+                                id="adminNotes" 
+                                class="form-control" 
+                                rows="4" 
+                                placeholder="Add internal notes about this registration... (e.g., verification issues, follow-up needed, contact history, etc.)"
+                                style="border: 1px solid #D1D5DB; border-radius: 6px; font-size: 14px;"
+                            >{{ registration.admin_notes or '' }}</textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-muted" id="notesCharCount">
+                                    <i class="fas fa-keyboard me-1"></i>
+                                    <span id="notesCount">{{ registration.admin_notes|length if registration.admin_notes else 0 }}</span>/1000 characters
+                                </small>
+                                <div>
+                                    <button 
+                                        onclick="saveAdminNotes({{ registration.id }}, this)" 
+                                        class="btn btn-success btn-sm"
+                                        style="background: #059669; border-color: #059669; font-weight: 500;"
+                                    >
+                                        <i class="fas fa-save me-1"></i>
+                                        Save Notes
+                                    </button>
                                 </div>
-                                <p class="mt-2 text-muted mb-0">Loading activity log...</p>
                             </div>
+                            {% if registration.notes_updated_at %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Last updated: {{ registration.notes_updated_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                                    {% if registration.notes_updated_by %}
+                                        by {{ registration.notes_updated_by }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+
             </div>
             </div>
         </div>
@@ -1008,6 +1102,93 @@
             }
         }
         
+        async function saveAdminNotes(registrationId, buttonElement) {
+            const notesTextarea = document.getElementById('adminNotes');
+            const notes = notesTextarea.value.trim();
+            
+            // Validate notes length
+            if (notes.length > 1000) {
+                alert('Admin notes must not exceed 1000 characters.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/notes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success message
+                    const originalText = buttonElement.innerHTML;
+                    buttonElement.innerHTML = '<i class="fas fa-check me-1"></i>Saved!';
+                    buttonElement.style.background = '#22C55E';
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        buttonElement.innerHTML = originalText;
+                        buttonElement.style.background = '#059669';
+                    }, 2000);
+                    
+                    // Reload audit logs to show the notes update
+                    loadAuditLogs();
+                    
+                    // Update the "last updated" info if present
+                    const updatedInfo = result.notes_updated_at;
+                    const updatedBy = result.notes_updated_by;
+                    if (updatedInfo) {
+                        // Find or create the "last updated" section
+                        const notesSection = document.querySelector('.admin-notes-section');
+                        let lastUpdatedDiv = notesSection.querySelector('.notes-last-updated');
+                        
+                        if (!lastUpdatedDiv) {
+                            lastUpdatedDiv = document.createElement('div');
+                            lastUpdatedDiv.className = 'mt-2 notes-last-updated';
+                            notesSection.appendChild(lastUpdatedDiv);
+                        }
+                        
+                        lastUpdatedDiv.innerHTML = `
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Last updated: ${new Date(updatedInfo).toLocaleString()} ${updatedBy ? 'by ' + updatedBy : ''}
+                            </small>
+                        `;
+                    }
+                    
+                } else {
+                    alert('❌ Error: ' + result.detail);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function updateNotesCharCount() {
+            const notesTextarea = document.getElementById('adminNotes');
+            const countSpan = document.getElementById('notesCount');
+            const count = notesTextarea.value.length;
+            
+            countSpan.textContent = count;
+            
+            // Change color based on character count
+            const charCountElement = document.getElementById('notesCharCount');
+            if (count > 900) {
+                charCountElement.style.color = '#EF5350';
+            } else if (count > 750) {
+                charCountElement.style.color = '#F59E0B';
+            } else {
+                charCountElement.style.color = '#6B7280';
+            }
+        }
+        
         // Event listeners for real-time updates
         document.addEventListener('DOMContentLoaded', function() {
             const textarea = document.getElementById('customMessage');
@@ -1015,6 +1196,12 @@
                 updateCharCount();
                 updateMessagePreview();
             });
+            
+            // Add event listener for admin notes character count
+            const notesTextarea = document.getElementById('adminNotes');
+            if (notesTextarea) {
+                notesTextarea.addEventListener('input', updateNotesCharCount);
+            }
             
             // Load audit logs when page loads
             loadAuditLogs();

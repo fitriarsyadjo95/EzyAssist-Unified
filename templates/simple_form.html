@@ -4,8 +4,9 @@
 <div class="row justify-content-center">
     <div class="col-lg-8 col-xl-7">
         <div class="card shadow-lg border-0 registration-card">
-            <div class="card-header">
-                <h1 class="mb-0">{{ translations.title }}</h1>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">Complete VIP Registration</h1>
+                <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">Step 2 of 2</span>
             </div>
             
             <div class="card-body p-4 p-md-5">
@@ -16,6 +17,7 @@
                     <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
                     <input type="hidden" name="language" value="ms">
                     <input type="hidden" name="form_hash" value="{{ form_hash }}">
+                    <input type="hidden" name="brokerage_name" value="OctaFX">
                     
                     <!-- Personal Information -->
                     <h5 class="mb-4 text-primary">Maklumat Diri</h5>
@@ -53,22 +55,20 @@
                         </div>
                     </div>
 
-                    <!-- Brokerage Information -->
-                    <h5 class="mb-4 text-primary mt-5">Info Brokerage & Deposit</h5>
+                    <!-- OctaFX Trading Information -->
+                    <h5 class="mb-4 text-primary mt-5">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Info Trading OctaFX
+                    </h5>
                     
-                    <div class="mb-4">
-                        <label for="brokerage_name" class="form-label">
-                            Nama Broker <span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-building fa-sm"></i></span>
-                            <select class="form-select form-control-lg" id="brokerage_name" name="brokerage_name" required>
-                                <option value="">Pilih broker awak...</option>
-                                <option value="OctaFX">OctaFX</option>
-                                <option value="Valetax™">Valetax™</option>
-                                <option value="HFM">HFM</option>
-                                <option value="DollarsMarkets">DollarsMarkets</option>
-                            </select>
+                    <!-- OctaFX Confirmation Display -->
+                    <div class="alert alert-success mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-3 text-success" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <h6 class="mb-1">Broker: <strong>OctaFX</strong></h6>
+                                <small class="text-muted">Akaun telah disediakan dalam Langkah 1</small>
+                            </div>
                         </div>
                     </div>
 
@@ -85,12 +85,16 @@
 
                     <div class="mb-4">
                         <label for="client_id" class="form-label">
-                            Client ID <span class="text-danger">*</span>
+                            OctaFX Client ID <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-id-card fa-sm"></i></span>
                             <input type="text" class="form-control form-control-lg" id="client_id" name="client_id" 
-                                   placeholder="ID pelanggan dari broker" required>
+                                   placeholder="Client ID dari akaun OctaFX anda" required>
+                        </div>
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Dapatkan Client ID dari dashboard OctaFX anda
                         </div>
                     </div>
 
