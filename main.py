@@ -1411,6 +1411,7 @@ async def send_vip_access_granted(telegram_id: str, registration_data: dict):
                 f"Hai {registration_data['full_name']},\n\n"
                 f"✅ Pendaftaran VIP anda telah DILULUSKAN!\n"
                 f"🔥 Anda kini boleh akses group VIP kami.\n\n"
+                f"🔗 VIP Group Link: {vip_group_link}\n\n"
                 f"📞 Jika ada soalan, hubungi team support kami."
             )
             
