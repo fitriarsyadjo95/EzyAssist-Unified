@@ -281,6 +281,10 @@
                                 <i class="fas fa-comments me-1"></i>
                                 View Conversations
                             </a>
+                            <button onclick="sendResubmissionLink({{ registration.id }})" class="btn btn-outline-info me-2" style="color: #0891B2; border-color: #0891B2; border-radius: 6px; font-weight: 500;">
+                                <i class="fas fa-link me-1"></i>
+                                Send Resubmission Link
+                            </button>
                         </div>
                         <div>
                             {% if registration.status.value == 'pending' %}
@@ -973,6 +977,34 @@
                     return 'Registration Created';
                 default:
                     return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            }
+        }
+        
+        async function sendResubmissionLink(registrationId) {
+            if (!confirm('Send a resubmission link to this user? They will be able to update their registration data.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/send-resubmission-link`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('✅ Resubmission link sent successfully!\n\nThe user will receive a message with a link to update their registration.');
+                    // Reload audit logs to show the new action
+                    loadAuditLogs();
+                } else {
+                    alert('❌ Error: ' + result.detail);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
             }
         }
         

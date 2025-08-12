@@ -347,45 +347,63 @@ TRANSLATIONS = {
 }
 
 # Utility functions
-def generate_registration_token(telegram_id: str, telegram_username: str = "") -> str:
-    """Generate secure registration token"""
+def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None) -> str:
+    """Generate secure registration token with support for different types"""
     try:
+        # Set expiry based on token type
+        if token_type == "resubmission":
+            # 7 days for resubmission tokens
+            expiry_minutes = 7 * 24 * 60  # 7 days in minutes
+        else:
+            # 30 minutes for initial registration tokens
+            expiry_minutes = int(os.getenv('FORM_TIMEOUT_MINUTES', 30))
+        
         payload = {
             'telegram_id': telegram_id,
             'telegram_username': telegram_username or '',
-            'exp': datetime.utcnow() + timedelta(minutes=int(os.getenv('FORM_TIMEOUT_MINUTES', 30))),
+            'token_type': token_type,
+            'exp': datetime.utcnow() + timedelta(minutes=expiry_minutes),
             'iat': datetime.utcnow()
         }
+        
+        # Include registration_id for resubmission tokens
+        if token_type == "resubmission" and registration_id:
+            payload['registration_id'] = registration_id
         
         secret = os.getenv('JWT_SECRET_KEY')
         if not secret:
             raise ValueError("JWT_SECRET_KEY not configured")
             
         token = jwt.encode(payload, secret, algorithm='HS256')
+        logger.info(f"Generated {token_type} token for {telegram_id} (expires in {expiry_minutes} minutes)")
         return token
     except Exception as e:
         logger.error(f"Token generation error: {e}")
         raise
 
-def verify_registration_token(token: str) -> tuple[Optional[str], Optional[str]]:
-    """Verify and decode registration token"""
+def verify_registration_token(token: str) -> tuple[Optional[str], Optional[str], Optional[dict]]:
+    """Verify and decode registration token, returning telegram_id, username, and token data"""
     try:
         secret = os.getenv('JWT_SECRET_KEY')
         if not secret:
             logger.error("JWT_SECRET_KEY not configured")
-            return None, None
+            return None, None, None
             
         payload = jwt.decode(token, secret, algorithms=['HS256'])
-        return payload.get('telegram_id'), payload.get('telegram_username', '')
+        telegram_id = payload.get('telegram_id')
+        telegram_username = payload.get('telegram_username', '')
+        
+        # Return full payload for additional token information
+        return telegram_id, telegram_username, payload
     except jwt.ExpiredSignatureError:
         logger.warning("Token has expired")
-        return None, None
+        return None, None, None
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid token: {e}")
-        return None, None
+        return None, None, None
     except Exception as e:
         logger.error(f"Token verification error: {e}")
-        return None, None
+        return None, None, None
 
 def generate_form_hash() -> str:
     """Generate form security hash"""
@@ -1163,7 +1181,7 @@ async def registration_form(request: Request, token: str = None):
             "translations": TRANSLATIONS['ms']
         })
     
-    telegram_id, telegram_username = verify_registration_token(token)
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
     if not telegram_id:
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -1171,28 +1189,44 @@ async def registration_form(request: Request, token: str = None):
             "translations": TRANSLATIONS['ms']
         })
     
-    # Check if already registered
+    # Get token type and registration data for resubmissions
+    token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
+    existing_registration = None
+    
     if SessionLocal:
         db = get_db()
         if db:
-            existing = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
-            if existing:
-                return templates.TemplateResponse("error.html", {
-                    "request": request,
-                    "error_message": TRANSLATIONS['ms']['already_registered'],
-                    "translations": TRANSLATIONS['ms'],
-                    "lang": "ms"
-                })
+            # For resubmission tokens, get existing registration data
+            if token_type == "resubmission" and token_data.get('registration_id'):
+                existing_registration = db.query(VipRegistration).filter_by(
+                    id=token_data['registration_id']
+                ).first()
+            else:
+                # For initial tokens, check if already registered
+                existing = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
+                if existing:
+                    return templates.TemplateResponse("error.html", {
+                        "request": request,
+                        "error_message": TRANSLATIONS['ms']['already_registered'],
+                        "translations": TRANSLATIONS['ms'],
+                        "lang": "ms"
+                    })
+            db.close()
     
     form_hash = generate_form_hash()
-    return templates.TemplateResponse("simple_form.html", {
+    template_data = {
         "request": request,
         "telegram_id": telegram_id,
         "telegram_username": telegram_username,
         "token": token,
         "form_hash": form_hash,
-        "translations": TRANSLATIONS['ms']
-    })
+        "translations": TRANSLATIONS['ms'],
+        "token_type": token_type,
+        "existing_registration": existing_registration.to_dict() if existing_registration else None,
+        "is_resubmission": token_type == "resubmission"
+    }
+    
+    return templates.TemplateResponse("simple_form.html", template_data)
 
 @app.post("/submit")
 async def submit_registration(
@@ -1221,13 +1255,18 @@ async def submit_registration(
     logger.info(f"Received client_id: {client_id if client_id else 'MISSING'}")
     
     # Verify token
-    telegram_id, telegram_username = verify_registration_token(token)
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
     if not telegram_id:
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Token tidak sah atau telah tamat tempoh",
             "translations": TRANSLATIONS['ms']
         })
+    
+    # Determine if this is a resubmission
+    token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
+    is_resubmission = token_type == "resubmission"
+    registration_id = token_data.get('registration_id') if token_data else None
     
     # Validate required fields
     if not all([full_name.strip(), email.strip(), phone_number.strip(), brokerage_name.strip(), deposit_amount.strip(), client_id.strip()]):
@@ -1249,31 +1288,83 @@ async def submit_registration(
         db = get_db()
         if db:
             try:
-                new_registration = VipRegistration(
-                    telegram_id=telegram_id,
-                    telegram_username=telegram_username or '',
-                    full_name=full_name.strip(),
-                    email=email.strip(),
-                    phone_number=phone_number.strip(),
-                    brokerage_name=brokerage_name.strip(),
-                    deposit_amount=deposit_amount.strip(),
-                    client_id=client_id.strip(),
-                    deposit_proof_1_path=deposit_proof_1_path,
-                    deposit_proof_2_path=deposit_proof_2_path,
-                    deposit_proof_3_path=deposit_proof_3_path,
-                    ip_address=request.client.host,
-                    user_agent=request.headers.get('User-Agent', '')
-                )
-                
-                db.add(new_registration)
-                db.commit()
-                logger.info(f"✅ Registration saved for {full_name}")
-                
-                # Send pending notification to user via bot
-                await send_registration_pending(telegram_id, new_registration.to_dict())
-                
-                # Notify admin
-                await send_admin_notification(new_registration.to_dict())
+                if is_resubmission and registration_id:
+                    # Update existing registration
+                    existing_registration = db.query(VipRegistration).filter_by(id=registration_id).first()
+                    if existing_registration:
+                        # Update fields
+                        existing_registration.full_name = full_name.strip()
+                        existing_registration.email = email.strip()
+                        existing_registration.phone_number = phone_number.strip()
+                        existing_registration.brokerage_name = brokerage_name.strip()
+                        existing_registration.deposit_amount = deposit_amount.strip()
+                        existing_registration.client_id = client_id.strip()
+                        
+                        # Update file paths only if new files were uploaded
+                        if deposit_proof_1_path:
+                            existing_registration.deposit_proof_1_path = deposit_proof_1_path
+                        if deposit_proof_2_path:
+                            existing_registration.deposit_proof_2_path = deposit_proof_2_path
+                        if deposit_proof_3_path:
+                            existing_registration.deposit_proof_3_path = deposit_proof_3_path
+                        
+                        # Reset status to pending for re-review
+                        existing_registration.status = RegistrationStatus.PENDING
+                        existing_registration.on_hold_reason = None
+                        existing_registration.custom_message = None
+                        existing_registration.status_updated_at = datetime.utcnow()
+                        
+                        db.commit()
+                        logger.info(f"✅ Registration updated for {full_name} (ID: {registration_id})")
+                        
+                        # Create audit log
+                        add_audit_log(
+                            registration_id=registration_id,
+                            action="RESUBMITTED",
+                            new_value="User resubmitted registration data",
+                            details="Registration updated via resubmission form"
+                        )
+                        
+                        # Send pending notification to user via bot
+                        await send_registration_pending(telegram_id, existing_registration.to_dict())
+                        
+                        # Notify admin of resubmission
+                        await send_admin_notification(existing_registration.to_dict())
+                        
+                    else:
+                        logger.error(f"Registration {registration_id} not found for resubmission")
+                        return templates.TemplateResponse("error.html", {
+                            "request": request,
+                            "error_message": "Pendaftaran tidak dijumpai",
+                            "translations": TRANSLATIONS['ms']
+                        })
+                else:
+                    # Create new registration
+                    new_registration = VipRegistration(
+                        telegram_id=telegram_id,
+                        telegram_username=telegram_username or '',
+                        full_name=full_name.strip(),
+                        email=email.strip(),
+                        phone_number=phone_number.strip(),
+                        brokerage_name=brokerage_name.strip(),
+                        deposit_amount=deposit_amount.strip(),
+                        client_id=client_id.strip(),
+                        deposit_proof_1_path=deposit_proof_1_path,
+                        deposit_proof_2_path=deposit_proof_2_path,
+                        deposit_proof_3_path=deposit_proof_3_path,
+                        ip_address=request.client.host,
+                        user_agent=request.headers.get('User-Agent', '')
+                    )
+                    
+                    db.add(new_registration)
+                    db.commit()
+                    logger.info(f"✅ New registration saved for {full_name}")
+                    
+                    # Send pending notification to user via bot
+                    await send_registration_pending(telegram_id, new_registration.to_dict())
+                    
+                    # Notify admin
+                    await send_admin_notification(new_registration.to_dict())
                 
             except Exception as e:
                 logger.error(f"❌ Database save failed: {e}")
@@ -1283,6 +1374,8 @@ async def submit_registration(
                     "error_message": "Masalah teknikal dengan pangkalan data",
                     "translations": TRANSLATIONS['ms']
                 })
+            finally:
+                db.close()
     
     # Redirect to success page
     return RedirectResponse(url=f"/success?token={token}", status_code=303)
@@ -1448,9 +1541,21 @@ async def send_registration_rejected(telegram_id: str, registration_data: dict):
         logger.error(f"Failed to send rejection message: {e}")
 
 async def send_registration_on_hold(telegram_id: str, registration_data: dict, custom_message: str, hold_reason: str = None):
-    """Send registration on hold message with custom admin message"""
+    """Send registration on hold message with custom admin message and resubmission link"""
     try:
         if bot_instance and bot_instance.application:
+            # Generate resubmission token (7 days expiry)
+            resubmission_token = generate_registration_token(
+                telegram_id, 
+                registration_data.get('telegram_username', ''),
+                token_type="resubmission",
+                registration_id=registration_data.get('id')
+            )
+            
+            # Get base URL from environment
+            base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
+            resubmission_url = f"{base_url}/?token={resubmission_token}"
+            
             on_hold_message = (
                 f"⏸️ Pendaftaran VIP - Tindakan Diperlukan\n\n"
                 f"Hai {registration_data['full_name']},\n\n"
@@ -1463,7 +1568,10 @@ async def send_registration_on_hold(telegram_id: str, registration_data: dict, c
                 on_hold_message += f"📋 **Kategori:** {hold_reason}\n\n"
             
             on_hold_message += (
-                f"📞 Sila reply message ini atau hubungi kami dalam masa 7 hari untuk meneruskan pendaftaran.\n\n"
+                f"🔄 **Untuk mengemas kini pendaftaran anda:**\n"
+                f"👉 {resubmission_url}\n\n"
+                f"⏰ Link ini aktif selama 7 hari.\n"
+                f"📝 Borang akan diisi dengan data anda yang sedia ada - anda hanya perlu mengemas kini bahagian yang diperlukan.\n\n"
                 f"📱 Pastikan phone {registration_data.get('phone_number', 'N/A')} aktif untuk makluman!\n\n"
                 f"🙏 Terima kasih atas kerjasama anda."
             )
@@ -1472,7 +1580,7 @@ async def send_registration_on_hold(telegram_id: str, registration_data: dict, c
                 chat_id=telegram_id, 
                 text=on_hold_message
             )
-            logger.info(f"✅ Registration on hold message sent to {telegram_id}")
+            logger.info(f"✅ Registration on hold message with resubmission link sent to {telegram_id}")
     except Exception as e:
         logger.error(f"Failed to send on hold message: {e}")
 
@@ -2517,6 +2625,75 @@ async def hold_registration(
         logger.error(f"Error holding registration {registration_id}: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to put registration on hold")
+    finally:
+        db.close()
+
+@app.post("/admin/registrations/{registration_id}/send-resubmission-link")
+async def send_resubmission_link(
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Send resubmission link to user"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Get registration
+        registration = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Generate resubmission token
+        resubmission_token = generate_registration_token(
+            registration.telegram_id,
+            registration.telegram_username or '',
+            token_type="resubmission",
+            registration_id=registration_id
+        )
+        
+        # Get base URL from environment
+        base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
+        resubmission_url = f"{base_url}/?token={resubmission_token}"
+        
+        # Send message to user
+        if bot_instance and bot_instance.application:
+            message = (
+                f"🔄 Link Kemas Kini Pendaftaran VIP\n\n"
+                f"Hai {registration.full_name},\n\n"
+                f"Berikut adalah link untuk mengemas kini pendaftaran VIP anda:\n\n"
+                f"👉 {resubmission_url}\n\n"
+                f"⏰ Link ini aktif selama 7 hari.\n"
+                f"📝 Borang akan diisi dengan data anda yang sedia ada.\n\n"
+                f"🙏 Terima kasih!"
+            )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=registration.telegram_id,
+                text=message
+            )
+        
+        # Create audit log
+        add_audit_log(
+            registration_id=registration_id,
+            action="RESUBMISSION_LINK_SENT",
+            admin_user=admin.get('username'),
+            details="Admin manually sent resubmission link to user"
+        )
+        
+        logger.info(f"✅ Resubmission link sent for registration {registration_id} by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Resubmission link sent to user successfully"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error sending resubmission link for registration {registration_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send resubmission link")
     finally:
         db.close()
 
