@@ -9,6 +9,23 @@
                 <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">Step 2 of 2</span>
             </div>
             
+            {% if setup_action %}
+            <!-- Account Setup Status -->
+            <div class="card-body p-3 border-bottom" style="background-color: #f8f9fa;">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <span class="text-muted small">
+                        <strong>Langkah 1 Selesai:</strong> 
+                        {% if setup_action == 'new_account' %}
+                            Akaun baru OctaFX telah dicipta
+                        {% elif setup_action == 'partner_change' %}
+                            Partner OctaFX telah ditukar
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="card-body p-4 p-md-5">
                 <form method="POST" action="/submit" enctype="multipart/form-data">
                     <!-- Hidden Fields -->

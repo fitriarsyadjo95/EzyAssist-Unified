@@ -486,6 +486,7 @@
                                         <th>Email</th>
                                         <th>Phone</th>
                                         <th>Broker</th>
+                                        <th>Setup</th>
                                         <th>Deposit</th>
                                         <th>Files</th>
                                         <th>Status</th>
@@ -510,6 +511,25 @@
                                         <td>{{ reg.phone_number }}</td>
                                         <td>
                                             <span class="badge bg-info">{{ reg.brokerage_name }}</span>
+                                        </td>
+                                        <td>
+                                            {% if reg.account_setup_action %}
+                                                {% if reg.account_setup_action.value == 'new_account' %}
+                                                    <span class="badge bg-primary" title="New Account Created" data-bs-toggle="tooltip">
+                                                        <i class="fas fa-user-plus me-1"></i>New
+                                                    </span>
+                                                {% elif reg.account_setup_action.value == 'partner_change' %}
+                                                    <span class="badge bg-warning" title="Partner Change" data-bs-toggle="tooltip">
+                                                        <i class="fas fa-exchange-alt me-1"></i>Change
+                                                    </span>
+                                                {% endif %}
+                                                <br>
+                                                <small class="text-muted">Step {{ reg.step_completed or 0 }}/2</small>
+                                            {% else %}
+                                                <span class="badge bg-secondary" title="No account setup tracked" data-bs-toggle="tooltip">
+                                                    <i class="fas fa-question me-1"></i>Unknown
+                                                </span>
+                                            {% endif %}
                                         </td>
                                         <td>${{ reg.deposit_amount }}</td>
                                         <td>

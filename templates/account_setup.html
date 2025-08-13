@@ -88,11 +88,17 @@
                 </div>
 
                 <!-- Continue Button -->
-                <form method="POST" action="/account-setup/continue">
+                <form method="POST" action="/account-setup/continue" id="continueForm">
                     <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="setup_action" id="setupAction" value="">
+                    
+                    <div class="alert alert-warning" id="actionAlert" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Sila pilih tindakan yang anda telah lakukan di atas sebelum meneruskan.
+                    </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg py-3">
+                        <button type="button" onclick="showActionSelection()" class="btn btn-success btn-lg py-3">
                             <i class="fas fa-check-circle me-2"></i>
                             Selesai, Teruskan ke Langkah 2
                         </button>
@@ -136,6 +142,54 @@
         </div>
     </div>
 </div>
+
+<!-- Action Selection Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="actionModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Konfirmasi Tindakan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Tindakan manakah yang anda telah lakukan?</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="selectAction('new_account')">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Saya telah cipta akaun baru OctaFX
+                    </button>
+                    <button type="button" class="btn btn-info btn-lg" onclick="selectAction('partner_change')">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        Saya telah tukar partner OctaFX
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function showActionSelection() {
+    const modal = new bootstrap.Modal(document.getElementById('actionModal'));
+    modal.show();
+}
+
+function selectAction(action) {
+    document.getElementById('setupAction').value = action;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('actionModal'));
+    modal.hide();
+    
+    // Submit the form
+    document.getElementById('continueForm').submit();
+}
+</script>
 
 <style>
 .account-option-card {

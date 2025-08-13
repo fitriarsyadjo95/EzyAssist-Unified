@@ -51,6 +51,11 @@ class RegistrationStatus(enum.Enum):
     VERIFIED = "verified"
     REJECTED = "rejected"
     ON_HOLD = "on_hold"
+
+# Account setup action enum
+class AccountSetupAction(enum.Enum):
+    NEW_ACCOUNT = "new_account"
+    PARTNER_CHANGE = "partner_change"
 from admin_auth import (
     authenticate_admin, create_admin_session, delete_admin_session,
     get_current_admin, admin_login_required
@@ -165,6 +170,10 @@ if Base:
         admin_notes = Column(Text, nullable=True)
         notes_updated_at = Column(DateTime, nullable=True)
         notes_updated_by = Column(String, nullable=True)
+        # Account setup tracking fields
+        account_setup_action = Column(Enum(AccountSetupAction), nullable=True)
+        account_setup_completed_at = Column(DateTime, nullable=True)
+        step_completed = Column(Integer, default=0)  # 0: neither, 1: setup only, 2: both steps
         ip_address = Column(String, nullable=True)
         user_agent = Column(Text, nullable=True)
         created_at = Column(DateTime, default=datetime.utcnow)
@@ -191,6 +200,9 @@ if Base:
                 'admin_notes': self.admin_notes,
                 'notes_updated_at': self.notes_updated_at.isoformat() if self.notes_updated_at else None,
                 'notes_updated_by': self.notes_updated_by,
+                'account_setup_action': self.account_setup_action.value if self.account_setup_action else None,
+                'account_setup_completed_at': self.account_setup_completed_at.isoformat() if self.account_setup_completed_at else None,
+                'step_completed': self.step_completed,
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
@@ -1217,9 +1229,97 @@ async def account_setup_page(request: Request, token: str = None):
     })
 
 @app.post("/account-setup/continue")
-async def account_setup_continue(request: Request, token: str = Form(...)):
+async def account_setup_continue(request: Request, token: str = Form(...), setup_action: str = Form(...)):
     """Continue from account setup to registration form (Step 2)"""
-    return RedirectResponse(url=f"/registration-form?token={token}", status_code=302)
+    # Verify the token first
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Validate setup_action
+    if setup_action not in ['new_account', 'partner_change']:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid setup action selected",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    try:
+        # Create a new token with setup action data
+        new_token = generate_registration_token(
+            telegram_id=telegram_id,
+            telegram_username=telegram_username or "",
+            token_type="initial_with_setup",
+            registration_id=token_data.get('registration_id') if token_data else None
+        )
+        
+        # Store the setup action in token data
+        if SessionLocal:
+            db = get_db()
+            try:
+                # Check if there's an existing registration to update
+                existing_registration = db.query(VipRegistration).filter(
+                    VipRegistration.telegram_id == telegram_id
+                ).first()
+                
+                if existing_registration:
+                    # Update existing registration with setup tracking
+                    existing_registration.account_setup_action = AccountSetupAction(setup_action)
+                    existing_registration.account_setup_completed_at = datetime.utcnow()
+                    existing_registration.step_completed = 1  # Setup completed
+                    
+                    # Add audit log
+                    add_audit_log(
+                        registration_id=existing_registration.id,
+                        action="ACCOUNT_SETUP_COMPLETED",
+                        details=f"User completed account setup: {setup_action.replace('_', ' ').title()}"
+                    )
+                else:
+                    # Create a temporary registration record to track setup
+                    temp_registration = VipRegistration(
+                        telegram_id=telegram_id,
+                        telegram_username=telegram_username or "",
+                        full_name="",  # Will be filled in step 2
+                        email="",      # Will be filled in step 2
+                        phone_number="", # Will be filled in step 2
+                        account_setup_action=AccountSetupAction(setup_action),
+                        account_setup_completed_at=datetime.utcnow(),
+                        step_completed=1,
+                        brokerage_name="OctaFX"  # Force brokerage to OctaFX for the new two-step flow
+                    )
+                    db.add(temp_registration)
+                    db.flush()  # Get the ID
+                    
+                    # Add audit log
+                    add_audit_log(
+                        registration_id=temp_registration.id,
+                        action="ACCOUNT_SETUP_COMPLETED",
+                        details=f"User completed account setup: {setup_action.replace('_', ' ').title()}"
+                    )
+                
+                db.commit()
+                logger.info(f"Account setup completed for {telegram_id}: {setup_action}")
+                
+            except Exception as e:
+                db.rollback()
+                logger.error(f"Error recording account setup: {e}")
+            finally:
+                db.close()
+        
+        # Include setup action in the URL parameters for the registration form
+        return RedirectResponse(url=f"/registration-form?token={new_token}&setup_action={setup_action}", status_code=302)
+        
+    except Exception as e:
+        logger.error(f"Error in account setup continue: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "An error occurred while processing your request",
+            "translations": TRANSLATIONS['ms']
+        })
 
 @app.get("/registration-form", response_class=HTMLResponse)
 async def registration_form(request: Request, token: str = None):
@@ -1242,26 +1342,47 @@ async def registration_form(request: Request, token: str = None):
     # Get token type and registration data for resubmissions
     token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
     existing_registration = None
+    setup_action = request.query_params.get('setup_action')
     
     if SessionLocal:
         db = get_db()
         if db:
-            # For resubmission tokens, get existing registration data
-            if token_type == "resubmission" and token_data.get('registration_id'):
-                existing_registration = db.query(VipRegistration).filter_by(
-                    id=token_data['registration_id']
-                ).first()
-            else:
-                # For initial tokens, check if already registered
-                existing = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
-                if existing:
-                    return templates.TemplateResponse("error.html", {
-                        "request": request,
-                        "error_message": TRANSLATIONS['ms']['already_registered'],
-                        "translations": TRANSLATIONS['ms'],
-                        "lang": "ms"
-                    })
-            db.close()
+            try:
+                # For resubmission tokens, get existing registration data
+                if token_type == "resubmission" and token_data.get('registration_id'):
+                    existing_registration = db.query(VipRegistration).filter_by(
+                        id=token_data['registration_id']
+                    ).first()
+                else:
+                    # Check if Step 1 was completed for new registrations
+                    existing = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
+                    
+                    if existing:
+                        # Check if user already completed full registration
+                        if existing.step_completed >= 2:
+                            return templates.TemplateResponse("error.html", {
+                                "request": request,
+                                "error_message": TRANSLATIONS['ms']['already_registered'],
+                                "translations": TRANSLATIONS['ms'],
+                                "lang": "ms"
+                            })
+                        
+                        # Check if Step 1 was completed
+                        if existing.step_completed < 1 or not existing.account_setup_action:
+                            # User hasn't completed Step 1, redirect them back
+                            new_token = generate_registration_token(telegram_id, telegram_username or "")
+                            return RedirectResponse(url=f"/account-setup?token={new_token}", status_code=302)
+                        
+                        # User completed Step 1, continue with Step 2
+                        existing_registration = existing
+                        setup_action = existing.account_setup_action.value if existing.account_setup_action else None
+                    else:
+                        # No existing registration and no setup_action, redirect to Step 1
+                        if not setup_action:
+                            new_token = generate_registration_token(telegram_id, telegram_username or "")
+                            return RedirectResponse(url=f"/account-setup?token={new_token}", status_code=302)
+            finally:
+                db.close()
     
     form_hash = generate_form_hash()
     template_data = {
@@ -1273,7 +1394,8 @@ async def registration_form(request: Request, token: str = None):
         "translations": TRANSLATIONS['ms'],
         "token_type": token_type,
         "existing_registration": existing_registration.to_dict() if existing_registration else None,
-        "is_resubmission": token_type == "resubmission"
+        "is_resubmission": token_type == "resubmission",
+        "setup_action": setup_action
     }
     
     return templates.TemplateResponse("simple_form.html", template_data)
@@ -1393,32 +1515,74 @@ async def submit_registration(
                             "translations": TRANSLATIONS['ms']
                         })
                 else:
-                    # Create new registration
-                    new_registration = VipRegistration(
-                        telegram_id=telegram_id,
-                        telegram_username=telegram_username or '',
-                        full_name=full_name.strip(),
-                        email=email.strip(),
-                        phone_number=phone_number.strip(),
-                        brokerage_name=brokerage_name.strip(),
-                        deposit_amount=deposit_amount.strip(),
-                        client_id=client_id.strip(),
-                        deposit_proof_1_path=deposit_proof_1_path,
-                        deposit_proof_2_path=deposit_proof_2_path,
-                        deposit_proof_3_path=deposit_proof_3_path,
-                        ip_address=request.client.host,
-                        user_agent=request.headers.get('User-Agent', '')
-                    )
+                    # Check if user has completed Step 1 (account setup)
+                    existing_setup = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
                     
-                    db.add(new_registration)
-                    db.commit()
-                    logger.info(f"✅ New registration saved for {full_name}")
-                    
-                    # Send pending notification to user via bot
-                    await send_registration_pending(telegram_id, new_registration.to_dict())
-                    
-                    # Notify admin
-                    await send_admin_notification(new_registration.to_dict())
+                    if existing_setup and existing_setup.step_completed >= 1:
+                        # User completed Step 1, update existing record with Step 2 data
+                        existing_setup.full_name = full_name.strip()
+                        existing_setup.email = email.strip()
+                        existing_setup.phone_number = phone_number.strip()
+                        existing_setup.brokerage_name = brokerage_name.strip()
+                        existing_setup.deposit_amount = deposit_amount.strip()
+                        existing_setup.client_id = client_id.strip()
+                        existing_setup.deposit_proof_1_path = deposit_proof_1_path
+                        existing_setup.deposit_proof_2_path = deposit_proof_2_path
+                        existing_setup.deposit_proof_3_path = deposit_proof_3_path
+                        existing_setup.ip_address = request.client.host
+                        existing_setup.user_agent = request.headers.get('User-Agent', '')
+                        existing_setup.step_completed = 2  # Both steps completed
+                        
+                        db.commit()
+                        logger.info(f"✅ Registration completed for {full_name} (updated existing record)")
+                        
+                        # Add audit log for registration completion
+                        add_audit_log(
+                            registration_id=existing_setup.id,
+                            action="REGISTRATION_COMPLETED",
+                            details="User completed Step 2: Full registration form submitted"
+                        )
+                        
+                        # Send pending notification to user via bot
+                        await send_registration_pending(telegram_id, existing_setup.to_dict())
+                        
+                        # Notify admin
+                        await send_admin_notification(existing_setup.to_dict())
+                    else:
+                        # Create completely new registration (shouldn't happen with proper flow validation)
+                        new_registration = VipRegistration(
+                            telegram_id=telegram_id,
+                            telegram_username=telegram_username or '',
+                            full_name=full_name.strip(),
+                            email=email.strip(),
+                            phone_number=phone_number.strip(),
+                            brokerage_name=brokerage_name.strip(),
+                            deposit_amount=deposit_amount.strip(),
+                            client_id=client_id.strip(),
+                            deposit_proof_1_path=deposit_proof_1_path,
+                            deposit_proof_2_path=deposit_proof_2_path,
+                            deposit_proof_3_path=deposit_proof_3_path,
+                            ip_address=request.client.host,
+                            user_agent=request.headers.get('User-Agent', ''),
+                            step_completed=2  # Both steps completed (edge case)
+                        )
+                        
+                        db.add(new_registration)
+                        db.commit()
+                        logger.info(f"✅ New registration saved for {full_name}")
+                        
+                        # Add audit log
+                        add_audit_log(
+                            registration_id=new_registration.id,
+                            action="REGISTRATION_CREATED",
+                            details="Complete registration created (bypassed Step 1 validation)"
+                        )
+                        
+                        # Send pending notification to user via bot
+                        await send_registration_pending(telegram_id, new_registration.to_dict())
+                        
+                        # Notify admin
+                        await send_admin_notification(new_registration.to_dict())
                 
             except Exception as e:
                 logger.error(f"❌ Database save failed: {e}")
