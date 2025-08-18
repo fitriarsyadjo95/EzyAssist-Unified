@@ -1092,20 +1092,6 @@ class EzyAssistBot:
                 daily_stats = BotActivity(date=today)
                 db.add(daily_stats)
             
-            # Ensure fields are initialized (fix for None values)
-            if daily_stats.total_messages is None:
-                daily_stats.total_messages = 0
-            if daily_stats.start_commands is None:
-                daily_stats.start_commands = 0
-            if daily_stats.register_commands is None:
-                daily_stats.register_commands = 0
-            if daily_stats.clear_commands is None:
-                daily_stats.clear_commands = 0
-            if daily_stats.errors is None:
-                daily_stats.errors = 0
-            if daily_stats.unique_users is None:
-                daily_stats.unique_users = 0
-                
             # Update statistics
             if command_type == 'message':
                 daily_stats.total_messages += 1
