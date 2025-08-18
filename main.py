@@ -842,7 +842,7 @@ class EzyAssistBot:
             f"Selamat datang ke EzyAssist, {user.first_name}! 🌟\n\n"
             "Saya di sini untuk membantu anda dengan pendidikan forex dan menjawab soalan anda. "
             "Jangan ragu untuk bertanya apa-apa tentang perdagangan forex!\n\n"
-            "Untuk pendaftaran VIP, gunakan /register"
+            "Untuk pendaftaran VIP, tanya sahaja tentang 'VIP' atau 'register'."
         )
         
         await update.message.reply_text(welcome_message)

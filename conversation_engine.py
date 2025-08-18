@@ -514,7 +514,7 @@ class ConversationEngine:
                 if language == 'ms':
                     return (
                         "🎯 Daftar VIP Channel EzyAssist sekarang!\n\n"
-                        "Untuk mendaftar, gunakan command /register atau hubungi admin kami.\n\n"
+                        "Untuk mendaftar, hubungi admin kami untuk proses pendaftaran.\n\n"
                         "VIP channel kita ada:\n"
                         "• Trading signals quality tinggi 📊\n"
                         "• Daily market analysis dari expert\n"
@@ -524,7 +524,7 @@ class ConversationEngine:
                 else:
                     return (
                         "🎯 Register for EzyAssist VIP Channel now!\n\n"
-                        "To register, use the /register command or contact our admin.\n\n"
+                        "To register, contact our admin for the registration process.\n\n"
                         "Our VIP channel offers:\n"
                         "• High-quality trading signals 📊\n"
                         "• Daily market analysis by experts\n"
