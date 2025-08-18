@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Activity - EzyAssist Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #F3F4F6;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #E5E7EB;
+            background: #F9FAFB;
+        }
+        .sidebar-brand {
+            color: #111827;
+            font-weight: 600;
+            font-size: 20px;
+            text-decoration: none;
+        }
+        .sidebar-brand:hover {
+            color: #2563EB;
+            text-decoration: none;
+        }
+        .sidebar-nav {
+            padding: 16px 0;
+        }
+        .nav-item {
+            margin: 4px 12px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #4B5563;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .nav-link:hover {
+            background: #EBF4FF;
+            color: #2563EB;
+            text-decoration: none;
+        }
+        .nav-link.active {
+            background: #2563EB;
+            color: #FFFFFF;
+        }
+        .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+            text-align: center;
+        }
+        .nav-submenu {
+            margin-left: 12px;
+            border-left: 2px solid #E5E7EB;
+            padding-left: 0;
+        }
+        .nav-submenu .nav-item {
+            margin: 2px 0;
+        }
+        .nav-submenu .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #6B7280;
+            margin-left: 8px;
+            border-radius: 4px;
+        }
+        .nav-submenu .nav-link:hover {
+            background: #F3F4F6;
+            color: #374151;
+        }
+        .nav-submenu .nav-link.active {
+            background: #EBF4FF;
+            color: #2563EB;
+            border-left: 3px solid #2563EB;
+        }
+        .nav-submenu .nav-link i {
+            width: 16px;
+            margin-right: 8px;
+            font-size: 12px;
+        }
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+        .topbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2563EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+        }
+        .card-header {
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 600;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .stat-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 16px;
+            transition: all 0.2s ease;
+            border: 1px solid #E5E7EB;
+        }
+        .stat-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stat-icon.bg-primary {
+            background: #2563EB !important;
+        }
+        .stat-icon.bg-warning {
+            background: #F59E0B !important;
+        }
+        .stat-icon.bg-success {
+            background: #22C55E !important;
+        }
+        .stat-icon.bg-danger {
+            background: #EF5350 !important;
+        }
+        .stat-icon.bg-info {
+            background: #3B82F6 !important;
+        }
+        .table {
+            color: #374151;
+            font-size: 14px;
+        }
+        .table thead th {
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 600;
+            border-color: #E5E7EB;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        .table tbody tr:hover {
+            background: #F3F4F6;
+        }
+        .table td, .table th {
+            border-color: #E5E7EB;
+            padding: 12px;
+        }
+        h2, h3, h4, h5 {
+            color: #111827;
+            font-weight: 600;
+        }
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F9FAFB;
+            border-radius: 8px;
+            color: #6B7280;
+        }
+        .activity-chart {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .date-range-selector {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .btn-primary {
+            background: #2563EB;
+            border-color: #2563EB;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #1D4ED8;
+            border-color: #1D4ED8;
+        }
+        .btn-outline-secondary {
+            color: #4B5563;
+            border-color: #D1D5DB;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-outline-secondary:hover {
+            background: #F3F4F6;
+            border-color: #9CA3AF;
+            color: #374151;
+        }
+        .form-select {
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .form-select:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .metric-label {
+            color: #6B7280;
+        }
+        .metric-value {
+            font-weight: 600;
+            color: #111827;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/" class="sidebar-brand">
+                <i class="fas fa-shield-alt me-2"></i>
+                EzyAssist Admin
+            </a>
+            <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
+                Version 2.1
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin/" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/registrations" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    Registrations
+                </a>
+                <div class="nav-submenu">
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            Pending Review
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=on_hold" class="nav-link">
+                            <i class="fas fa-pause"></i>
+                            On Hold
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=verified" class="nav-link">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/bot-activity" class="nav-link active">
+                    <i class="fas fa-chart-line"></i>
+                    Bot Activity
+                </a>
+            </div>
+        </nav>
+        <!-- Settings and Admin Users at bottom -->
+        <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/admin-users" class="nav-link">
+                    <i class="fas fa-user-shield"></i>
+                    Admin Users
+                </a>
+            </div>
+        </div>
+        <!-- Logout button at bottom -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div>
+                <h4 class="mb-0" style="color: #111827; font-weight: 600;">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Bot Activity Analytics
+                </h4>
+            </div>
+            <div class="user-menu">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span style="color: #4B5563; font-weight: 500;">Admin</span>
+            </div>
+        </div>
+
+        <!-- Bot Activity Content -->
+        <div class="container-fluid p-4">
+
+            <!-- Current Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="stat-icon bg-primary text-white me-3">
+                                <i class="fas fa-users fa-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0">{{ current_stats.active_users or 0 }}</h3>
+                                <small class="text-muted">Active Users</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="stat-icon bg-success text-white me-3">
+                                <i class="fas fa-comments fa-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0">{{ current_stats.messages_today or 0 }}</h3>
+                                <small class="text-muted">Messages Today</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="stat-icon bg-info text-white me-3">
+                                <i class="fas fa-percentage fa-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0">{{ current_stats.success_rate or 0 }}%</h3>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="stat-icon bg-warning text-white me-3">
+                                <i class="fas fa-exclamation-triangle fa-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0">{{ current_stats.error_count or 0 }}</h3>
+                                <small class="text-muted">Errors Today</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historical Data Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>
+                                Daily Activity History (Last 30 Days)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if historical_data %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Total Messages</th>
+                                            <th>Unique Users</th>
+                                            <th>New Users</th>
+                                            <th>/start</th>
+                                            <th>/register</th>
+                                            <th>/clear</th>
+                                            <th>Errors</th>
+                                            <th>Peak Users</th>
+                                            <th>Avg Response</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for activity in historical_data %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ activity.date.strftime('%Y-%m-%d') }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ activity.date.strftime('%a') }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ activity.total_messages }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ activity.unique_users }}</span>
+                                            </td>
+                                            <td>
+                                                {% if activity.new_users > 0 %}
+                                                <span class="badge bg-success">{{ activity.new_users }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ activity.start_commands }}</td>
+                                            <td>{{ activity.register_commands }}</td>
+                                            <td>{{ activity.clear_commands }}</td>
+                                            <td>
+                                                {% if activity.errors > 0 %}
+                                                <span class="badge bg-danger">{{ activity.errors }}</span>
+                                                {% else %}
+                                                <span class="text-muted">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ activity.peak_active_users }}</td>
+                                            <td>
+                                                {% if activity.avg_response_time %}
+                                                {{ "%.2f"|format(activity.avg_response_time) }}s
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Historical Data Available</h5>
+                                <p class="text-muted">Bot activity tracking has been enabled. Data will appear here as users interact with the bot.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats Summary -->
+            {% if historical_data %}
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calculator me-2"></i>
+                                30-Day Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% set total_messages = historical_data | sum(attribute='total_messages') %}
+                            {% set total_users = historical_data | sum(attribute='unique_users') %}
+                            {% set total_new_users = historical_data | sum(attribute='new_users') %}
+                            {% set total_errors = historical_data | sum(attribute='errors') %}
+                            {% set avg_daily_messages = (total_messages / historical_data|length) if historical_data|length > 0 else 0 %}
+                            
+                            <div class="metric-row">
+                                <span class="metric-label">Total Messages:</span>
+                                <span class="metric-value">{{ total_messages }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Total Unique Users:</span>
+                                <span class="metric-value">{{ total_users }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">New Users Joined:</span>
+                                <span class="metric-value">{{ total_new_users }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Total Errors:</span>
+                                <span class="metric-value">{{ total_errors }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Avg Daily Messages:</span>
+                                <span class="metric-value">{{ "%.1f"|format(avg_daily_messages) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-trophy me-2"></i>
+                                Peak Performance
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% set peak_messages_day = historical_data | max(attribute='total_messages') %}
+                            {% set peak_users_day = historical_data | max(attribute='unique_users') %}
+                            {% set peak_new_users_day = historical_data | max(attribute='new_users') %}
+                            {% set peak_active_day = historical_data | max(attribute='peak_active_users') %}
+                            
+                            <div class="metric-row">
+                                <span class="metric-label">Peak Messages (Day):</span>
+                                <span class="metric-value">{{ peak_messages_day.total_messages if peak_messages_day else 0 }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Peak Users (Day):</span>
+                                <span class="metric-value">{{ peak_users_day.unique_users if peak_users_day else 0 }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Peak New Users:</span>
+                                <span class="metric-value">{{ peak_new_users_day.new_users if peak_new_users_day else 0 }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Peak Active Users:</span>
+                                <span class="metric-value">{{ peak_active_day.peak_active_users if peak_active_day else 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto refresh every 60 seconds with session check
+        setTimeout(async () => {
+            try {
+                // Check if session is still valid before refresh
+                const response = await fetch('/admin/bot-status');
+                if (response.status === 401) {
+                    const errorData = await response.json();
+                    if (errorData.redirect) {
+                        window.location.href = errorData.redirect;
+                        return;
+                    }
+                }
+                // Session is valid, proceed with refresh
+                location.reload();
+            } catch (error) {
+                // Network error or other issue, try to reload anyway
+                location.reload();
+            }
+        }, 60000);
+    </script>
+</body>
+</html>

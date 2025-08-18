@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-xl-5">
+        <div class="card shadow-lg border-0 error-card">
+            <div class="card-body text-center p-4 p-md-5">
+                <!-- Error Icon -->
+                <div class="error-icon mb-4">
+                    <i class="fas fa-exclamation-triangle fa-5x text-warning"></i>
+                </div>
+                
+                <!-- Error Message -->
+                <h1 class="h3 text-danger fw-bold mb-3">{{ translations.error_title }}</h1>
+                <p class="lead mb-4">{{ error_message }}</p>
+                
+                <!-- Help Section -->
+                <div class="help-section bg-light rounded p-4 mb-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-lightbulb me-2 text-primary"></i>
+                        {{ 'Apa yang perlu dilakukan?' if lang == 'ms' else 'What should you do?' }}
+                    </h6>
+                    <div class="text-start">
+                        <div class="mb-2">
+                            <i class="fas fa-arrow-right me-2 text-primary"></i>
+                            {{ 'Pastikan link pendaftaran masih sah' if lang == 'ms' else 'Make sure the registration link is still valid' }}
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-arrow-right me-2 text-primary"></i>
+                            {{ 'Dapatkan link baharu dari bot Telegram' if lang == 'ms' else 'Get a new link from the Telegram bot' }}
+                        </div>
+                        <div>
+                            <i class="fas fa-arrow-right me-2 text-primary"></i>
+                            {{ 'Hubungi sokongan jika masalah berterusan' if lang == 'ms' else 'Contact support if the problem persists' }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2">
+                    <a href="https://t.me/ezyassist_vip" class="btn btn-primary btn-lg py-3 fw-bold">
+                        <i class="fab fa-telegram-plane me-2"></i>
+                        {{ translations.back_to_telegram }}
+                    </a>
+                    <button onclick="history.back()" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        {{ 'Kembali' if lang == 'ms' else 'Go Back' }}
+                    </button>
+                </div>
+                
+                <!-- Support Info -->
+                <div class="mt-4 text-muted">
+                    <small>
+                        <i class="fas fa-headset me-1"></i>
+                        {{ 'Perlukan bantuan? Hubungi kami di Telegram untuk sokongan segera.' if lang == 'ms' else 'Need help? Contact us on Telegram for immediate support.' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

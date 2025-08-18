@@ -1,0 +1,76 @@
+{
+    "identity": {
+        "logo": "bot_manager_logo",
+        "primary_color": "#2563EB",
+        "secondary_color": "#F3F4F6",
+        "accent_color": "#FACC15",
+        "success_color": "#22C55E",
+        "danger_color": "#EF5350",
+        "warning_color": "#F59E0B",
+        "info_color": "#3B82F6",
+        "font": {
+            "family": "Inter, sans-serif",
+            "weights": {
+                "regular": 400,
+                "medium": 500,
+                "semibold": 600,
+                "bold": 700
+            },
+            "sizes": {
+                "small": "12px",
+                "base": "14px",
+                "medium": "16px",
+                "large": "20px",
+                "xlarge": "24px"
+            }
+        }
+    },
+    "components": {
+        "sidebar": {
+            "background_color": "#FFFFFF",
+            "active_link_color": "#2563EB",
+            "link_text_color": "#4B5563",
+            "hover_color": "#E5E7EB",
+            "icon_color": "#9CA3AF",
+            "width": "250px"
+        },
+        "header": {
+            "background_color": "#FFFFFF",
+            "text_color": "#111827",
+            "font_size": "20px",
+            "font_weight": 600
+        },
+        "card": {
+            "background_color": "#FFFFFF",
+            "border_radius": "8px",
+            "shadow": "0 1px 3px rgba(0,0,0,0.1)",
+            "padding": "16px"
+        },
+        "buttons": {
+            "primary": {
+                "background_color": "#2563EB",
+                "text_color": "#FFFFFF",
+                "border_radius": "6px",
+                "hover_color": "#1D4ED8"
+            },
+            "secondary": {
+                "background_color": "#F3F4F6",
+                "text_color": "#111827",
+                "border_radius": "6px",
+                "hover_color": "#E5E7EB"
+            }
+        },
+        "table": {
+            "header_background": "#F9FAFB",
+            "header_text_color": "#374151",
+            "row_hover_color": "#F3F4F6",
+            "border_color": "#E5E7EB"
+        },
+        "form": {
+            "input_background": "#FFFFFF",
+            "input_border": "#D1D5DB",
+            "input_focus_border": "#2563EB",
+            "label_color": "#374151"
+        }
+    }
+}

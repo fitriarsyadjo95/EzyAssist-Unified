@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-lg border-0 registration-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">Complete VIP Registration</h1>
+                <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">Step 2 of 2</span>
+            </div>
+            
+            {% if setup_action %}
+            <!-- Account Setup Status -->
+            <div class="card-body p-3 border-bottom" style="background-color: #f8f9fa;">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <span class="text-muted small">
+                        <strong>Langkah 1 Selesai:</strong> 
+                        {% if setup_action == 'new_account' %}
+                            Akaun baru OctaFX telah dicipta
+                        {% elif setup_action == 'partner_change' %}
+                            Partner OctaFX telah ditukar
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="/submit" enctype="multipart/form-data">
+                    <!-- Hidden Fields -->
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
+                    <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
+                    <input type="hidden" name="language" value="ms">
+                    <input type="hidden" name="form_hash" value="{{ form_hash }}">
+                    <input type="hidden" name="brokerage_name" value="OctaFX">
+                    
+                    <!-- Personal Information -->
+                    <h5 class="mb-4 text-primary">Maklumat Diri</h5>
+                    
+                    <div class="mb-4">
+                        <label for="full_name" class="form-label">
+                            Nama Penuh <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user fa-sm"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="full_name" name="full_name" 
+                                   placeholder="Masukkan nama penuh anda" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="email" class="form-label">
+                            Alamat Email <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope fa-sm"></i></span>
+                            <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                   placeholder="nama@example.com" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="phone_number" class="form-label">
+                            Nombor Telefon <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone fa-sm"></i></span>
+                            <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
+                                   placeholder="01234567890" required>
+                        </div>
+                    </div>
+
+                    <!-- OctaFX Trading Information -->
+                    <h5 class="mb-4 text-primary mt-5">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Info Trading OctaFX
+                    </h5>
+                    
+                    <!-- OctaFX Confirmation Display -->
+                    <div class="alert alert-success mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-3 text-success" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <h6 class="mb-1">Broker: <strong>OctaFX</strong></h6>
+                                <small class="text-muted">Akaun telah disediakan dalam Langkah 1</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="deposit_amount" class="form-label">
+                            Jumlah Deposit (dalam $) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-money-bill-wave fa-sm"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="deposit_amount" name="deposit_amount" 
+                                   placeholder="contoh: 100" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="client_id" class="form-label">
+                            OctaFX Client ID <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-id-card fa-sm"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="client_id" name="client_id" 
+                                   placeholder="Client ID dari akaun OctaFX anda" required>
+                        </div>
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Dapatkan Client ID dari dashboard OctaFX anda
+                        </div>
+                    </div>
+
+                    <!-- File Uploads (Optional) -->
+                    <h5 class="mb-4 text-primary mt-5">Upload Bukti Deposit <small class="text-muted">(opsional)</small></h5>
+                    
+                    <div class="mb-3">
+                        <label for="deposit_proof_1" class="form-label">File 1</label>
+                        <input type="file" class="form-control" id="deposit_proof_1" name="deposit_proof_1" 
+                               accept="image/*,.pdf">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="deposit_proof_2" class="form-label">File 2</label>
+                        <input type="file" class="form-control" id="deposit_proof_2" name="deposit_proof_2" 
+                               accept="image/*,.pdf">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="deposit_proof_3" class="form-label">File 3</label>
+                        <input type="file" class="form-control" id="deposit_proof_3" name="deposit_proof_3" 
+                               accept="image/*,.pdf">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold">
+                            {{ translations.submit }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

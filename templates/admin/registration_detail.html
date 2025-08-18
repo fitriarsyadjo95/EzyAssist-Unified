@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration #{{ registration.id }} - EzyAssist Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Cache bust: {{ range(1, 999999) | random }} -->
+    <style>
+        body {
+            background: #F3F4F6;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #E5E7EB;
+            background: #F9FAFB;
+        }
+        .sidebar-brand {
+            color: #111827;
+            font-weight: 600;
+            font-size: 20px;
+            text-decoration: none;
+        }
+        .sidebar-brand:hover {
+            color: #2563EB;
+            text-decoration: none;
+        }
+        .sidebar-nav {
+            padding: 16px 0;
+        }
+        .nav-item {
+            margin: 4px 12px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #4B5563;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .nav-link:hover {
+            background: #EBF4FF;
+            color: #2563EB;
+            text-decoration: none;
+        }
+        .nav-link.active {
+            background: #2563EB;
+            color: #FFFFFF;
+        }
+        .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+            text-align: center;
+        }
+        .nav-submenu {
+            margin-left: 12px;
+            border-left: 2px solid #E5E7EB;
+            padding-left: 0;
+        }
+        .nav-submenu .nav-item {
+            margin: 2px 0;
+        }
+        .nav-submenu .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #6B7280;
+            margin-left: 8px;
+            border-radius: 4px;
+        }
+        .nav-submenu .nav-link:hover {
+            background: #F3F4F6;
+            color: #374151;
+        }
+        .nav-submenu .nav-link.active {
+            background: #EBF4FF;
+            color: #2563EB;
+            border-left: 3px solid #2563EB;
+        }
+        .nav-submenu .nav-link i {
+            width: 16px;
+            margin-right: 8px;
+            font-size: 12px;
+        }
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+        .topbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2563EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-outline-primary {
+            color: #2563EB;
+            border-color: #2563EB;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-outline-primary:hover {
+            background: #2563EB;
+            border-color: #2563EB;
+            color: white;
+        }
+        .btn-outline-success {
+            color: #22C55E;
+            border-color: #22C55E;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-outline-success:hover {
+            background: #22C55E;
+            border-color: #22C55E;
+            color: white;
+        }
+        .btn-outline-info {
+            color: #3B82F6;
+            border-color: #3B82F6;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-outline-info:hover {
+            background: #3B82F6;
+            border-color: #3B82F6;
+            color: white;
+        }
+        .detail-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+        }
+        .detail-header {
+            background: #2563EB;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        .info-row {
+            border-bottom: 1px solid #E5E7EB;
+            padding: 12px 0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        .info-value {
+            color: #111827;
+            font-weight: 500;
+        }
+        .file-download {
+            display: inline-block;
+            margin: 4px 8px 4px 0;
+        }
+        .badge-status {
+            font-size: 11px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/" class="sidebar-brand">
+                <i class="fas fa-shield-alt me-2"></i>
+                EzyAssist Admin
+            </a>
+            <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
+                Version 2.1
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin/" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/registrations" class="nav-link active">
+                    <i class="fas fa-users"></i>
+                    Registrations
+                </a>
+                <div class="nav-submenu">
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            Pending Review
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=on_hold" class="nav-link">
+                            <i class="fas fa-pause"></i>
+                            On Hold
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=verified" class="nav-link">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/bot-activity" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    Bot Activity
+                </a>
+            </div>
+        </nav>
+        <!-- Settings and Admin Users at bottom -->
+        <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/admin-users" class="nav-link">
+                    <i class="fas fa-user-shield"></i>
+                    Admin Users
+                </a>
+            </div>
+        </div>
+        <!-- Logout button at bottom -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div>
+                <h4 class="mb-0" style="color: #111827; font-weight: 600;">
+                    <i class="fas fa-user-circle me-2"></i>
+                    Registration #{{ registration.id }}
+                </h4>
+                <nav aria-label="breadcrumb" style="margin-top: 4px;">
+                    <ol class="breadcrumb mb-0" style="font-size: 12px;">
+                        <li class="breadcrumb-item"><a href="/admin/" style="color: #4B5563;">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/admin/registrations" style="color: #4B5563;">Registrations</a></li>
+                        <li class="breadcrumb-item active" style="color: #9CA3AF;">#{{ registration.id }}</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="user-menu">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span style="color: #4B5563; font-weight: 500;">Admin</span>
+            </div>
+        </div>
+
+        <!-- Registration Details Content -->
+        <div class="container-fluid p-4">
+            <!-- Action Buttons -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="/admin/registrations" class="btn btn-outline-secondary me-2" style="color: #4B5563; border-color: #D1D5DB; border-radius: 6px; font-weight: 500;">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Back to List
+                            </a>
+                            <a href="/admin/conversations/{{ registration.id }}" class="btn btn-outline-primary me-2" style="color: #2563EB; border-color: #2563EB; border-radius: 6px; font-weight: 500;">
+                                <i class="fas fa-comments me-1"></i>
+                                View Conversations
+                            </a>
+                            <button onclick="sendResubmissionLink({{ registration.id }})" class="btn btn-outline-info me-2" style="color: #0891B2; border-color: #0891B2; border-radius: 6px; font-weight: 500;">
+                                <i class="fas fa-link me-1"></i>
+                                Send Resubmission Link
+                            </button>
+                        </div>
+                        <div>
+                            {% if registration.status.value == 'pending' %}
+                                <button onclick="verifyRegistration({{ registration.id }})" class="btn btn-success me-2" style="background: #22C55E; border-color: #22C55E; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-check me-1"></i>
+                                    Verify & Grant VIP
+                                </button>
+                                <button onclick="showHoldModal({{ registration.id }})" class="btn btn-warning me-2" style="background: #F59E0B; border-color: #F59E0B; border-radius: 6px; font-weight: 500; color: white;">
+                                    <i class="fas fa-pause me-1"></i>
+                                    Put On Hold
+                                </button>
+                                <button onclick="rejectRegistration({{ registration.id }})" class="btn btn-danger" style="background: #EF5350; border-color: #EF5350; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-times me-1"></i>
+                                    Reject Registration
+                                </button>
+                            {% elif registration.status.value == 'on_hold' %}
+                                <button onclick="verifyRegistration({{ registration.id }})" class="btn btn-success me-2" style="background: #22C55E; border-color: #22C55E; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-check me-1"></i>
+                                    Verify & Grant VIP
+                                </button>
+                                <button onclick="showHoldModal({{ registration.id }})" class="btn btn-warning me-2" style="background: #F59E0B; border-color: #F59E0B; border-radius: 6px; font-weight: 500; color: white;">
+                                    <i class="fas fa-edit me-1"></i>
+                                    Update Hold Message
+                                </button>
+                                <button onclick="rejectRegistration({{ registration.id }})" class="btn btn-danger" style="background: #EF5350; border-color: #EF5350; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-times me-1"></i>
+                                    Reject Registration
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registration Details Card -->
+            <div class="row">
+            <div class="col-lg-8">
+                <div class="card detail-card">
+                    <div class="card-header detail-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-id-card me-2"></i>
+                                    Registration #{{ registration.id }}
+                                </h4>
+                                <small class="opacity-75">
+                                    Submitted: {{ registration.created_at.strftime('%B %d, %Y at %I:%M %p') if registration.created_at else 'N/A' }}
+                                </small>
+                            </div>
+                            <div>
+                                {% if registration.status.value == 'pending' %}
+                                    <span class="badge" style="background: #F59E0B !important; color: #FFFFFF; font-size: 14px; font-weight: 500; padding: 8px 16px;">
+                                        <i class="fas fa-clock me-1"></i>
+                                        PENDING REVIEW
+                                    </span>
+                                {% elif registration.status.value == 'verified' %}
+                                    <span class="badge" style="background: #22C55E !important; font-size: 14px; font-weight: 500; padding: 8px 16px;">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        VERIFIED
+                                    </span>
+                                {% elif registration.status.value == 'rejected' %}
+                                    <span class="badge" style="background: #EF5350 !important; font-size: 14px; font-weight: 500; padding: 8px 16px;">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        REJECTED
+                                    </span>
+                                {% elif registration.status.value == 'on_hold' %}
+                                    <span class="badge" style="background: #F59E0B !important; color: #FFFFFF; font-size: 14px; font-weight: 500; padding: 8px 16px;">
+                                        <i class="fas fa-pause-circle me-1"></i>
+                                        ON HOLD
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Personal Information -->
+                        <div class="p-4">
+                            <h5 class="mb-3" style="color: #2563EB; font-weight: 600;">
+                                <i class="fas fa-user me-2"></i>
+                                Personal Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Full Name</div>
+                                        <div class="info-value">{{ registration.full_name or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Email Address</div>
+                                        <div class="info-value">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ registration.email or 'N/A' }}</span>
+                                                {% if registration.email %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="mailto:{{ registration.email }}" class="btn btn-outline-primary btn-sm" title="Send Email">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Phone Number</div>
+                                        <div class="info-value">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ registration.phone_number or 'N/A' }}</span>
+                                                {% if registration.phone_number %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="tel:{{ registration.phone_number }}" class="btn btn-outline-success btn-sm" title="Call">
+                                                        <i class="fas fa-phone"></i>
+                                                    </a>
+                                                    <a href="https://wa.me/{{ registration.phone_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '') }}" target="_blank" class="btn btn-outline-success btn-sm" title="WhatsApp">
+                                                        <i class="fab fa-whatsapp"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Client ID</div>
+                                        <div class="info-value">{{ registration.client_id or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-0">
+
+                        <!-- Trading Information -->
+                        <div class="p-4">
+                            <h5 class="mb-3" style="color: #22C55E; font-weight: 600;">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Trading Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Brokerage Name</div>
+                                        <div class="info-value">
+                                            <span class="badge" style="background: #3B82F6 !important; font-size: 11px; font-weight: 500; padding: 4px 8px;">{{ registration.brokerage_name or 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Deposit Amount</div>
+                                        <div class="info-value">
+                                            <strong style="color: #22C55E;">${{ registration.deposit_amount or 'N/A' }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-0">
+
+                        <!-- Account Setup Information -->
+                        <div class="p-4">
+                            <h5 class="mb-3" style="color: #8B5CF6; font-weight: 600;">
+                                <i class="fas fa-user-cog me-2"></i>
+                                Account Setup Tracking
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Setup Action</div>
+                                        <div class="info-value">
+                                            {% if registration.account_setup_action %}
+                                                {% if registration.account_setup_action.value == 'new_account' %}
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-user-plus me-1"></i>
+                                                        New Account Created
+                                                    </span>
+                                                {% elif registration.account_setup_action.value == 'partner_change' %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-exchange-alt me-1"></i>
+                                                        Partner Change
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ registration.account_setup_action.value | title }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">No setup action recorded</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Registration Progress</div>
+                                        <div class="info-value">
+                                            {% set progress = registration.step_completed or 0 %}
+                                            {% if progress == 0 %}
+                                                <span class="badge bg-secondary">No Steps Completed</span>
+                                            {% elif progress == 1 %}
+                                                <span class="badge bg-warning">Step 1 Only (Setup)</span>
+                                            {% elif progress >= 2 %}
+                                                <span class="badge bg-success">Both Steps Completed</span>
+                                            {% endif %}
+                                            <div class="progress mt-2" style="height: 8px;">
+                                                <div class="progress-bar {{ 'bg-success' if progress >= 2 else 'bg-warning' if progress == 1 else 'bg-secondary' }}" 
+                                                     style="width: {{ (progress / 2) * 100 }}%"></div>
+                                            </div>
+                                            <small class="text-muted">{{ progress }}/2 steps completed</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Setup Completed</div>
+                                        <div class="info-value">
+                                            {% if registration.account_setup_completed_at %}
+                                                {{ registration.account_setup_completed_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                                            {% else %}
+                                                <span class="text-muted">Not completed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Registration Created</div>
+                                        <div class="info-value">
+                                            {{ registration.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if registration.created_at else 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-0">
+
+                        <!-- Telegram Information -->
+                        <div class="p-4">
+                            <h5 class="mb-3" style="color: #3B82F6; font-weight: 600;">
+                                <i class="fab fa-telegram me-2"></i>
+                                Telegram Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Telegram ID</div>
+                                        <div class="info-value">{{ registration.telegram_id or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-row">
+                                        <div class="info-label">Telegram Username</div>
+                                        <div class="info-value">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    {% if registration.telegram_username %}
+                                                        @{{ registration.telegram_username }}
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </span>
+                                                {% if registration.telegram_username %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="https://t.me/{{ registration.telegram_username }}" target="_blank" class="btn btn-outline-info btn-sm" title="Chat on Telegram">
+                                                        <i class="fas fa-comments"></i>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Log Card -->
+                <div class="card detail-card mt-4">
+                    <div class="card-header" style="background: #8B5CF6; color: white; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-history me-2"></i>
+                            Activity Log
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="auditLogContainer">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted mb-0">Loading activity log...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Files and Metadata -->
+            <div class="col-lg-4">
+                <!-- Uploaded Files -->
+                <div class="card detail-card mb-4">
+                    <div class="card-header" style="background: #2563EB; color: white; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-file-upload me-2"></i>
+                            Deposit Proof Files
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% set file_paths = [registration.deposit_proof_1_path, registration.deposit_proof_2_path, registration.deposit_proof_3_path] %}
+                        {% set has_files = file_paths | select | list | length > 0 %}
+                        
+                        {% if has_files %}
+                            {% for file_path in file_paths %}
+                                {% if file_path %}
+                                    {% set filename = file_path.split('/')[-1] %}
+                                    <div class="file-download">
+                                        <a href="/uploads/{{ filename }}" target="_blank" class="btn btn-outline-primary btn-sm" style="color: #2563EB; border-color: #2563EB; border-radius: 6px; font-weight: 500; font-size: 12px; padding: 6px 12px;">
+                                            <i class="fas fa-download me-1"></i>
+                                            File {{ loop.index }}
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {{ file_paths | select | list | length }} file(s) uploaded
+                                </small>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-file-times fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">No files uploaded</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Technical Metadata -->
+                <div class="card detail-card">
+                    <div class="card-header" style="background: #6B7280; color: white; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-cogs me-2"></i>
+                            Technical Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <div class="info-label">Registration ID</div>
+                            <div class="info-value">
+                                <code>#{{ registration.id }}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">IP Address</div>
+                            <div class="info-value">
+                                <code>{{ registration.ip_address or 'N/A' }}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">User Agent</div>
+                            <div class="info-value">
+                                <small class="text-muted">{{ registration.user_agent or 'N/A' }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">Registration Date</div>
+                            <div class="info-value">
+                                {{ registration.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if registration.created_at else 'N/A' }}
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">
+                                {% if registration.status.value == 'pending' %}
+                                    <span class="badge" style="background: #F59E0B !important; color: #FFFFFF; font-size: 11px; font-weight: 500; padding: 4px 8px;">Pending Review</span>
+                                {% elif registration.status.value == 'verified' %}
+                                    <span class="badge" style="background: #22C55E !important; font-size: 11px; font-weight: 500; padding: 4px 8px;">Verified</span>
+                                {% elif registration.status.value == 'rejected' %}
+                                    <span class="badge" style="background: #EF5350 !important; font-size: 11px; font-weight: 500; padding: 4px 8px;">Rejected</span>
+                                {% elif registration.status.value == 'on_hold' %}
+                                    <span class="badge" style="background: #F59E0B !important; color: #FFFFFF; font-size: 11px; font-weight: 500; padding: 4px 8px;">On Hold</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if registration.status_updated_at %}
+                        <div class="info-row">
+                            <div class="info-label">Status Updated</div>
+                            <div class="info-value">
+                                {{ registration.status_updated_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                                {% if registration.updated_by_admin %}
+                                    by {{ registration.updated_by_admin }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Admin Notes Card -->
+                <div class="card detail-card mt-4">
+                    <div class="card-header" style="background: #059669; color: white; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-sticky-note me-2"></i>
+                            Admin Notes
+                            {% if registration.admin_notes %}
+                                <span class="badge bg-light text-dark ms-2" style="font-size: 10px;">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="admin-notes-section">
+                            <textarea 
+                                id="adminNotes" 
+                                class="form-control" 
+                                rows="4" 
+                                placeholder="Add internal notes about this registration... (e.g., verification issues, follow-up needed, contact history, etc.)"
+                                style="border: 1px solid #D1D5DB; border-radius: 6px; font-size: 14px;"
+                            >{{ registration.admin_notes or '' }}</textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-muted" id="notesCharCount">
+                                    <i class="fas fa-keyboard me-1"></i>
+                                    <span id="notesCount">{{ registration.admin_notes|length if registration.admin_notes else 0 }}</span>/1000 characters
+                                </small>
+                                <div>
+                                    <button 
+                                        onclick="saveAdminNotes({{ registration.id }}, this)" 
+                                        class="btn btn-success btn-sm"
+                                        style="background: #059669; border-color: #059669; font-weight: 500;"
+                                    >
+                                        <i class="fas fa-save me-1"></i>
+                                        Save Notes
+                                    </button>
+                                </div>
+                            </div>
+                            {% if registration.notes_updated_at %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Last updated: {{ registration.notes_updated_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                                    {% if registration.notes_updated_by %}
+                                        by {{ registration.notes_updated_by }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hold Registration Modal -->
+    <div class="modal fade" id="holdModal" tabindex="-1" aria-labelledby="holdModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #F59E0B; color: white;">
+                    <h5 class="modal-title" id="holdModalLabel">
+                        <i class="fas fa-pause me-2"></i>
+                        Put Registration On Hold
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: brightness(0) invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="holdForm">
+                        <div class="mb-3">
+                            <label for="holdReason" class="form-label">
+                                <strong>Hold Reason (Optional)</strong>
+                            </label>
+                            <select class="form-select" id="holdReason" name="hold_reason">
+                                <option value="">Select a reason (optional)</option>
+                                <option value="Document verification needed">Document verification needed</option>
+                                <option value="Additional information required">Additional information required</option>
+                                <option value="Deposit proof unclear">Deposit proof unclear</option>
+                                <option value="Brokerage verification pending">Brokerage verification pending</option>
+                                <option value="Identity verification required">Identity verification required</option>
+                                <option value="Contact information needs update">Contact information needs update</option>
+                                <option value="Other - see custom message">Other - see custom message</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="customMessage" class="form-label">
+                                <strong>Custom Message <span class="text-danger">*</span></strong>
+                                <small class="text-muted d-block">This message will be sent to the user via Telegram</small>
+                            </label>
+                            <textarea class="form-control" id="customMessage" name="custom_message" rows="5" required maxlength="500" placeholder="Please provide specific details about what information or action is needed from the user..."></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/500 characters
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Preview of message to user:</strong>
+                            <div class="mt-2" style="font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; border-left: 4px solid #F59E0B;">
+                                ⏸️ <strong>Pendaftaran VIP - Tindakan Diperlukan</strong><br><br>
+                                Hai {{ registration.full_name }},<br><br>
+                                Pendaftaran VIP anda sedang dalam semakan. Team kami memerlukan maklumat tambahan:<br><br>
+                                📝 <strong>Mesej daripada Admin:</strong><br>
+                                <span id="messagePreview" style="color: #2563EB;">[Your custom message will appear here]</span><br><br>
+                                📞 Sila reply message ini atau hubungi kami dalam masa 7 hari untuk meneruskan pendaftaran.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="submitHoldForm()" style="background: #F59E0B; border-color: #F59E0B; color: white;">
+                        <i class="fas fa-pause me-1"></i>
+                        Put On Hold & Send Message
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function verifyRegistration(registrationId) {
+            if (!confirm('Are you sure you want to verify this registration? The user will receive VIP access immediately.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Registration verified successfully! User has been granted VIP access.');
+                    // Refresh audit logs before page reload
+                    await loadAuditLogs();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('Error: ' + result.detail);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function rejectRegistration(registrationId) {
+            if (!confirm('Are you sure you want to reject this registration? The user will be notified that our team will contact them.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Registration rejected. User has been notified that our team will contact them.');
+                    // Refresh audit logs before page reload
+                    await loadAuditLogs();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('Error: ' + result.detail);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function showHoldModal(registrationId) {
+            // Store registration ID for later use
+            document.getElementById('holdModal').dataset.registrationId = registrationId;
+            
+            // Pre-fill existing data if this is an update
+            {% if registration.status.value == 'on_hold' and registration.custom_message %}
+                document.getElementById('customMessage').value = `{{ registration.custom_message|e }}`;
+                {% if registration.on_hold_reason %}
+                    document.getElementById('holdReason').value = `{{ registration.on_hold_reason|e }}`;
+                {% endif %}
+                document.getElementById('holdModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Update Hold Message';
+                updateCharCount();
+                updateMessagePreview();
+            {% else %}
+                // Clear form for new hold
+                document.getElementById('holdForm').reset();
+                document.getElementById('holdModalLabel').innerHTML = '<i class="fas fa-pause me-2"></i>Put Registration On Hold';
+                updateCharCount();
+                updateMessagePreview();
+            {% endif %}
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('holdModal'));
+            modal.show();
+        }
+        
+        async function submitHoldForm() {
+            const registrationId = document.getElementById('holdModal').dataset.registrationId;
+            const customMessage = document.getElementById('customMessage').value.trim();
+            const holdReason = document.getElementById('holdReason').value;
+            
+            // Validate form
+            if (!customMessage) {
+                alert('Please enter a custom message.');
+                return;
+            }
+            
+            if (customMessage.length > 500) {
+                alert('Custom message must not exceed 500 characters.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/hold`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        custom_message: customMessage,
+                        hold_reason: holdReason || null
+                    })
+                });
+                
+                // Check if response is HTML (authentication redirect)
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('text/html')) {
+                    alert('Your session has expired. Please login again.');
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Registration put on hold successfully. User has been notified with your custom message.');
+                    // Refresh audit logs before page reload
+                    await loadAuditLogs();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('Error: ' + (result.detail || 'An error occurred'));
+                }
+            } catch (error) {
+                console.error('Hold registration error:', error);
+                if (error.message.includes('Unexpected token')) {
+                    alert('Your session may have expired. Please refresh the page and try again.');
+                } else {
+                    alert('Error: ' + error.message);
+                }
+            }
+        }
+        
+        function updateCharCount() {
+            const textarea = document.getElementById('customMessage');
+            const charCount = document.getElementById('charCount');
+            charCount.textContent = textarea.value.length;
+            
+            // Update color based on character count
+            if (textarea.value.length > 450) {
+                charCount.style.color = '#EF5350';
+            } else if (textarea.value.length > 400) {
+                charCount.style.color = '#F59E0B';
+            } else {
+                charCount.style.color = '#4B5563';
+            }
+        }
+        
+        function updateMessagePreview() {
+            const customMessage = document.getElementById('customMessage').value;
+            const preview = document.getElementById('messagePreview');
+            
+            if (customMessage.trim()) {
+                preview.textContent = customMessage;
+                preview.style.fontStyle = 'normal';
+            } else {
+                preview.textContent = '[Your custom message will appear here]';
+                preview.style.fontStyle = 'italic';
+            }
+        }
+        
+        // Audit Log Functions
+        async function loadAuditLogs() {
+            const registrationId = {{ registration.id }};
+            const container = document.getElementById('auditLogContainer');
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/audit-logs`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayAuditLogs(data.audit_logs);
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                            <p class="text-muted mb-0">Failed to load activity log</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted mb-0">Error loading activity log</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayAuditLogs(logs) {
+            const container = document.getElementById('auditLogContainer');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No activity recorded yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="audit-logs">';
+            
+            logs.forEach(log => {
+                const actionIcon = getActionIcon(log.action);
+                const actionColor = getActionColor(log.action);
+                const actionLabel = getActionLabel(log.action);
+                
+                html += `
+                    <div class="audit-log-entry" style="border-left: 3px solid ${actionColor}; padding: 12px; margin-bottom: 12px; background: #f8f9fa; border-radius: 0 6px 6px 0;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="${actionIcon} me-2" style="color: ${actionColor}; font-size: 14px;"></i>
+                                    <strong style="color: #374151; font-size: 14px;">${actionLabel}</strong>
+                                </div>
+                                ${log.details ? `<div style="color: #6B7280; font-size: 13px; margin-bottom: 8px;">${log.details}</div>` : ''}
+                                ${log.old_value && log.new_value ? `
+                                    <div style="font-size: 12px; color: #6B7280;">
+                                        <span style="background: #FEE2E2; color: #DC2626; padding: 2px 6px; border-radius: 3px; margin-right: 8px;">${log.old_value}</span>
+                                        <i class="fas fa-arrow-right mx-2" style="color: #9CA3AF;"></i>
+                                        <span style="background: #D1FAE5; color: #059669; padding: 2px 6px; border-radius: 3px;">${log.new_value}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="text-end" style="min-width: 120px;">
+                                <div style="color: #9CA3AF; font-size: 11px;">${log.timestamp}</div>
+                                ${log.admin_user ? `<div style="color: #6B7280; font-size: 12px; font-weight: 500;">${log.admin_user}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function getActionIcon(action) {
+            switch (action) {
+                case 'STATUS_CHANGE':
+                    return 'fas fa-exchange-alt';
+                case 'CUSTOM_MESSAGE':
+                    return 'fas fa-comment-dots';
+                case 'REGISTRATION_CREATED':
+                    return 'fas fa-plus-circle';
+                default:
+                    return 'fas fa-info-circle';
+            }
+        }
+        
+        function getActionColor(action) {
+            switch (action) {
+                case 'STATUS_CHANGE':
+                    return '#3B82F6';
+                case 'CUSTOM_MESSAGE':
+                    return '#F59E0B';
+                case 'REGISTRATION_CREATED':
+                    return '#22C55E';
+                default:
+                    return '#6B7280';
+            }
+        }
+        
+        function getActionLabel(action) {
+            switch (action) {
+                case 'STATUS_CHANGE':
+                    return 'Status Changed';
+                case 'CUSTOM_MESSAGE':
+                    return 'Custom Message Updated';
+                case 'REGISTRATION_CREATED':
+                    return 'Registration Created';
+                default:
+                    return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            }
+        }
+        
+        async function sendResubmissionLink(registrationId) {
+            if (!confirm('Send a resubmission link to this user? They will be able to update their registration data.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/send-resubmission-link`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('✅ Resubmission link sent successfully!\n\nThe user will receive a message with a link to update their registration.');
+                    // Reload audit logs to show the new action
+                    loadAuditLogs();
+                } else {
+                    alert('❌ Error: ' + result.detail);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function saveAdminNotes(registrationId, buttonElement) {
+            const notesTextarea = document.getElementById('adminNotes');
+            const notes = notesTextarea.value.trim();
+            
+            // Validate notes length
+            if (notes.length > 1000) {
+                alert('Admin notes must not exceed 1000 characters.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}/notes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success message
+                    const originalText = buttonElement.innerHTML;
+                    buttonElement.innerHTML = '<i class="fas fa-check me-1"></i>Saved!';
+                    buttonElement.style.background = '#22C55E';
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        buttonElement.innerHTML = originalText;
+                        buttonElement.style.background = '#059669';
+                    }, 2000);
+                    
+                    // Reload audit logs to show the notes update
+                    loadAuditLogs();
+                    
+                    // Update the "last updated" info if present
+                    const updatedInfo = result.notes_updated_at;
+                    const updatedBy = result.notes_updated_by;
+                    if (updatedInfo) {
+                        // Find or create the "last updated" section
+                        const notesSection = document.querySelector('.admin-notes-section');
+                        let lastUpdatedDiv = notesSection.querySelector('.notes-last-updated');
+                        
+                        if (!lastUpdatedDiv) {
+                            lastUpdatedDiv = document.createElement('div');
+                            lastUpdatedDiv.className = 'mt-2 notes-last-updated';
+                            notesSection.appendChild(lastUpdatedDiv);
+                        }
+                        
+                        lastUpdatedDiv.innerHTML = `
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Last updated: ${new Date(updatedInfo).toLocaleString()} ${updatedBy ? 'by ' + updatedBy : ''}
+                            </small>
+                        `;
+                    }
+                    
+                } else {
+                    alert('❌ Error: ' + result.detail);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function updateNotesCharCount() {
+            const notesTextarea = document.getElementById('adminNotes');
+            const countSpan = document.getElementById('notesCount');
+            const count = notesTextarea.value.length;
+            
+            countSpan.textContent = count;
+            
+            // Change color based on character count
+            const charCountElement = document.getElementById('notesCharCount');
+            if (count > 900) {
+                charCountElement.style.color = '#EF5350';
+            } else if (count > 750) {
+                charCountElement.style.color = '#F59E0B';
+            } else {
+                charCountElement.style.color = '#6B7280';
+            }
+        }
+        
+        // Event listeners for real-time updates
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('customMessage');
+            textarea.addEventListener('input', function() {
+                updateCharCount();
+                updateMessagePreview();
+            });
+            
+            // Add event listener for admin notes character count
+            const notesTextarea = document.getElementById('adminNotes');
+            if (notesTextarea) {
+                notesTextarea.addEventListener('input', updateNotesCharCount);
+            }
+            
+            // Load audit logs when page loads
+            loadAuditLogs();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrations - EzyAssist Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #F3F4F6;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #E5E7EB;
+            background: #F9FAFB;
+        }
+        .sidebar-brand {
+            color: #111827;
+            font-weight: 600;
+            font-size: 20px;
+            text-decoration: none;
+        }
+        .sidebar-brand:hover {
+            color: #2563EB;
+            text-decoration: none;
+        }
+        .sidebar-nav {
+            padding: 16px 0;
+        }
+        .nav-item {
+            margin: 4px 12px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #4B5563;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .nav-link:hover {
+            background: #EBF4FF;
+            color: #2563EB;
+            text-decoration: none;
+        }
+        .nav-link.active {
+            background: #2563EB;
+            color: #FFFFFF;
+        }
+        .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+            text-align: center;
+        }
+        .nav-submenu {
+            margin-left: 12px;
+            border-left: 2px solid #E5E7EB;
+            padding-left: 0;
+        }
+        .nav-submenu .nav-item {
+            margin: 2px 0;
+        }
+        .nav-submenu .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #6B7280;
+            margin-left: 8px;
+            border-radius: 4px;
+        }
+        .nav-submenu .nav-link:hover {
+            background: #F3F4F6;
+            color: #374151;
+        }
+        .nav-submenu .nav-link.active {
+            background: #EBF4FF;
+            color: #2563EB;
+            border-left: 3px solid #2563EB;
+        }
+        .nav-submenu .nav-link i {
+            width: 16px;
+            margin-right: 8px;
+            font-size: 12px;
+        }
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+        .topbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2563EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .table-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+        }
+        .card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+        }
+        .card-header {
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 600;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .btn-view {
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background: #2563EB;
+            border-color: #2563EB;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #1D4ED8;
+            border-color: #1D4ED8;
+        }
+        .btn-outline-secondary {
+            color: #4B5563;
+            border-color: #D1D5DB;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-outline-secondary:hover {
+            background: #F3F4F6;
+            border-color: #9CA3AF;
+            color: #374151;
+        }
+        .form-control, .form-select {
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+        .table {
+            color: #374151;
+            font-size: 14px;
+        }
+        .table thead th {
+            background: #F9FAFB;
+            color: #374151;
+            font-weight: 600;
+            border-color: #E5E7EB;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        .table tbody tr:hover {
+            background: #F3F4F6;
+        }
+        .table td, .table th {
+            border-color: #E5E7EB;
+            padding: 12px;
+        }
+        .badge {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 8px;
+        }
+        .badge.bg-warning {
+            background: #F59E0B !important;
+            color: #FFFFFF;
+        }
+        .badge.bg-success {
+            background: #22C55E !important;
+        }
+        .badge.bg-danger {
+            background: #EF5350 !important;
+        }
+        .badge.bg-info {
+            background: #3B82F6 !important;
+        }
+        .badge.bg-secondary {
+            background: #6B7280 !important;
+        }
+        .pagination {
+            justify-content: center;
+        }
+        .page-link {
+            color: #4B5563;
+            border-color: #D1D5DB;
+            border-radius: 6px;
+            margin: 0 2px;
+        }
+        .page-link:hover {
+            color: #2563EB;
+            background: #F3F4F6;
+            border-color: #D1D5DB;
+        }
+        .page-item.active .page-link {
+            background: #2563EB;
+            border-color: #2563EB;
+        }
+        h2, h3, h4, h5 {
+            color: #111827;
+            font-weight: 600;
+        }
+        .input-group-text {
+            background: #F9FAFB;
+            border-color: #D1D5DB;
+            color: #4B5563;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/" class="sidebar-brand">
+                <i class="fas fa-shield-alt me-2"></i>
+                EzyAssist Admin
+            </a>
+            <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
+                Version 2.1
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin/" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/registrations" class="nav-link active">
+                    <i class="fas fa-users"></i>
+                    Registrations
+                </a>
+                <div class="nav-submenu">
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            Pending Review
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=on_hold" class="nav-link">
+                            <i class="fas fa-pause"></i>
+                            On Hold
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=verified" class="nav-link">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/bot-activity" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    Bot Activity
+                </a>
+            </div>
+        </nav>
+        <!-- Settings and Admin Users at bottom -->
+        <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/admin-users" class="nav-link">
+                    <i class="fas fa-user-shield"></i>
+                    Admin Users
+                </a>
+            </div>
+        </div>
+        <!-- Logout button at bottom -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div>
+                <h4 class="mb-0" style="color: #111827; font-weight: 600;">
+                    <i class="fas fa-users me-2"></i>
+                    VIP Registrations
+                    <span class="badge bg-primary ms-2" style="background: #2563EB; font-size: 12px;">{{ total_count }}</span>
+                </h4>
+            </div>
+            <div class="user-menu">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span style="color: #4B5563; font-weight: 500;">Admin</span>
+            </div>
+        </div>
+
+        <!-- Registrations Content -->
+        <div class="container-fluid p-4">
+
+            <!-- Export Message Alert -->
+            {% if request.query_params.get('message') == 'use_export_button' %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Export Tip:</strong> To export registrations, please use the "Export" button below to set your filters and date range.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <!-- Search and Export Form -->
+            <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="get" action="/admin/registrations" class="row g-3">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" name="search" 
+                                           value="{{ search }}" placeholder="Search by name, email, broker...">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="status">
+                                    <option value="">All Status</option>
+                                    <option value="pending" {{ 'selected' if status == 'pending' else '' }}>Pending</option>
+                                    <option value="on_hold" {{ 'selected' if status == 'on_hold' else '' }}>On Hold</option>
+                                    <option value="verified" {{ 'selected' if status == 'verified' else '' }}>Verified</option>
+                                    <option value="rejected" {{ 'selected' if status == 'rejected' else '' }}>Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-1"></i>
+                                        Filter
+                                    </button>
+                                    <a href="/admin/registrations" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>
+                                        Clear
+                                    </a>
+                                    <button type="button" class="btn btn-success" onclick="showExportModal()">
+                                        <i class="fas fa-download me-1"></i>
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Export Modal -->
+            <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exportModalLabel">
+                                <i class="fas fa-download me-2"></i>
+                                Export Registrations
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="exportForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="startDate" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="startDate" name="start_date">
+                                        <small class="text-muted">Leave empty for no start limit</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="endDate" class="form-label">End Date</label>
+                                        <input type="date" class="form-control" id="endDate" name="end_date">
+                                        <small class="text-muted">Leave empty for no end limit</small>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="exportStatus" class="form-label">Status Filter</label>
+                                        <select class="form-select" id="exportStatus" name="status">
+                                            <option value="">All Status</option>
+                                            <option value="pending">Pending Only</option>
+                                            <option value="on_hold">On Hold Only</option>
+                                            <option value="verified">Verified Only</option>
+                                            <option value="rejected">Rejected Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="exportFormat" class="form-label">Export Format</label>
+                                        <select class="form-select" id="exportFormat" name="format">
+                                            <option value="csv">CSV (Excel Compatible)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 p-3 bg-light rounded">
+                                    <h6 class="mb-2"><i class="fas fa-info-circle me-1"></i> Export Information</h6>
+                                    <ul class="mb-0 small">
+                                        <li>Exports include all registration data and metadata</li>
+                                        <li>Files will be named with selected filters and timestamp</li>
+                                        <li>Large exports may take a few moments to download</li>
+                                        <li>All exports are logged for security purposes</li>
+                                    </ul>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="performExport()">
+                                <i class="fas fa-download me-1"></i>
+                                Download Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registrations Table -->
+            <div class="row">
+            <div class="col-12">
+                <div class="card table-card">
+                    <div class="card-body p-0">
+                        {% if registrations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Full Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Broker</th>
+                                        <th>Setup</th>
+                                        <th>Deposit</th>
+                                        <th>Files</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in registrations %}
+                                    <tr>
+                                        <td><strong>#{{ reg.id }}</strong></td>
+                                        <td>
+                                            {{ reg.full_name }}
+                                            {% if reg.admin_notes %}
+                                                <i class="fas fa-sticky-note text-success ms-1" 
+                                                   title="Has admin notes" 
+                                                   data-bs-toggle="tooltip" 
+                                                   style="font-size: 12px;"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ reg.email }}</td>
+                                        <td>{{ reg.phone_number }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ reg.brokerage_name }}</span>
+                                        </td>
+                                        <td>
+                                            {% if reg.account_setup_action %}
+                                                {% if reg.account_setup_action.value == 'new_account' %}
+                                                    <span class="badge bg-primary" title="New Account Created" data-bs-toggle="tooltip">
+                                                        <i class="fas fa-user-plus me-1"></i>New
+                                                    </span>
+                                                {% elif reg.account_setup_action.value == 'partner_change' %}
+                                                    <span class="badge bg-warning" title="Partner Change" data-bs-toggle="tooltip">
+                                                        <i class="fas fa-exchange-alt me-1"></i>Change
+                                                    </span>
+                                                {% endif %}
+                                                <br>
+                                                <small class="text-muted">Step {{ reg.step_completed or 0 }}/2</small>
+                                            {% else %}
+                                                <span class="badge bg-secondary" title="No account setup tracked" data-bs-toggle="tooltip">
+                                                    <i class="fas fa-question me-1"></i>Unknown
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ reg.deposit_amount }}</td>
+                                        <td>
+                                            {% set file_count = [reg.deposit_proof_1_path, reg.deposit_proof_2_path, reg.deposit_proof_3_path] | select | list | length %}
+                                            {% if file_count > 0 %}
+                                                <span class="badge bg-success">{{ file_count }} files</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No files</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if reg.status.value == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif reg.status.value == 'on_hold' %}
+                                                <span class="badge" style="background-color: #F59E0B; color: white;">On Hold</span>
+                                            {% elif reg.status.value == 'verified' %}
+                                                <span class="badge bg-success">Verified</span>
+                                            {% elif reg.status.value == 'rejected' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ reg.status.value | title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ reg.created_at.strftime('%Y-%m-%d %H:%M') if reg.created_at else 'N/A' }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="/admin/registrations/{{ reg.id }}" class="btn btn-primary btn-sm btn-view">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if total_pages > 1 %}
+                        <div class="card-footer">
+                            <nav aria-label="Registrations pagination">
+                                <ul class="pagination mb-0">
+                                    {% if current_page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ current_page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in range(1, total_pages + 1) %}
+                                        {% if page_num == current_page %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_num }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if current_page < total_pages %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ current_page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                        
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No registrations found</h5>
+                            {% if search %}
+                            <p class="text-muted">Try adjusting your search criteria</p>
+                            <a href="/admin/registrations" class="btn btn-primary">
+                                <i class="fas fa-list me-1"></i>
+                                Show All Registrations
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showExportModal() {
+            // Set default dates (last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            
+            // Show modal
+            const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+            exportModal.show();
+        }
+
+        async function performExport() {
+            const form = document.getElementById('exportForm');
+            const formData = new FormData(form);
+            
+            // Build URL with parameters
+            const params = new URLSearchParams();
+            for (const [key, value] of formData) {
+                if (value) {
+                    params.append(key, value);
+                }
+            }
+            
+            const exportUrl = `/admin/registrations/export?${params.toString()}`;
+            
+            try {
+                // Show loading state
+                const exportBtn = document.querySelector('[onclick="performExport()"]');
+                const originalText = exportBtn.innerHTML;
+                exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating Export...';
+                exportBtn.disabled = true;
+                
+                // Perform export
+                const response = await fetch(exportUrl);
+                
+                if (response.ok) {
+                    // Get filename from response headers
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = 'registrations_export.csv';
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename=(.+)/);
+                        if (match) {
+                            filename = match[1];
+                        }
+                    }
+                    
+                    // Download the file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    // Close modal
+                    const exportModal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+                    exportModal.hide();
+                    
+                    // Show success message
+                    alert('✅ Export completed successfully!');
+                } else {
+                    const error = await response.text();
+                    alert('❌ Export failed: ' + error);
+                }
+                
+                // Reset button state
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+                
+            } catch (error) {
+                alert('❌ Export error: ' + error.message);
+                
+                // Reset button state
+                const exportBtn = document.querySelector('[onclick="performExport()"]');
+                exportBtn.innerHTML = '<i class="fas fa-download me-1"></i>Download Export';
+                exportBtn.disabled = false;
+            }
+        }
+        
+        // Validate date range
+        document.getElementById('startDate').addEventListener('change', function() {
+            const startDate = this.value;
+            const endDateInput = document.getElementById('endDate');
+            if (startDate && endDateInput.value && startDate > endDateInput.value) {
+                alert('Start date cannot be after end date');
+                this.value = '';
+            }
+        });
+        
+        document.getElementById('endDate').addEventListener('change', function() {
+            const endDate = this.value;
+            const startDateInput = document.getElementById('startDate');
+            if (endDate && startDateInput.value && endDate < startDateInput.value) {
+                alert('End date cannot be before start date');
+                this.value = '';
+            }
+        });
+        
+        // Initialize Bootstrap tooltips for notes indicators
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

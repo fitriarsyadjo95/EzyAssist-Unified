@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <!-- Header -->
+        <div class="card shadow-lg border-0 registration-card">
+            <div class="card-header">
+                <h1 class="mb-0">{{ translations.title }}</h1>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <!-- Step Progress Indicator -->
+                <div class="step-progress">
+                    <div class="progress-text active" id="progressText">Langkah 1 daripada 3: Maklumat Diri</div>
+                    
+                    <!-- Step Indicators -->
+                    <div class="step-indicators mb-3">
+                        <div class="step-indicator active" data-step="1">
+                            <div class="step-circle">1</div>
+                            <div class="step-label">Maklumat Diri</div>
+                        </div>
+                        <div class="step-indicator" data-step="2">
+                            <div class="step-circle">2</div>
+                            <div class="step-label">Brokerage Info</div>
+                        </div>
+                        <div class="step-indicator" data-step="3">
+                            <div class="step-circle">3</div>
+                            <div class="step-label">Bukti Deposit</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Animated Progress Bar -->
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                </div>
+
+                <form id="registrationForm" method="POST" action="/submit" enctype="multipart/form-data" novalidate>
+                    <!-- Hidden Fields -->
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
+                    <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
+                    <input type="hidden" name="language" value="ms">
+                    <input type="hidden" name="form_hash" value="{{ form_hash }}">
+                    
+                    <!-- Required Fields Note -->
+                    <div class="required-note">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Ruang yang ada tanda <span class="text-danger">*</span> adalah wajib diisi
+                    </div>
+
+                    <!-- Step 1: Personal Information -->
+                    <div class="form-step" id="step-1" data-step="1">
+                        <!-- Full Name -->
+                        <div class="mb-4">
+                            <label for="full_name" class="form-label">
+                                {{ translations.full_name }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user fa-sm"></i></span>
+                                <input type="text" class="form-control form-control-lg" id="full_name" name="full_name" 
+                                       placeholder="{{ translations.full_name_placeholder }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-4">
+                            <label for="email" class="form-label">
+                                {{ translations.email }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope fa-sm"></i></span>
+                                <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                       placeholder="{{ translations.email_placeholder }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="mb-4">
+                            <label for="phone_number" class="form-label">
+                                {{ translations.phone }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone fa-sm"></i></span>
+                                <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
+                                       placeholder="{{ translations.phone_placeholder }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Brokerage Information -->
+                    <div class="form-step" id="step-2" data-step="2" style="display: none;">
+                        <h5 class="mb-4 text-primary">Langkah 2: Info Brokerage & Deposit</h5>
+                        
+                        <!-- Brokerage Name -->
+                        <div class="mb-4">
+                            <label for="brokerage_name" class="form-label">
+                                {{ translations.brokerage_name }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-building fa-sm"></i></span>
+                                <select class="form-select form-control-lg" id="brokerage_name" name="brokerage_name" required>
+                                    <option value="">Pilih broker awak...</option>
+                                    <option value="OctaFX">OctaFX</option>
+                                    <option value="Valetax™">Valetax™</option>
+                                    <option value="HFM">HFM</option>
+                                    <option value="DollarsMarkets">DollarsMarkets</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Deposit Amount -->
+                        <div class="mb-4">
+                            <label for="deposit_amount" class="form-label">
+                                {{ translations.deposit_amount }} (Amaun dalam $) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-money-bill-wave fa-sm"></i></span>
+                                <input type="text" class="form-control form-control-lg" id="deposit_amount" name="deposit_amount" 
+                                       placeholder="{{ translations.deposit_amount_placeholder }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Client ID -->
+                        <div class="mb-4">
+                            <label for="client_id" class="form-label">
+                                {{ translations.client_id }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-id-card fa-sm"></i></span>
+                                <input type="text" class="form-control form-control-lg" id="client_id" name="client_id" 
+                                       placeholder="{{ translations.client_id_placeholder }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Deposit Proof -->
+                    <div class="form-step" id="step-3" data-step="3" style="display: none;">
+                        <h5 class="mb-4 text-primary">Langkah 3: Upload Bukti Deposit</h5>
+                        
+                        <!-- Deposit Proof Files -->
+                        <div class="mb-4">
+                            <label for="deposit_proof" class="form-label">
+                                {{ translations.deposit_proof }} <small class="text-muted">(opsional)</small>
+                            </label>
+                            <small class="d-block text-muted mb-3">{{ translations.deposit_proof_help }}</small>
+                            
+                            <div class="mb-3">
+                                <label for="deposit_proof_1" class="form-label text-muted">File 1</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    <input type="file" class="form-control" id="deposit_proof_1" name="deposit_proof_1" 
+                                           accept="image/*,.pdf" aria-label="File 1">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="deposit_proof_2" class="form-label text-muted">File 2</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    <input type="file" class="form-control" id="deposit_proof_2" name="deposit_proof_2" 
+                                           accept="image/*,.pdf" aria-label="File 2">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="deposit_proof_3" class="form-label text-muted">File 3</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    <input type="file" class="form-control" id="deposit_proof_3" name="deposit_proof_3" 
+                                           accept="image/*,.pdf" aria-label="File 3">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Navigation -->
+                    <div class="step-navigation mt-4">
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" id="prevBtn" style="display: none;">
+                                <i class="fas fa-arrow-left me-2"></i>Kembali
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg px-4" id="nextBtn">
+                                Seterusnya<i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold submit-btn" id="submitBtn" style="display: none;">
+                                {{ translations.submit }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="text-center mt-3 d-none" id="loadingState">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">{{ translations.loading }}</span>
+                        </div>
+                        <p class="mt-2 text-muted">{{ translations.loading }}</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Form JavaScript (only loaded on registration form page) -->
+<script src="/static/js/form.js"></script>
+{% endblock %}

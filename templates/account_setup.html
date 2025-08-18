@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-lg border-0 registration-card">
+            <!-- Step Progress -->
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">Set up OctaFX Account</h1>
+                <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">Step 1 of 2</span>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-chart-line text-primary mb-3" style="font-size: 3rem;"></i>
+                    <h3 class="text-primary mb-3">Sediakan Akaun OctaFX Anda</h3>
+                    <p class="lead text-muted">
+                        Sebelum mendaftar untuk VIP access, anda perlu mempunyai akaun OctaFX yang aktif. 
+                        Pilih pilihan yang sesuai untuk anda:
+                    </p>
+                </div>
+
+                <!-- Account Options -->
+                <div class="row g-4 mb-5">
+                    <!-- New Account Option -->
+                    <div class="col-md-6">
+                        <div class="card h-100 border-2 border-primary shadow-sm account-option-card">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-user-plus text-primary" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h5 class="card-title text-primary mb-3">Pengguna Baru</h5>
+                                <p class="card-text text-muted mb-4">
+                                    Belum ada akaun OctaFX? Cipta akaun baru sekarang dengan partnership kami.
+                                </p>
+                                <a href="https://my.octabroker.com/open-account/?refid=ib7679642" 
+                                   target="_blank" 
+                                   class="btn btn-primary btn-lg w-100 mb-3">
+                                    <i class="fas fa-external-link-alt me-2"></i>
+                                    Cipta Akaun Baru
+                                </a>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Akan membuka dalam tab baru
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Existing Account Option -->
+                    <div class="col-md-6">
+                        <div class="card h-100 border-2 border-info shadow-sm account-option-card">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-user-cog text-info" style="font-size: 2.5rem;"></i>
+                                </div>
+                                <h5 class="card-title text-info mb-3">Pengguna Sedia Ada</h5>
+                                <p class="card-text text-muted mb-4">
+                                    Sudah ada akaun OctaFX? Tukar partner request untuk join partnership kami.
+                                </p>
+                                <a href="https://my.octafx.com/change-partner-request/?partner=7679642" 
+                                   target="_blank" 
+                                   class="btn btn-info btn-lg w-100 mb-3">
+                                    <i class="fas fa-exchange-alt me-2"></i>
+                                    Tukar Partner
+                                </a>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Akan membuka dalam tab baru
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Arahan
+                    </h6>
+                    <ol class="mb-0">
+                        <li>Klik butang yang sesuai di atas untuk pergi ke OctaFX</li>
+                        <li>Lengkapkan proses setup/tukar partner di laman web OctaFX</li>
+                        <li>Setelah selesai, kembali ke halaman ini</li>
+                        <li>Klik "Selesai, Teruskan" untuk ke langkah seterusnya</li>
+                    </ol>
+                </div>
+
+                <!-- Continue Button -->
+                <form method="POST" action="/account-setup/continue" id="continueForm">
+                    <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="setup_action" id="setupAction" value="">
+                    
+                    <div class="alert alert-warning" id="actionAlert" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Sila pilih tindakan yang anda telah lakukan di atas sebelum meneruskan.
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="button" onclick="showActionSelection()" class="btn btn-success btn-lg py-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Selesai, Teruskan ke Langkah 2
+                        </button>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Pastikan anda telah setup akaun OctaFX sebelum meneruskan
+                        </small>
+                    </div>
+                </form>
+
+                <!-- Help Section -->
+                <div class="mt-5 pt-4 border-top">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Mengapa OctaFX?
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-shield-alt text-success me-2"></i>
+                                <small class="text-muted">Regulated & Trusted</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-dollar-sign text-success me-2"></i>
+                                <small class="text-muted">Low Spreads</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-headset text-success me-2"></i>
+                                <small class="text-muted">24/7 Support</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Selection Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="actionModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Konfirmasi Tindakan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Tindakan manakah yang anda telah lakukan?</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="selectAction('new_account')">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Saya telah cipta akaun baru OctaFX
+                    </button>
+                    <button type="button" class="btn btn-info btn-lg" onclick="selectAction('partner_change')">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        Saya telah tukar partner OctaFX
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function showActionSelection() {
+    const modal = new bootstrap.Modal(document.getElementById('actionModal'));
+    modal.show();
+}
+
+function selectAction(action) {
+    document.getElementById('setupAction').value = action;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('actionModal'));
+    modal.hide();
+    
+    // Submit the form
+    document.getElementById('continueForm').submit();
+}
+</script>
+
+<style>
+.account-option-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}

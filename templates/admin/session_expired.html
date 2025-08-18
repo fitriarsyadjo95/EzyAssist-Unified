@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Expired - EzyAssist Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #F3F4F6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+        .session-expired-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #E5E7EB;
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+        }
+        .card-header {
+            background: #FEF2F2;
+            color: #991B1B;
+            padding: 24px;
+            border-bottom: 1px solid #FECACA;
+            text-align: center;
+        }
+        .card-header h3 {
+            font-weight: 600;
+            font-size: 24px;
+            color: #991B1B;
+            margin: 0;
+        }
+        .card-header p {
+            color: #7F1D1D;
+            font-size: 14px;
+            margin: 8px 0 0 0;
+        }
+        .card-body {
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .session-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #FEE2E2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: #DC2626;
+            font-size: 32px;
+        }
+        .btn-login {
+            background: #2563EB;
+            border: none;
+            color: white;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 12px 32px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-login:hover {
+            background: #1D4ED8;
+            color: white;
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+        .btn-secondary {
+            background: #6B7280;
+            border: none;
+            color: white;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 12px 32px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 12px;
+        }
+        .btn-secondary:hover {
+            background: #4B5563;
+            color: white;
+            text-decoration: none;
+        }
+        .info-text {
+            color: #4B5563;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .security-note {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 24px;
+            text-align: left;
+        }
+        .security-note h6 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .security-note p {
+            color: #6B7280;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.5;
+        }
+        .countdown {
+            color: #2563EB;
+            font-weight: 600;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card session-expired-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-clock me-2"></i>
+                            Session Expired
+                        </h3>
+                        <p>Your admin session has expired for security reasons</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="session-icon">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        
+                        <div class="info-text">
+                            <strong>Your admin session has expired.</strong><br>
+                            For security reasons, admin sessions automatically expire after 1 hour of inactivity.
+                            Please log in again to continue managing the EzyAssist system.
+                        </div>
+                        
+                        <div class="d-flex justify-content-center">
+                            <a href="/admin/login" class="btn btn-login">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Login Again
+                            </a>
+                            <a href="/" class="btn btn-secondary">
+                                <i class="fas fa-home me-2"></i>
+                                Go Home
+                            </a>
+                        </div>
+                        
+                        <div class="security-note">
+                            <h6><i class="fas fa-shield-alt me-1"></i> Security Information</h6>
+                            <p>
+                                <strong>Why did this happen?</strong><br>
+                                • Admin sessions expire after 1 hour for security<br>
+                                • Sessions also expire when cookies are cleared<br>
+                                • This protects your admin account from unauthorized access
+                            </p>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Redirecting to login in <span id="countdown" class="countdown">10</span> seconds...
+                                <button onclick="skipCountdown()" class="btn btn-link btn-sm p-0 ms-2" style="font-size: 12px;">
+                                    Skip wait
+                                </button>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto redirect countdown
+        let countdown = 10;
+        const countdownElement = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            countdown--;
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(timer);
+                window.location.href = '/admin/login';
+            }
+        }, 1000);
+        
+        // Function to skip countdown
+        function skipCountdown() {
+            clearInterval(timer);
+            window.location.href = '/admin/login';
+        }
+        
+        // Clear any existing admin session cookie
+        document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    </script>
+</body>
+</html>
