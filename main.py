@@ -28,7 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # Telegram bot components
-from telegram import Update
+from telegram import Update, constants
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
@@ -795,7 +795,7 @@ def initialize_default_admin():
             db.close()
 
 # Telegram Bot Class
-class EzyAssistBot:
+class RentungBot_Ai:
     def __init__(self):
         self.token = os.getenv('TELEGRAM_BOT_TOKEN')
         self.admin_id = os.getenv('ADMIN_ID')
@@ -839,10 +839,13 @@ class EzyAssistBot:
         self.reset_daily_tracking()
         
         welcome_message = (
-            f"Selamat datang ke EzyAssist, {user.first_name}! 🌟\n\n"
-            "Saya di sini untuk membantu anda dengan pendidikan forex dan menjawab soalan anda. "
-            "Jangan ragu untuk bertanya apa-apa tentang perdagangan forex!\n\n"
-            "Untuk pendaftaran VIP, tanya sahaja tentang 'VIP' atau 'register'."
+            f"Selamat datang ke RentungBot_Ai, {user.first_name}! 🤖✨\n\n"
+            "Saya adalah bot pintar yang membantu dengan:\n"
+            "🎯 Pendaftaran VIP dan kempen promosi\n"
+            "📊 Maklumat lengkap tentang broker Valetax\n"
+            "💡 Soalan perdagangan forex asas\n\n"
+            "Untuk pendaftaran VIP: tanya 'VIP' atau 'register'\n"
+            "Untuk berbual dengan agent sebenar: /agent"
         )
         
         await update.message.reply_text(welcome_message)
@@ -894,6 +897,39 @@ class EzyAssistBot:
             
             # Log error command to database
             self.log_conversation(telegram_id, "/register", error_message, "command")
+
+    async def agent_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /agent command - redirect to live agent"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        
+        # Track activity
+        self.command_usage['agent'] = self.command_usage.get('agent', 0) + 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
+        
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'agent')
+        self.reset_daily_tracking()
+        
+        # Get live agent username from admin settings or use default
+        live_agent_username = get_admin_setting('live_agent_telegram', '@fjo95')
+        
+        agent_message = (
+            f"🧑‍💼 Anda akan disambungkan dengan agent sebenar!\n\n"
+            f"Sila hubungi agent kami di: {live_agent_username}\n\n"
+            f"Agent kami akan membantu dengan:\n"
+            f"✅ Soalan teknikal perdagangan lanjutan\n"
+            f"✅ Strategi pelaburan khusus\n"
+            f"✅ Analisis pasaran mendalam\n"
+            f"✅ Setup akaun Valetax\n\n"
+            f"Terima kasih kerana menggunakan RentungBot_Ai! 🤖"
+        )
+        
+        await update.message.reply_text(agent_message)
+        
+        # Log command to database
+        self.log_conversation(telegram_id, "/agent", agent_message, "command")
 
     async def clear_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /clear command"""
@@ -979,6 +1015,9 @@ class EzyAssistBot:
 
         # Update last seen (removed Supabase dependency)
 
+        # Show typing indicator
+        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
+        
         # Process message through conversation engine
         try:
             response = await self.conversation_engine.process_message(
@@ -1178,6 +1217,7 @@ class EzyAssistBot:
         # Add handlers
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("register", self.register_command))
+        self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
         self.application.add_error_handler(self.error_handler)
@@ -1186,7 +1226,7 @@ class EzyAssistBot:
         return self.application
 
 # Initialize bot instance
-bot_instance = EzyAssistBot()
+bot_instance = RentungBot_Ai()
 
 # FastAPI Routes
 @app.get("/", response_class=HTMLResponse)
@@ -2460,6 +2500,20 @@ async def admin_settings_page(request: Request, admin = Depends(get_current_admi
                 all_settings = db.query(AdminSettings).all()
                 for setting in all_settings:
                     settings[setting.setting_key] = setting.setting_value
+                
+                # Set default values for settings that don't exist
+                default_settings = {
+                    'live_agent_telegram': '@fjo95',
+                    'vip_group_link': 'https://t.me/+VIPGroupDefault',
+                    'admin_notification_enabled': 'false',
+                    'notification_recipient': '@admin',
+                    'auto_approval_enabled': 'false'
+                }
+                
+                for key, default_value in default_settings.items():
+                    if key not in settings:
+                        settings[key] = default_value
+                
                 db.close()
         except Exception as e:
             logger.error(f"Error getting settings: {e}")
@@ -2488,7 +2542,8 @@ async def save_admin_settings(
             'vip_group_link': 'VIP Telegram group link for verified users',
             'admin_notification_enabled': 'Enable admin notifications for new registrations',
             'notification_recipient': 'Telegram username or chat ID to receive notifications',
-            'auto_approval_enabled': 'Enable automatic approval of registrations'
+            'auto_approval_enabled': 'Enable automatic approval of registrations',
+            'live_agent_telegram': 'Telegram username for live agent redirection (e.g., @fjo95)'
         }
         
         success_count = 0

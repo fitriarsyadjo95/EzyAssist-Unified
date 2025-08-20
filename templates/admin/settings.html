@@ -367,6 +367,26 @@
                                     </div>
                                 </div>
 
+                                <!-- Live Agent Setting -->
+                                <div class="setting-group">
+                                    <div class="setting-label">Live Agent Telegram</div>
+                                    <div class="setting-description">
+                                        Telegram username for live agent redirection when users need advanced help
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fab fa-telegram-plane"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="live_agent_telegram" name="live_agent_telegram" 
+                                               placeholder="@fjo95" 
+                                               value="{{ settings.get('live_agent_telegram', '@fjo95') }}">
+                                    </div>
+                                    <div class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Users will be redirected to this agent for technical trading questions and the /agent command
+                                    </div>
+                                </div>
+
                                 <!-- Save Button -->
                                 <div class="setting-group">
                                     <button type="submit" class="btn btn-save">
@@ -402,10 +422,16 @@
                                     When enabled, notifications for new registration submissions will be sent to the configured recipient.
                                 </p>
                             </div>
-                            <div class="mb-0">
+                            <div class="mb-3">
                                 <strong>Auto Approval</strong>
                                 <p class="text-muted mb-0" style="font-size: 12px;">
                                     Dangerous: When enabled, all registrations will be automatically approved without review.
+                                </p>
+                            </div>
+                            <div class="mb-0">
+                                <strong>Live Agent</strong>
+                                <p class="text-muted mb-0" style="font-size: 12px;">
+                                    Set the Telegram username for live agent redirection. Users are automatically redirected for complex trading questions or when using /agent command.
                                 </p>
                             </div>
                         </div>

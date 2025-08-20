@@ -36,10 +36,10 @@ class ConversationEngine:
             print("WARNING: JWT_SECRET_KEY not found in environment variables")
         # Only keep broker keywords for broker inquiry detection
         self.broker_keywords = [
-            'octafx', 'octa', 'hfm', 'hotforex', 'valetax', 'dollars markets',
-            'broker', 'brokers', 'compare', 'comparison', 'review', 'regulation',
+            'valetax', 'valet tax', 'broker', 'brokers', 'trading platform', 
+            'account setup', 'registration', 'deposit', 'withdrawal',
             'spread', 'leverage', 'minimum deposit', 'platform', 'mt4', 'mt5',
-            'cysec', 'fca', 'fsc', 'regulated', 'withdrawal', 'deposit'
+            'fsc', 'regulated', 'trading conditions', 'account types'
         ]
         # FAQ responses removed - now handled by AI for natural conversation
 
@@ -48,6 +48,54 @@ class ConversationEngine:
     def detect_language(self, message: str) -> str:
         """Always return Bahasa Melayu - bot responds only in Malay"""
         return 'ms'
+
+    def needs_live_agent(self, message: str) -> bool:
+        """Detect if question requires live agent intervention"""
+        message_lower = message.lower()
+        
+        # Technical analysis keywords
+        technical_keywords = [
+            'fibonacci retracement', 'elliott wave', 'harmonic pattern', 'divergence analysis',
+            'ichimoku cloud', 'bollinger band', 'rsi divergence', 'macd histogram',
+            'pivot point calculation', 'stochastic oscillator', 'williams %r',
+            'market structure', 'price action', 'volume profile', 'order flow',
+            'scalping strategy', 'day trading', 'swing trading', 'position sizing',
+            'correlation analysis', 'carry trade', 'hedging strategy',
+            'news trading', 'economic calendar', 'fundamental analysis'
+        ]
+        
+        # Advanced trading concepts
+        advanced_keywords = [
+            'algorithmic trading', 'expert advisor', 'automated trading',
+            'backtesting', 'forward testing', 'optimization',
+            'risk management', 'portfolio management', 'money management',
+            'drawdown', 'sharpe ratio', 'risk-reward ratio',
+            'margin call', 'stop out', 'margin requirement',
+            'slippage', 'requote', 'spread widening'
+        ]
+        
+        # Live agent request keywords
+        agent_request_keywords = [
+            'live agent', 'human agent', 'real person', 'customer service',
+            'support team', 'help desk', 'representative', 'advisor',
+            'agent sebenar', 'manusia sebenar', 'customer support',
+            'nak cakap dengan orang', 'minta tolong staff', 'agent bantuan'
+        ]
+        
+        # Check for any technical keywords
+        all_keywords = technical_keywords + advanced_keywords + agent_request_keywords
+        
+        for keyword in all_keywords:
+            if keyword in message_lower:
+                return True
+                
+        # Check for complex question patterns (multiple questions, specific strategy requests)
+        if ('how to' in message_lower and ('strategy' in message_lower or 'trade' in message_lower)) or \
+           ('what is the best' in message_lower and 'trading' in message_lower) or \
+           len(message.split()) > 50:  # Very long questions
+            return True
+            
+        return False
 
     def is_forex_related(self, message: str) -> bool:
         """Check if message is forex/trading related"""
@@ -85,14 +133,10 @@ class ConversationEngine:
         mentioned = []
 
         broker_mappings = {
-            'octafx': 'octafx',
-            'octa': 'octafx',
-            'hfm': 'hfm',
-            'hotforex': 'hfm',
-            'hot forex': 'hfm',
             'valetax': 'valetax',
-            'dollars markets': 'dollars_markets',
-            'dollarsmarkets': 'dollars_markets'
+            'valet tax': 'valetax',
+            'broker': 'valetax',  # Default broker mentions to Valetax
+            'trading platform': 'valetax'
         }
 
         for keyword, broker_key in broker_mappings.items():
@@ -320,12 +364,34 @@ class ConversationEngine:
             # Smart context detection
             is_greeting = any(word in message.lower() for word in ['hello', 'hi', 'hai', 'good morning', 'assalamualaikum', 'selamat', 'start'])
             is_forex_related = self.is_forex_related(message)
+            needs_agent = self.needs_live_agent(message)
+            
+            # If user needs live agent, provide immediate redirection
+            if needs_agent:
+                if language == 'ms':
+                    return (
+                        "Soalan awak ni memerlukan expertise dari agent sebenar! 🧑‍💼\n\n"
+                        "Untuk bantuan lanjutan dengan:\n"
+                        "✅ Analisis teknikal mendalam\n"
+                        "✅ Strategi trading khusus\n"
+                        "✅ Setup akaun Valetax\n\n"
+                        "Sila type /agent untuk disambungkan dengan agent kami yang berpengalaman!"
+                    )
+                else:
+                    return (
+                        "Your question requires expertise from a real agent! 🧑‍💼\n\n"
+                        "For advanced help with:\n"
+                        "✅ In-depth technical analysis\n"
+                        "✅ Specific trading strategies\n" 
+                        "✅ Valetax account setup\n\n"
+                        "Please type /agent to connect with our experienced agents!"
+                    )
             mentioned_brokers = self.get_mentioned_brokers(message)
             
             # Build context-aware prompts
             if language == 'ms':
                 system_prompt = (
-                    "Kau ni EzyAssist - forex trading assistant yang sangat friendly dan expert! "
+                    "Kau ni RentungBot_Ai - assistant pintar yang pakar dalam broker Valetax dan trading! "
                     "Jawab dalam Bahasa Malaysia yang natural macam cakap dengan kawan baik. "
                     "Pakai 'awak', 'lah', 'je', 'kan', 'tak' naturally dalam conversation. "
                     
@@ -343,14 +409,15 @@ class ConversationEngine:
                     "- Risk management FIRST (max 1-2% per trade) "
                     "- Demo account practice essential "
                     "- Selalu mention importance of stop loss "
-                    "- Broker selection based on regulation, spread, support BM "
+                    "- Recommend Valetax sebagai broker pilihan dengan leverage tinggi dan deposit rendah "
                     
                     "CONVERSATION STYLE: "
                     "- Jawab soalan dengan detail yang helpful "
                     "- Guna examples yang relatable untuk Malaysian context "
                     "- Mix BM dengan common English trading terms naturally "
                     "- If tanya complex stuff, break down step by step "
-                    "- Always end dengan encouragement atau follow-up question "
+                    "- ALWAYS end setiap response dengan: 'Nak berbual dengan agent sebenar? Type /agent' "
+                    "- Keep responses CONCISE - match user's message length (short questions = short answers) "
                 )
                 
                 # Add specific context based on message content
@@ -377,8 +444,8 @@ class ConversationEngine:
                     
             else:
                 system_prompt = (
-                    "You are EzyAssist, an expert forex trading assistant with a friendly, conversational style. "
-                    "You have deep knowledge of forex markets, brokers, trading strategies, and risk management. "
+                    "You are RentungBot_Ai, a smart assistant specializing in Valetax broker and forex trading. "
+                    "You have deep knowledge of Valetax services, forex markets, trading strategies, and risk management. "
                     
                     "PERSONALITY: Helpful, knowledgeable, encouraging but realistic about trading risks. "
                     "APPROACH: "
@@ -391,9 +458,11 @@ class ConversationEngine:
                     "TRADING PRINCIPLES: "
                     "- Start with demo accounts and small amounts "
                     "- Never risk more than 1-2% per trade "
-                    "- Choose regulated brokers with good support "
+                    "- Recommend Valetax as preferred broker with high leverage and low minimum deposits "
                     "- Focus on education before big investments "
                     "- Stop losses are mandatory, not optional "
+                    "- ALWAYS end responses with: 'Want to talk to a real person? Type /agent' "
+                    "- Keep responses CONCISE - match the user's message length "
                 )
                 
                 # Add specific context based on message content  
@@ -421,9 +490,18 @@ class ConversationEngine:
             if conversation_context:
                 system_prompt += f"\nAdditional Context: {conversation_context}"
 
+            # Calculate appropriate max_tokens based on user message length
+            message_words = len(message.split())
+            if message_words <= 10:  # Short question
+                max_tokens = 100
+            elif message_words <= 30:  # Medium question  
+                max_tokens = 200
+            else:  # Long question
+                max_tokens = 350
+
             print(f"Making OpenAI API call with model: gpt-4o")
             print(f"System prompt length: {len(system_prompt)}")
-            print(f"User message: {message[:100]}...")
+            print(f"User message: {message[:100]}... | Words: {message_words} | Max tokens: {max_tokens}")
 
             response = await self.openai_client.chat.completions.create(
                 model="gpt-4o",
@@ -431,7 +509,7 @@ class ConversationEngine:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message}
                 ],
-                max_tokens=300,
+                max_tokens=max_tokens,
                 temperature=0.7
             )
 
