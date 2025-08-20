@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EzyAssist Unified System - Combines Telegram Bot and Registration Form
+RentungFX Unified System - Combines Telegram Bot and Registration Form
 """
 
 import os
@@ -110,7 +110,7 @@ async def save_uploaded_file(upload_file: UploadFile) -> Optional[str]:
         return None
 
 # Initialize FastAPI app
-app = FastAPI(title="EzyAssist Unified System", version="1.0.0")
+app = FastAPI(title="RentungFX Unified System", version="1.0.0")
 
 # Setup templates and static files
 templates = Jinja2Templates(directory="templates")
@@ -340,8 +340,8 @@ class AdminUser(Base):
 # Language translations
 TRANSLATIONS = {
     'ms': {
-        'title': 'Pendaftaran VIP EzyAssist',
-        'welcome': 'Selamat datang ke EzyAssist VIP',
+        'title': 'Pendaftaran VIP RentungFX',
+        'welcome': 'Selamat datang ke RentungFX VIP',
         'full_name': 'Nama Penuh',
         'email': 'Alamat Email',
         'phone': 'Nombor Telefon',
@@ -877,7 +877,7 @@ class RentungBot_Ai:
             registration_url = f"{base_url}/?token={token}"
             
             register_message = (
-                f"🎯 Pendaftaran VIP EzyAssist\n\n"
+                f"🎯 Pendaftaran VIP RentungFX\n\n"
                 f"Klik link di bawah untuk mengisi borang pendaftaran VIP:\n\n"
                 f"👉 {registration_url}\n\n"
                 f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
@@ -1669,7 +1669,7 @@ async def health_check():
     
     return {
         "status": "ok", 
-        "message": "EzyAssist Unified System is running",
+        "message": "RentungFX Unified System is running",
         "timestamp": datetime.utcnow().isoformat(),
         "bot_ready": bot_ready,
         "database_ready": bool(SessionLocal and engine)

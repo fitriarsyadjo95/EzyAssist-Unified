@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create test registration data for EzyAssist system
+Create test registration data for RentungFX system
 Generates 15 realistic test registrations: 10 verified, 5 rejected
 """
 
@@ -338,7 +338,7 @@ def show_current_stats():
         db.close()
 
 if __name__ == "__main__":
-    print("🎯 EzyAssist Test Data Generator")
+    print("🎯 RentungFX Test Data Generator")
     print("=" * 50)
     
     # Show current stats

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for EzyAssist Unified System
+Test script for RentungFX Unified System
 """
 
 import requests
@@ -90,7 +90,7 @@ def test_environment_variables():
         return True
 
 def main():
-    print("🧪 Testing EzyAssist Unified System\n")
+    print("🧪 Testing RentungFX Unified System\n")
     
     # Default to localhost for testing
     base_url = os.getenv('BASE_URL', 'http://localhost:8000')

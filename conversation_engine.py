@@ -591,7 +591,7 @@ class ConversationEngine:
             if registration_url == "error":
                 if language == 'ms':
                     return (
-                        "🎯 Daftar VIP Channel EzyAssist sekarang!\n\n"
+                        "🎯 Daftar VIP Channel RentungFX sekarang!\n\n"
                         "Untuk mendaftar, hubungi admin kami untuk proses pendaftaran.\n\n"
                         "VIP channel kita ada:\n"
                         "• Trading signals quality tinggi 📊\n"
@@ -601,7 +601,7 @@ class ConversationEngine:
                     )
                 else:
                     return (
-                        "🎯 Register for EzyAssist VIP Channel now!\n\n"
+                        "🎯 Register for RentungFX VIP Channel now!\n\n"
                         "To register, contact our admin for the registration process.\n\n"
                         "Our VIP channel offers:\n"
                         "• High-quality trading signals 📊\n"
@@ -612,7 +612,7 @@ class ConversationEngine:
             
             if language == 'ms':
                 return (
-                    "🎯 Daftar VIP Channel EzyAssist sekarang!\n\n"
+                    "🎯 Daftar VIP Channel RentungFX sekarang!\n\n"
                     "VIP channel kita ada:\n"
                     "• Trading signals quality tinggi 📊\n"
                     "• Daily market analysis dari expert (focus Asian + London session)\n"
@@ -625,7 +625,7 @@ class ConversationEngine:
                 )
             else:
                 return (
-                    "🎯 Register for EzyAssist VIP Channel now!\n\n"
+                    "🎯 Register for RentungFX VIP Channel now!\n\n"
                     "Our VIP channel offers:\n"
                     "• High-quality trading signals 📊\n"
                     "• Daily market analysis by experts\n"

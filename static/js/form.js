@@ -1,5 +1,5 @@
 /**
- * EzyAssist VIP Registration Form
+ * RentungFX VIP Registration Form
  * Client-side form validation and interactions
  */
 
@@ -7,10 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
     'use strict';
 
     // Security console message
-    console.log('%c🔒 EzyAssist VIP Registration Form\n%cThis is a secure registration form. Please do not paste any code here.', 
+    console.log('%c🔒 RentungFX VIP Registration Form\n%cThis is a secure registration form. Please do not paste any code here.', 
                'color: #1a472a; font-size: 16px; font-weight: bold;', 
                'color: #666; font-size: 12px;');
-    console.log('✅ EzyAssist VIP Registration Form initialized successfully');
+    console.log('✅ RentungFX VIP Registration Form initialized successfully');
 
     // Form elements with null checks
     const form = document.getElementById('registrationForm');
@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     if (window.console) {
         console.log(
-            '%c🔒 EzyAssist VIP Registration Form\n%cThis is a secure registration form. Please do not paste any code here.',
+            '%c🔒 RentungFX VIP Registration Form\n%cThis is a secure registration form. Please do not paste any code here.',
             'color: #1a472a; font-size: 16px; font-weight: bold;',
             'color: #666; font-size: 12px;'
         );
@@ -565,5 +565,5 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    console.log('✅ EzyAssist VIP Registration Form initialized successfully');
+    console.log('✅ RentungFX VIP Registration Form initialized successfully');
 });

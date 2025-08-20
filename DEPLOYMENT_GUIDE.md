@@ -1,4 +1,4 @@
-# 🚀 EzyAssist Unified System - Deployment Guide
+# 🚀 RentungFX Unified System - Deployment Guide
 
 ## 📋 Pre-Deployment Checklist
 
@@ -22,7 +22,7 @@
 
 ## 📁 Step 2: Upload Files
 
-Upload all files from the `EzyAssist-Unified/` folder:
+Upload all files from the `RentungFX-Unified/` folder:
 
 ```
 📁 Root Directory
@@ -125,7 +125,7 @@ Should show:
 ```json
 {
   "status": "ok",
-  "message": "EzyAssist Unified System is running",
+  "message": "RentungFX Unified System is running",
   "bot_ready": true,
   "database_ready": true
 }

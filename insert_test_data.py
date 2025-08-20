@@ -255,7 +255,7 @@ async def create_test_data(admin = Depends(get_current_admin)):
     return endpoint_code
 
 if __name__ == "__main__":
-    print("🎯 EzyAssist Test Data Generator")
+    print("🎯 RentungFX Test Data Generator")
     print("=" * 50)
     print("This script generates code for a test data endpoint.")
     print("Add this endpoint to main.py to create test registrations.")

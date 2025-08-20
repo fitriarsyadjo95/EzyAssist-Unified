@@ -1,4 +1,4 @@
-# 🚀 EzyAssist Unified System
+# 🚀 RentungFX Unified System
 
 A complete Telegram bot and web registration system combined into a single application.
 
@@ -15,7 +15,7 @@ A complete Telegram bot and web registration system combined into a single appli
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                EzyAssist Unified                    │
+│                RentungFX Unified                    │
 ├─────────────────────────────────────────────────────┤
 │  FastAPI Application (main.py)                     │
 │  ├── Telegram Bot Routes                           │
@@ -125,7 +125,7 @@ User → Gets Confirmation → Bot Message
 
 ### Project Structure
 ```
-EzyAssist-Unified/
+RentungFX-Unified/
 ├── main.py                 # Main FastAPI application
 ├── conversation_engine.py  # AI conversation handling
 ├── supabase_client.py     # Database client
@@ -182,7 +182,7 @@ CREATE TABLE vip_registrations (
 
 ### 1. Create Project
 1. Go to Replit.com
-2. Create new project: "EzyAssist Unified"
+2. Create new project: "RentungFX Unified"
 3. Upload all files from this folder
 
 ### 2. Enable Database

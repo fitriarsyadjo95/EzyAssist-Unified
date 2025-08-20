@@ -1,4 +1,4 @@
-# EzyAssist Unified System - Product Manual
+# RentungFX Unified System - Product Manual
 
 ## Table of Contents
 1. [System Overview](#system-overview)
@@ -17,9 +17,9 @@
 
 ## System Overview
 
-### What is EzyAssist Unified System?
+### What is RentungFX Unified System?
 
-EzyAssist Unified System is a comprehensive platform that combines a Telegram bot with a web-based registration system and admin dashboard. It's designed specifically for managing VIP forex trading course registrations for Malaysian users.
+RentungFX Unified System is a comprehensive platform that combines a Telegram bot with a web-based registration system and admin dashboard. It's designed specifically for managing VIP forex trading course registrations for Malaysian users.
 
 ### Key Features
 - **Telegram Bot Integration**: Interactive bot for user engagement and VIP registration
@@ -43,7 +43,7 @@ EzyAssist Unified System is a comprehensive platform that combines a Telegram bo
 ### Accessing the System
 
 #### For Users
-1. **Telegram Bot**: Search for your EzyAssist bot on Telegram
+1. **Telegram Bot**: Search for your RentungFX bot on Telegram
 2. **Registration**: Use bot commands to get registration links
 3. **VIP Group**: Join https://t.me/ezyassist_vip after approval
 
@@ -604,7 +604,7 @@ Admins receive notifications for:
 
 ## Conclusion
 
-The EzyAssist Unified System provides a comprehensive solution for managing VIP forex course registrations through an integrated Telegram bot and web-based admin dashboard. With real-time monitoring, direct communication features, and automated workflows, it streamlines the entire registration and approval process while maintaining professional standards and user experience.
+The RentungFX Unified System provides a comprehensive solution for managing VIP forex course registrations through an integrated Telegram bot and web-based admin dashboard. With real-time monitoring, direct communication features, and automated workflows, it streamlines the entire registration and approval process while maintaining professional standards and user experience.
 
 For additional support or feature requests, please contact the system administrator or development team.
 
@@ -616,4 +616,4 @@ For additional support or feature requests, please contact the system administra
 
 ---
 
-*This manual covers all features and functionality of the EzyAssist Unified System. For the most current information, always refer to the admin dashboard and system notifications.*
+*This manual covers all features and functionality of the RentungFX Unified System. For the most current information, always refer to the admin dashboard and system notifications.*

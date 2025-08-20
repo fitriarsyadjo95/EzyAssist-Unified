@@ -1,8 +1,8 @@
 [project]
 name = "ezyassist-unified"
 version = "1.0.0"
-description = "EzyAssist Unified System - Telegram Bot + Registration Form"
-authors = ["EzyAssist Team"]
+description = "RentungFX Unified System - Telegram Bot + Registration Form"
+authors = ["RentungFX Team"]
 requires-python = ">=3.11"
 dependencies = [
     "python-telegram-bot==20.7",
