@@ -399,6 +399,14 @@
                                         <i class="fas fa-download me-1"></i>
                                         Export
                                     </button>
+                                    <button type="button" class="btn btn-info" onclick="showImportModal()">
+                                        <i class="fas fa-upload me-1"></i>
+                                        Import
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="downloadTemplate()">
+                                        <i class="fas fa-file-excel me-1"></i>
+                                        Template
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -467,6 +475,82 @@
                                 Download Export
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Modal -->
+            <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="importModalLabel">
+                                <i class="fas fa-upload me-2"></i>
+                                Import Customer Data
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form id="importForm" enctype="multipart/form-data">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="importFile" class="form-label">Select File</label>
+                                    <input type="file" class="form-control" id="importFile" name="file" 
+                                           accept=".xlsx,.xls,.csv" required>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Supported formats: Excel (.xlsx, .xls) or CSV (.csv). Maximum size: 10MB.
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <h6 class="mb-2"><i class="fas fa-list me-1"></i> Required Columns</h6>
+                                    <ul class="mb-2 small">
+                                        <li><strong>telegram_id</strong> - Unique Telegram user ID</li>
+                                        <li><strong>full_name</strong> - Customer's full name</li>
+                                        <li><strong>email</strong> - Customer's email address</li>
+                                        <li><strong>phone_number</strong> - Customer's phone number</li>
+                                    </ul>
+                                    
+                                    <h6 class="mb-2"><i class="fas fa-plus me-1"></i> Optional Columns</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>telegram_username</strong> - Telegram username</li>
+                                        <li><strong>brokerage_name</strong> - Default: Valetax</li>
+                                        <li><strong>deposit_amount</strong> - Deposit amount</li>
+                                        <li><strong>client_id</strong> - Broker client ID</li>
+                                        <li><strong>status</strong> - PENDING, VERIFIED, REJECTED, ON_HOLD (Default: VERIFIED)</li>
+                                    </ul>
+                                </div>
+                                
+                                <div id="importProgress" style="display: none;">
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" style="width: 100%"></div>
+                                    </div>
+                                    <p class="text-center mb-0">
+                                        <i class="fas fa-spinner fa-spin me-1"></i>
+                                        Processing import...
+                                    </p>
+                                </div>
+                                
+                                <div id="importResults" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <h6><i class="fas fa-check-circle me-1"></i> Import Completed</h6>
+                                        <div id="resultsContent"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-info" onclick="downloadTemplate()">
+                                    <i class="fas fa-file-excel me-1"></i>
+                                    Download Template
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="importBtn">
+                                    <i class="fas fa-upload me-1"></i>
+                                    Import Data
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -733,6 +817,101 @@
             }
         });
         
+        // Import functionality
+        function showImportModal() {
+            // Reset form and results
+            document.getElementById('importForm').reset();
+            document.getElementById('importProgress').style.display = 'none';
+            document.getElementById('importResults').style.display = 'none';
+            document.getElementById('importBtn').style.display = 'inline-block';
+            
+            const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+            importModal.show();
+        }
+        
+        function downloadTemplate() {
+            window.open('/admin/registrations/import-template', '_blank');
+        }
+        
+        // Handle import form submission
+        document.getElementById('importForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to import');
+                return;
+            }
+            
+            // Validate file size (10MB limit)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size exceeds 10MB limit');
+                return;
+            }
+            
+            // Show progress
+            document.getElementById('importProgress').style.display = 'block';
+            document.getElementById('importResults').style.display = 'none';
+            document.getElementById('importBtn').style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/admin/registrations/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                // Hide progress
+                document.getElementById('importProgress').style.display = 'none';
+                
+                if (response.ok) {
+                    // Show results
+                    const resultsHtml = `
+                        <ul class="mb-0">
+                            <li><strong>Total Rows:</strong> ${result.results.total_rows}</li>
+                            <li><strong>Successfully Imported:</strong> ${result.results.successful}</li>
+                            <li><strong>Duplicates Skipped:</strong> ${result.results.duplicates}</li>
+                            <li><strong>Errors:</strong> ${result.results.errors}</li>
+                        </ul>
+                        ${result.results.error_details.length > 0 ? `
+                            <hr>
+                            <h6>Error Details:</h6>
+                            <ul class="small">
+                                ${result.results.error_details.slice(0, 10).map(error => `<li>${error}</li>`).join('')}
+                                ${result.results.error_details.length > 10 ? `<li><em>... and ${result.results.error_details.length - 10} more errors</em></li>` : ''}
+                            </ul>
+                        ` : ''}
+                    `;
+                    
+                    document.getElementById('resultsContent').innerHTML = resultsHtml;
+                    document.getElementById('importResults').style.display = 'block';
+                    
+                    // Refresh page after delay to show new data
+                    if (result.results.successful > 0) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    }
+                } else {
+                    alert('❌ Import failed: ' + result.detail);
+                    document.getElementById('importBtn').style.display = 'inline-block';
+                }
+                
+            } catch (error) {
+                // Hide progress
+                document.getElementById('importProgress').style.display = 'none';
+                document.getElementById('importBtn').style.display = 'inline-block';
+                
+                alert('❌ Import error: ' + error.message);
+            }
+        });
+
         // Initialize Bootstrap tooltips for notes indicators
         document.addEventListener('DOMContentLoaded', function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

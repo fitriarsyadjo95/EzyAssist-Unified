@@ -11,6 +11,7 @@ import random
 import csv
 import io
 from typing import Optional
+import pandas as pd
 import secrets
 import hashlib
 import time
@@ -3245,6 +3246,228 @@ async def create_test_registrations(admin = Depends(get_current_admin)):
         raise HTTPException(status_code=500, detail=f"Failed to create test data: {str(e)}")
     finally:
         db.close()
+
+@app.post("/admin/registrations/import")
+async def import_registrations(
+    file: UploadFile = File(...),
+    admin = Depends(get_current_admin)
+):
+    """Import customer data from Excel/CSV file with verification status"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Validate file type
+    allowed_extensions = {'.xlsx', '.xls', '.csv'}
+    file_extension = Path(file.filename).suffix.lower()
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+        )
+    
+    # Validate file size (max 10MB)
+    if file.size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Parse file based on extension
+        if file_extension == '.csv':
+            df = pd.read_csv(io.BytesIO(content))
+        else:
+            df = pd.read_excel(io.BytesIO(content))
+        
+        # Validate required columns
+        required_columns = ['telegram_id', 'full_name', 'email', 'phone_number']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Missing required columns: {', '.join(missing_columns)}"
+            )
+        
+        # Optional columns with defaults
+        optional_columns = {
+            'telegram_username': '',
+            'brokerage_name': 'Valetax',
+            'deposit_amount': '',
+            'client_id': '',
+            'status': 'VERIFIED'
+        }
+        
+        for col, default_val in optional_columns.items():
+            if col not in df.columns:
+                df[col] = default_val
+        
+        # Clean and validate data
+        df = df.fillna('')  # Replace NaN with empty strings
+        df['telegram_id'] = df['telegram_id'].astype(str)
+        df['email'] = df['email'].str.strip().str.lower()
+        df['phone_number'] = df['phone_number'].astype(str)
+        
+        # Validate status values
+        valid_statuses = ['PENDING', 'VERIFIED', 'REJECTED', 'ON_HOLD']
+        df['status'] = df['status'].str.upper()
+        invalid_statuses = df[~df['status'].isin(valid_statuses)]
+        if not invalid_statuses.empty:
+            df.loc[~df['status'].isin(valid_statuses), 'status'] = 'VERIFIED'
+        
+        # Track import results
+        import_results = {
+            'total_rows': len(df),
+            'successful': 0,
+            'duplicates': 0,
+            'errors': 0,
+            'error_details': []
+        }
+        
+        # Get existing users to check for duplicates
+        existing_users = db.query(VipRegistration).all()
+        existing_telegram_ids = {user.telegram_id for user in existing_users}
+        existing_emails = {user.email for user in existing_users}
+        
+        # Process each row
+        for index, row in df.iterrows():
+            try:
+                # Check for duplicates
+                if row['telegram_id'] in existing_telegram_ids:
+                    import_results['duplicates'] += 1
+                    import_results['error_details'].append(
+                        f"Row {index + 2}: Duplicate telegram_id {row['telegram_id']}"
+                    )
+                    continue
+                
+                if row['email'] in existing_emails:
+                    import_results['duplicates'] += 1
+                    import_results['error_details'].append(
+                        f"Row {index + 2}: Duplicate email {row['email']}"
+                    )
+                    continue
+                
+                # Create new registration
+                new_registration = VipRegistration(
+                    telegram_id=row['telegram_id'],
+                    telegram_username=row['telegram_username'] if row['telegram_username'] else None,
+                    full_name=row['full_name'],
+                    email=row['email'],
+                    phone_number=row['phone_number'],
+                    brokerage_name=row['brokerage_name'],
+                    deposit_amount=row['deposit_amount'] if row['deposit_amount'] else None,
+                    client_id=row['client_id'] if row['client_id'] else None,
+                    status=RegistrationStatus(row['status']),
+                    status_updated_at=datetime.utcnow() if row['status'] == 'VERIFIED' else None,
+                    updated_by_admin=admin.get('username') if row['status'] == 'VERIFIED' else None,
+                    created_at=datetime.utcnow(),
+                    step_completed=2 if row['status'] == 'VERIFIED' else 0,
+                    ip_address='bulk_import',
+                    user_agent='Admin Import'
+                )
+                
+                db.add(new_registration)
+                db.flush()  # Get the ID for audit log
+                
+                # Add audit log entry
+                audit_log = RegistrationAuditLog(
+                    registration_id=new_registration.id,
+                    action='BULK_IMPORT',
+                    old_value=None,
+                    new_value=row['status'],
+                    admin_user=admin.get('username'),
+                    details=f"Imported via bulk import with status {row['status']}"
+                )
+                db.add(audit_log)
+                
+                # Track for duplicates in current import
+                existing_telegram_ids.add(row['telegram_id'])
+                existing_emails.add(row['email'])
+                
+                import_results['successful'] += 1
+                
+            except Exception as e:
+                import_results['errors'] += 1
+                import_results['error_details'].append(
+                    f"Row {index + 2}: {str(e)}"
+                )
+                continue
+        
+        # Commit all changes
+        db.commit()
+        
+        logger.info(f"✅ Bulk import completed by {admin.get('username')} - "
+                   f"{import_results['successful']} successful, "
+                   f"{import_results['duplicates']} duplicates, "
+                   f"{import_results['errors']} errors")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Import completed",
+            "results": import_results
+        })
+        
+    except pd.errors.EmptyDataError:
+        raise HTTPException(status_code=400, detail="File is empty or invalid")
+    except pd.errors.ParserError:
+        raise HTTPException(status_code=400, detail="Unable to parse file. Please check format.")
+    except Exception as e:
+        logger.error(f"Error during bulk import: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+    finally:
+        db.close()
+
+@app.get("/admin/registrations/import-template")
+async def download_import_template(admin = Depends(get_current_admin)):
+    """Download Excel template for bulk import"""
+    
+    # Create sample data
+    sample_data = {
+        'telegram_id': ['1234567890', '0987654321'],
+        'telegram_username': ['user1', 'user2'],
+        'full_name': ['John Doe', 'Jane Smith'],
+        'email': ['john@example.com', 'jane@example.com'],
+        'phone_number': ['+60123456789', '+60198765432'],
+        'brokerage_name': ['Valetax', 'Valetax'],
+        'deposit_amount': ['100', '200'],
+        'client_id': ['VT001', 'VT002'],
+        'status': ['VERIFIED', 'VERIFIED']
+    }
+    
+    # Create DataFrame and Excel file
+    df = pd.DataFrame(sample_data)
+    
+    # Create Excel file in memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Customers', index=False)
+        
+        # Add instructions sheet
+        instructions = pd.DataFrame({
+            'Instructions': [
+                '1. Fill in customer data in the "Customers" sheet',
+                '2. Required columns: telegram_id, full_name, email, phone_number',
+                '3. Optional columns will use defaults if not provided',
+                '4. Status can be: PENDING, VERIFIED, REJECTED, ON_HOLD',
+                '5. Default status is VERIFIED for bulk imports',
+                '6. Duplicate telegram_id or email will be skipped',
+                '7. Maximum file size: 10MB',
+                '8. Supported formats: .xlsx, .xls, .csv'
+            ]
+        })
+        instructions.to_excel(writer, sheet_name='Instructions', index=False)
+    
+    output.seek(0)
+    
+    return Response(
+        content=output.getvalue(),
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename=customer_import_template.xlsx'}
+    )
 
 
 # Bot initialization on startup
