@@ -3350,6 +3350,14 @@ async def import_registrations(
                     )
                     continue
                 
+                # Map uppercase status to enum values
+                status_mapping = {
+                    'PENDING': RegistrationStatus.PENDING,
+                    'VERIFIED': RegistrationStatus.VERIFIED,
+                    'REJECTED': RegistrationStatus.REJECTED,
+                    'ON_HOLD': RegistrationStatus.ON_HOLD
+                }
+                
                 # Create new registration
                 new_registration = VipRegistration(
                     telegram_id=row['telegram_id'],
@@ -3360,7 +3368,7 @@ async def import_registrations(
                     brokerage_name=row['brokerage_name'],
                     deposit_amount=row['deposit_amount'] if row['deposit_amount'] else None,
                     client_id=row['client_id'] if row['client_id'] else None,
-                    status=RegistrationStatus(row['status']),
+                    status=status_mapping[row['status']],
                     status_updated_at=datetime.utcnow() if row['status'] == 'VERIFIED' else None,
                     updated_by_admin=admin.get('username') if row['status'] == 'VERIFIED' else None,
                     created_at=datetime.utcnow(),
