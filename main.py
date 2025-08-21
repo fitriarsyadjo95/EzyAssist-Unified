@@ -3422,8 +3422,8 @@ async def import_registrations(
         db.close()
 
 @app.get("/admin/registrations/import-template")
-async def download_import_template(admin = Depends(get_current_admin)):
-    """Download Excel template for bulk import"""
+async def download_import_template(format: str = "excel", admin = Depends(get_current_admin)):
+    """Download template for bulk import (Excel or CSV)"""
     
     # Create sample data
     sample_data = {
@@ -3438,36 +3438,88 @@ async def download_import_template(admin = Depends(get_current_admin)):
         'status': ['VERIFIED', 'VERIFIED']
     }
     
-    # Create DataFrame and Excel file
-    df = pd.DataFrame(sample_data)
-    
-    # Create Excel file in memory
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Customers', index=False)
+    if format.lower() == "csv":
+        # Generate CSV template
+        output = io.StringIO()
+        df = pd.DataFrame(sample_data)
+        df.to_csv(output, index=False)
         
-        # Add instructions sheet
-        instructions = pd.DataFrame({
-            'Instructions': [
-                '1. Fill in customer data in the "Customers" sheet',
-                '2. Required columns: telegram_id, full_name, email, phone_number',
-                '3. Optional columns will use defaults if not provided',
-                '4. Status can be: PENDING, VERIFIED, REJECTED, ON_HOLD',
-                '5. Default status is VERIFIED for bulk imports',
-                '6. Duplicate telegram_id or email will be skipped',
-                '7. Maximum file size: 10MB',
-                '8. Supported formats: .xlsx, .xls, .csv'
-            ]
-        })
-        instructions.to_excel(writer, sheet_name='Instructions', index=False)
+        return Response(
+            content=output.getvalue(),
+            media_type='text/csv',
+            headers={'Content-Disposition': 'attachment; filename=customer_import_template.csv'}
+        )
     
-    output.seek(0)
+    else:
+        # Generate Excel template
+        try:
+            df = pd.DataFrame(sample_data)
+            
+            # Create Excel file in memory
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Customers', index=False)
+                
+                # Add instructions sheet
+                instructions = pd.DataFrame({
+                    'Instructions': [
+                        '1. Fill in customer data in the "Customers" sheet',
+                        '2. Required columns: telegram_id, full_name, email, phone_number',
+                        '3. Optional columns will use defaults if not provided',
+                        '4. Status can be: PENDING, VERIFIED, REJECTED, ON_HOLD',
+                        '5. Default status is VERIFIED for bulk imports',
+                        '6. Duplicate telegram_id or email will be skipped',
+                        '7. Maximum file size: 10MB',
+                        '8. Supported formats: .xlsx, .xls, .csv'
+                    ]
+                })
+                instructions.to_excel(writer, sheet_name='Instructions', index=False)
+            
+            output.seek(0)
+            
+            return Response(
+                content=output.getvalue(),
+                media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                headers={'Content-Disposition': 'attachment; filename=customer_import_template.xlsx'}
+            )
+            
+        except Exception as e:
+            logger.error(f"Excel template generation failed: {e}")
+            # Fallback to CSV if Excel fails
+            output = io.StringIO()
+            df = pd.DataFrame(sample_data)
+            df.to_csv(output, index=False)
+            
+            return Response(
+                content=output.getvalue(),
+                media_type='text/csv',
+                headers={'Content-Disposition': 'attachment; filename=customer_import_template.csv'}
+            )
+
+@app.get("/admin/registrations/import-status")
+async def check_import_dependencies(admin = Depends(get_current_admin)):
+    """Check if import dependencies are available"""
+    status = {
+        "pandas_available": False,
+        "openpyxl_available": False,
+        "import_functional": False
+    }
     
-    return Response(
-        content=output.getvalue(),
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': 'attachment; filename=customer_import_template.xlsx'}
-    )
+    try:
+        import pandas as pd
+        status["pandas_available"] = True
+    except ImportError:
+        pass
+    
+    try:
+        import openpyxl
+        status["openpyxl_available"] = True
+    except ImportError:
+        pass
+    
+    status["import_functional"] = status["pandas_available"] and status["openpyxl_available"]
+    
+    return JSONResponse(content=status)
 
 
 # Bot initialization on startup
