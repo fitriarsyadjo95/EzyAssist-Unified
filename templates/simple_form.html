@@ -5,7 +5,7 @@
     <div class="col-lg-8 col-xl-7">
         <div class="card shadow-lg border-0 registration-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h1 class="mb-0">Complete VIP Registration</h1>
+                <h1 class="mb-0">Complete Group Chat Fighter Rentung Registration</h1>
                 <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">Step 2 of 2</span>
             </div>
             
@@ -17,9 +17,9 @@
                     <span class="text-muted small">
                         <strong>Langkah 1 Selesai:</strong> 
                         {% if setup_action == 'new_account' %}
-                            Akaun baru OctaFX telah dicipta
+                            Akaun baru Valetax telah dicipta
                         {% elif setup_action == 'partner_change' %}
-                            Partner OctaFX telah ditukar
+                            Partner Valetax telah ditukar
                         {% endif %}
                     </span>
                 </div>
@@ -34,7 +34,7 @@
                     <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
                     <input type="hidden" name="language" value="ms">
                     <input type="hidden" name="form_hash" value="{{ form_hash }}">
-                    <input type="hidden" name="brokerage_name" value="OctaFX">
+                    <input type="hidden" name="brokerage_name" value="Valetax">
                     
                     <!-- Personal Information -->
                     <h5 class="mb-4 text-primary">Maklumat Diri</h5>
@@ -72,18 +72,18 @@
                         </div>
                     </div>
 
-                    <!-- OctaFX Trading Information -->
+                    <!-- Valetax Trading Information -->
                     <h5 class="mb-4 text-primary mt-5">
                         <i class="fas fa-chart-line me-2"></i>
-                        Info Trading OctaFX
+                        Info Trading Valetax
                     </h5>
                     
-                    <!-- OctaFX Confirmation Display -->
+                    <!-- Valetax Confirmation Display -->
                     <div class="alert alert-success mb-4">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-check-circle me-3 text-success" style="font-size: 1.5rem;"></i>
                             <div>
-                                <h6 class="mb-1">Broker: <strong>OctaFX</strong></h6>
+                                <h6 class="mb-1">Broker: <strong>Valetax</strong></h6>
                                 <small class="text-muted">Akaun telah disediakan dalam Langkah 1</small>
                             </div>
                         </div>
@@ -102,16 +102,16 @@
 
                     <div class="mb-4">
                         <label for="client_id" class="form-label">
-                            OctaFX Client ID <span class="text-danger">*</span>
+                            Valetax Trading Account <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-id-card fa-sm"></i></span>
                             <input type="text" class="form-control form-control-lg" id="client_id" name="client_id" 
-                                   placeholder="Client ID dari akaun OctaFX anda" required>
+                                   placeholder="Nombor akaun trading Valetax anda" required>
                         </div>
                         <div class="form-text text-muted">
                             <i class="fas fa-info-circle me-1"></i>
-                            Dapatkan Client ID dari dashboard OctaFX anda
+                            Dapatkan nombor akaun dari platform Valetax anda
                         </div>
                     </div>
 

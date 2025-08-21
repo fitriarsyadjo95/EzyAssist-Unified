@@ -578,7 +578,7 @@ def initialize_default_settings():
         {
             'key': 'vip_group_link',
             'value': 'https://t.me/+VIPGroupDefault',
-            'description': 'VIP Telegram group link for verified users'
+            'description': 'Group Chat Fighter Rentung link for verified users'
         },
         {
             'key': 'admin_notification_enabled',
@@ -913,7 +913,7 @@ class RentungBot_Ai:
         self.reset_daily_tracking()
         
         # Get live agent username from admin settings or use default
-        live_agent_username = get_admin_setting('live_agent_telegram', '@fjo95')
+        live_agent_username = get_admin_setting('live_agent_telegram', '@Cix_Na')
         
         agent_message = (
             f"🧑‍💼 Anda akan disambungkan dengan agent sebenar!\n\n"
@@ -1329,7 +1329,7 @@ async def account_setup_continue(request: Request, token: str = Form(...), setup
                         account_setup_action=AccountSetupAction(setup_action),
                         account_setup_completed_at=datetime.utcnow(),
                         step_completed=1,
-                        brokerage_name="OctaFX"  # Force brokerage to OctaFX for the new two-step flow
+                        brokerage_name="Valetax"  # Force brokerage to Valetax for the new two-step flow
                     )
                     db.add(temp_registration)
                     db.flush()  # Get the ID
@@ -1480,8 +1480,8 @@ async def submit_registration(
     is_resubmission = token_type == "resubmission"
     registration_id = token_data.get('registration_id') if token_data else None
     
-    # Force brokerage to OctaFX for the new two-step flow
-    brokerage_name = "OctaFX"
+    # Force brokerage to Valetax for the new two-step flow
+    brokerage_name = "Valetax"
     logger.info(f"✅ Brokerage forced to: {brokerage_name}")
     
     # Validate required fields (excluding brokerage since it's auto-set)
@@ -1755,15 +1755,15 @@ async def send_vip_access_granted(telegram_id: str, registration_data: dict):
     """Send VIP access granted message to user"""
     try:
         if bot_instance and bot_instance.application:
-            # Get VIP group link from settings
+            # Get Group Chat Fighter Rentung link from settings
             vip_group_link = get_admin_setting('vip_group_link', 'https://t.me/ezyassist_vip')
             
             vip_message = (
-                f"🎉 Berita Baik, VIP akses anda diluluskan!\n\n"
+                f"🎉 Berita Baik, Group Chat Fighter Rentung akses anda diluluskan!\n\n"
                 f"Hai {registration_data['full_name']},\n\n"
-                f"✅ Pendaftaran VIP anda telah DILULUSKAN!\n"
-                f"🔥 Anda kini boleh akses group VIP kami.\n\n"
-                f"🔗 VIP Group Link: {vip_group_link}\n\n"
+                f"✅ Pendaftaran Group Chat Fighter Rentung anda telah DILULUSKAN!\n"
+                f"🔥 Anda kini boleh akses Group Chat Fighter Rentung kami.\n\n"
+                f"🔗 Group Chat Fighter Rentung Link: {vip_group_link}\n\n"
                 f"📞 Jika ada soalan, hubungi team support kami."
             )
             
@@ -2503,7 +2503,7 @@ async def admin_settings_page(request: Request, admin = Depends(get_current_admi
                 
                 # Set default values for settings that don't exist
                 default_settings = {
-                    'live_agent_telegram': '@fjo95',
+                    'live_agent_telegram': '@Cix_Na',
                     'vip_group_link': 'https://t.me/+VIPGroupDefault',
                     'admin_notification_enabled': 'false',
                     'notification_recipient': '@admin',
@@ -2539,7 +2539,7 @@ async def save_admin_settings(
         
         # Define allowed settings with their descriptions
         allowed_settings = {
-            'vip_group_link': 'VIP Telegram group link for verified users',
+            'vip_group_link': 'Group Chat Fighter Rentung link for verified users',
             'admin_notification_enabled': 'Enable admin notifications for new registrations',
             'notification_recipient': 'Telegram username or chat ID to receive notifications',
             'auto_approval_enabled': 'Enable automatic approval of registrations',

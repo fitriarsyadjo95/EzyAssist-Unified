@@ -591,9 +591,9 @@ class ConversationEngine:
             if registration_url == "error":
                 if language == 'ms':
                     return (
-                        "🎯 Daftar VIP Channel RentungFX sekarang!\n\n"
+                        "🎯 Daftar Group Chat Fighter Rentung sekarang!\n\n"
                         "Untuk mendaftar, hubungi admin kami untuk proses pendaftaran.\n\n"
-                        "VIP channel kita ada:\n"
+                        "Group Chat Fighter Rentung ada:\n"
                         "• Trading signals quality tinggi 📊\n"
                         "• Daily market analysis dari expert\n"
                         "• Tips broker terbaik untuk Malaysian\n"
@@ -601,9 +601,9 @@ class ConversationEngine:
                     )
                 else:
                     return (
-                        "🎯 Register for RentungFX VIP Channel now!\n\n"
+                        "🎯 Register for Group Chat Fighter Rentung now!\n\n"
                         "To register, contact our admin for the registration process.\n\n"
-                        "Our VIP channel offers:\n"
+                        "Our Group Chat Fighter Rentung offers:\n"
                         "• High-quality trading signals 📊\n"
                         "• Daily market analysis by experts\n"
                         "• Best broker tips for Malaysians\n"
@@ -612,8 +612,8 @@ class ConversationEngine:
             
             if language == 'ms':
                 return (
-                    "🎯 Daftar VIP Channel RentungFX sekarang!\n\n"
-                    "VIP channel kita ada:\n"
+                    "🎯 Daftar Group Chat Fighter Rentung sekarang!\n\n"
+                    "Group Chat Fighter Rentung ada:\n"
                     "• Trading signals quality tinggi 📊\n"
                     "• Daily market analysis dari expert (focus Asian + London session)\n"
                     "• Tips broker mana yang best untuk Malaysian\n"
@@ -621,12 +621,12 @@ class ConversationEngine:
                     "• Strategy sesuai untuk working adults (lepas kerja trading)\n\n"
                     f"Klik link di bawah untuk lengkapkan pendaftaran:\n{registration_url}\n\n"
                     "⏰ Link ini akan expired dalam 30 minit.\n"
-                    "Lepas register, team kita akan semak dan contact dalam 24-48 jam untuk VIP access!"
+                    "Lepas register, team kita akan semak dan contact dalam 24-48 jam untuk Group Chat Fighter Rentung access!"
                 )
             else:
                 return (
-                    "🎯 Register for RentungFX VIP Channel now!\n\n"
-                    "Our VIP channel offers:\n"
+                    "🎯 Register for Group Chat Fighter Rentung now!\n\n"
+                    "Our Group Chat Fighter Rentung offers:\n"
                     "• High-quality trading signals 📊\n"
                     "• Daily market analysis by experts\n"
                     "• Latest trading tips and strategies\n"
@@ -634,7 +634,7 @@ class ConversationEngine:
                     "• Guidance to become a profitable trader 💰\n\n"
                     f"Click the link below to complete registration:\n{registration_url}\n\n"
                     "⏰ This link will expire in 30 minutes.\n"
-                    "Once you register, our team will review and contact you within 24-48 hours for VIP access!"
+                    "Once you register, our team will review and contact you within 24-48 hours for Group Chat Fighter Rentung access!"
                 )
 
         elif intent == 'broker_inquiry':
@@ -669,13 +669,13 @@ class ConversationEngine:
                     if language == 'ms':
                         ai_response += (
                             f"\n\n💡 Awak ni memang active bertanya! "
-                            f"Nak join VIP channel untuk quality signals dan expert analysis? "
+                            f"Nak join Group Chat Fighter Rentung untuk quality signals dan expert analysis? "
                             f"Klik sini: {registration_url}"
                         )
                     else:
                         ai_response += (
                             f"\n\n💡 You're really engaged with learning! "
-                            f"Want to join our VIP channel for quality signals and expert analysis? "
+                            f"Want to join our Group Chat Fighter Rentung for quality signals and expert analysis? "
                             f"Click here: {registration_url}"
                         )
 
