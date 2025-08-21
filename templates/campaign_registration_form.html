@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-lg border-0 registration-card">
+            <!-- Campaign Header -->
+            <div class="card-header bg-gradient-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="mb-1 text-white">🎉 {{ campaign.name }}</h1>
+                        <p class="mb-0 opacity-75">
+                            <i class="fas fa-gift me-1"></i>
+                            {{ campaign.reward_description }}
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-light text-primary px-3 py-2" style="font-size: 0.9rem;">
+                            Step 2 of 2
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-edit text-primary mb-3" style="font-size: 3rem;"></i>
+                    <h3 class="text-primary mb-3">Lengkapkan Pendaftaran Campaign</h3>
+                    <p class="lead text-muted">
+                        Sila isi maklumat anda untuk menyertai campaign dan dapatkan akses ke Group Chat Fighter Rentung.
+                    </p>
+                </div>
+
+                <!-- Campaign Requirements Reminder -->
+                <div class="alert alert-info border-0 mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle text-info me-3"></i>
+                        <div>
+                            <strong>Peringatan:</strong> Pastikan anda deposit minimum ${{ campaign.min_deposit_amount }} USD untuk layak mendapat {{ campaign.reward_description }}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="/campaign/{{ campaign.campaign_id }}/submit" class="needs-validation" novalidate>
+                    <input type="hidden" name="token" value="{{ token }}">
+                    
+                    <!-- Personal Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-user me-2"></i>
+                            Maklumat Peribadi
+                        </h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label">Nama Penuh <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                <div class="invalid-feedback">Sila masukkan nama penuh anda.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="invalid-feedback">Sila masukkan email yang sah.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label">Nombor Telefon <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
+                                <div class="invalid-feedback">Sila masukkan nombor telefon anda.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="country" class="form-label">Negara <span class="text-danger">*</span></label>
+                                <select class="form-select" id="country" name="country" required>
+                                    <option value="">Pilih negara</option>
+                                    <option value="Malaysia">Malaysia</option>
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="Singapore">Singapore</option>
+                                    <option value="Thailand">Thailand</option>
+                                    <option value="Philippines">Philippines</option>
+                                    <option value="Vietnam">Vietnam</option>
+                                    <option value="Other">Lain-lain</option>
+                                </select>
+                                <div class="invalid-feedback">Sila pilih negara anda.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trading Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Maklumat Trading Valetax
+                        </h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="trading_id" class="form-label">Trading ID/Account Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="trading_id" name="trading_id" required>
+                                <div class="form-text">Masukkan Trading ID dari akaun Valetax anda</div>
+                                <div class="invalid-feedback">Sila masukkan Trading ID anda.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="deposit_amount" class="form-label">Jumlah Deposit (USD) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="deposit_amount" name="deposit_amount" 
+                                       min="{{ campaign.min_deposit_amount }}" step="0.01" required>
+                                <div class="form-text">Minimum: ${{ campaign.min_deposit_amount }} USD</div>
+                                <div class="invalid-feedback">Jumlah deposit mesti sekurang-kurangnya ${{ campaign.min_deposit_amount }} USD.</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-3">
+                            <small>
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>Penting:</strong> Pastikan maklumat Trading ID dan jumlah deposit adalah tepat. 
+                                Tim kami akan verify maklumat ini sebelum approve reward anda.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="fab fa-telegram me-2"></i>
+                            Maklumat Telegram
+                        </h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="telegram_username" class="form-label">Username Telegram <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">@</span>
+                                    <input type="text" class="form-control" id="telegram_username" name="telegram_username" required>
+                                </div>
+                                <div class="form-text">Username tanpa @ (contoh: johndoe123)</div>
+                                <div class="invalid-feedback">Sila masukkan username Telegram anda.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="telegram_id" class="form-label">Telegram ID</label>
+                                <input type="text" class="form-control" id="telegram_id" name="telegram_id">
+                                <div class="form-text">Optional - untuk memudahkan proses invitation</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                Saya bersetuju dengan <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">terma dan syarat</a> 
+                                campaign ini dan memahami bahawa reward akan diproses setelah deposit verification. <span class="text-danger">*</span>
+                            </label>
+                            <div class="invalid-feedback">Anda mesti bersetuju dengan terma dan syarat.</div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg py-3">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            Hantar Pendaftaran Campaign
+                        </button>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Setelah submit, anda akan menerima confirmation dan team kami akan process reward anda
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terma dan Syarat Campaign</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Kelayakan Campaign</h6>
+                <ul>
+                    <li>Peserta mesti deposit minimum ${{ campaign.min_deposit_amount }} USD ke akaun Valetax</li>
+                    <li>Akaun Valetax mesti berada di bawah IB Partner Code 4958783</li>
+                    <li>Deposit mesti dilakukan dalam tempoh campaign yang aktif</li>
+                </ul>
+
+                <h6>2. Proses Reward</h6>
+                <ul>
+                    <li>{{ campaign.reward_description }} akan diproses setelah verification deposit</li>
+                    <li>Verification akan mengambil masa 1-3 hari bekerja</li>
+                    <li>Reward akan dikreditkan ke akaun yang didaftarkan</li>
+                </ul>
+
+                <h6>3. Akses Group Chat</h6>
+                <ul>
+                    <li>Akses ke "Group Chat Fighter Rentung" akan diberikan setelah verification</li>
+                    <li>Invitation akan dihantar melalui Telegram</li>
+                    <li>Pastikan username Telegram adalah tepat</li>
+                </ul>
+
+                <h6>4. Syarat Am</h6>
+                <ul>
+                    <li>Campaign ini tertakluk kepada terma dan syarat RentungFX</li>
+                    <li>RentungFX berhak untuk mengubah atau menamatkan campaign tanpa notis</li>
+                    <li>Keputusan RentungFX adalah muktamad</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Bootstrap form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Deposit amount validation
+document.getElementById('deposit_amount').addEventListener('input', function() {
+    const minAmount = {{ campaign.min_deposit_amount }};
+    const currentAmount = parseFloat(this.value);
+    
+    if (currentAmount < minAmount) {
+        this.setCustomValidity(`Jumlah deposit mesti sekurang-kurangnya $${minAmount} USD`);
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+// Username validation (remove @ if user adds it)
+document.getElementById('telegram_username').addEventListener('input', function() {
+    if (this.value.startsWith('@')) {
+        this.value = this.value.substring(1);
+    }
+});
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-success:hover {
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}

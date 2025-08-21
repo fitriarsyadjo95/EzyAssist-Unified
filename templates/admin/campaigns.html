@@ -1,0 +1,192 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Campaign Management</h5>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                        <i class="fas fa-plus me-1"></i>
+                        Create Campaign
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if campaigns %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Campaign ID</th>
+                                    <th>Name</th>
+                                    <th>Min Deposit</th>
+                                    <th>Reward</th>
+                                    <th>Status</th>
+                                    <th>Registration Link</th>
+                                    <th>Registrations</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in campaigns %}
+                                <tr>
+                                    <td><code>{{ campaign.campaign_id }}</code></td>
+                                    <td>{{ campaign.name }}</td>
+                                    <td>${{ campaign.min_deposit_amount }}</td>
+                                    <td>{{ campaign.reward_description }}</td>
+                                    <td>
+                                        {% if campaign.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" 
+                                                   value="{{ request.base_url }}campaign/{{ campaign.campaign_id }}" 
+                                                   id="link-{{ campaign.id }}" readonly>
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="copyToClipboard('link-{{ campaign.id }}')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="/admin/campaigns/{{ campaign.campaign_id }}/registrations" 
+                                           class="btn btn-sm btn-outline-info">
+                                            View ({{ campaign.registration_count or 0 }})
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="toggleCampaign('{{ campaign.campaign_id }}', {{ campaign.is_active|lower }})">
+                                                {% if campaign.is_active %}
+                                                    <i class="fas fa-pause"></i>
+                                                {% else %}
+                                                    <i class="fas fa-play"></i>
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-bullhorn text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted">No campaigns yet</h5>
+                        <p class="text-muted">Create your first campaign to start attracting customers with special offers.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                            <i class="fas fa-plus me-1"></i>
+                            Create First Campaign
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Campaign Modal -->
+<div class="modal fade" id="createCampaignModal" tabindex="-1" aria-labelledby="createCampaignModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createCampaignModalLabel">Create New Campaign</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createCampaignForm" method="POST" action="/admin/campaigns/create">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="campaignId" class="form-label">Campaign ID</label>
+                        <input type="text" class="form-control" id="campaignId" name="campaign_id" 
+                               placeholder="e.g., rm50-giveaway-jan2025" required>
+                        <div class="form-text">Unique identifier for the campaign (letters, numbers, hyphens only)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campaignName" class="form-label">Campaign Name</label>
+                        <input type="text" class="form-control" id="campaignName" name="name" 
+                               placeholder="e.g., RM50 Giveaway January 2025" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="minDeposit" class="form-label">Minimum Deposit Amount (USD)</label>
+                        <input type="number" class="form-control" id="minDeposit" name="min_deposit_amount" 
+                               placeholder="100" min="1" required>
+                        <div class="form-text">Minimum deposit required to qualify for this campaign</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rewardDescription" class="form-label">Reward Description</label>
+                        <textarea class="form-control" id="rewardDescription" name="reward_description" 
+                                  rows="3" placeholder="RM50 cash reward upon successful deposit verification" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(function() {
+        // Show success feedback
+        const button = input.nextElementSibling;
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+        }, 2000);
+    });
+}
+
+function toggleCampaign(campaignId, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    const confirmMessage = `Are you sure you want to ${action} this campaign?`;
+    
+    if (confirm(confirmMessage)) {
+        fetch(`/admin/campaigns/${campaignId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error toggling campaign status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error toggling campaign status');
+        });
+    }
+}
+
+// Form validation
+document.getElementById('createCampaignForm').addEventListener('submit', function(e) {
+    const campaignId = document.getElementById('campaignId').value;
+    const validPattern = /^[a-z0-9-]+$/;
+    
+    if (!validPattern.test(campaignId)) {
+        e.preventDefault();
+        alert('Campaign ID can only contain lowercase letters, numbers, and hyphens');
+        return false;
+    }
+});
+</script>
+{% endblock %}

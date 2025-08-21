@@ -177,6 +177,12 @@ if Base:
         step_completed = Column(Integer, default=0)  # 0: neither, 1: setup only, 2: both steps
         ip_address = Column(String, nullable=True)
         user_agent = Column(Text, nullable=True)
+        # Campaign fields
+        campaign_id = Column(String, nullable=True)
+        campaign_name = Column(String, nullable=True)
+        campaign_min_deposit = Column(String, nullable=True)
+        campaign_reward = Column(String, nullable=True)
+        is_campaign_registration = Column(Boolean, default=False, nullable=False)
         created_at = Column(DateTime, default=datetime.utcnow)
         
         def to_dict(self):
@@ -204,7 +210,44 @@ if Base:
                 'account_setup_action': self.account_setup_action.value if self.account_setup_action else None,
                 'account_setup_completed_at': self.account_setup_completed_at.isoformat() if self.account_setup_completed_at else None,
                 'step_completed': self.step_completed,
+                'campaign_id': self.campaign_id,
+                'campaign_name': self.campaign_name,
+                'campaign_min_deposit': self.campaign_min_deposit,
+                'campaign_reward': self.campaign_reward,
+                'is_campaign_registration': self.is_campaign_registration,
                 'created_at': self.created_at.isoformat() if self.created_at else None
+            }
+
+    class Campaign(Base):
+        __tablename__ = "campaigns"
+        
+        id = Column(Integer, primary_key=True, index=True)
+        campaign_id = Column(String, unique=True, nullable=False, index=True)
+        name = Column(String, nullable=False)
+        description = Column(Text, nullable=True)
+        min_deposit_amount = Column(String, nullable=False)
+        reward_description = Column(String, nullable=False)
+        is_active = Column(Boolean, default=True, nullable=False)
+        start_date = Column(DateTime, nullable=True)
+        end_date = Column(DateTime, nullable=True)
+        created_by = Column(String, nullable=True)
+        created_at = Column(DateTime, default=datetime.utcnow)
+        updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'campaign_id': self.campaign_id,
+                'name': self.name,
+                'description': self.description,
+                'min_deposit_amount': self.min_deposit_amount,
+                'reward_description': self.reward_description,
+                'is_active': self.is_active,
+                'start_date': self.start_date.isoformat() if self.start_date else None,
+                'end_date': self.end_date.isoformat() if self.end_date else None,
+                'created_by': self.created_by,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None
             }
 
     class BotActivity(Base):
@@ -845,8 +888,11 @@ class RentungBot_Ai:
             "🎯 Pendaftaran VIP dan kempen promosi\n"
             "📊 Maklumat lengkap tentang broker Valetax\n"
             "💡 Soalan perdagangan forex asas\n\n"
-            "Untuk pendaftaran VIP: tanya 'VIP' atau 'register'\n"
-            "Untuk berbual dengan agent sebenar: /agent"
+            "Commands yang tersedia:\n"
+            "📝 /register - Pendaftaran VIP biasa\n"
+            "🎉 /campaign - Lihat campaign aktif atau join campaign\n"
+            "👨‍💼 /agent - Berbual dengan live agent\n\n"
+            "Contoh: /campaign rm50-giveaway"
         )
         
         await update.message.reply_text(welcome_message)
@@ -898,6 +944,123 @@ class RentungBot_Ai:
             
             # Log error command to database
             self.log_conversation(telegram_id, "/register", error_message, "command")
+
+    async def campaign_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /campaign command - show active campaigns or specific campaign registration"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        telegram_username = user.username or ""
+        
+        # Track activity
+        self.command_usage['campaign'] = self.command_usage.get('campaign', 0) + 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
+        
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'campaign')
+        self.reset_daily_tracking()
+        
+        try:
+            # Check if campaign ID was provided as argument
+            campaign_id = None
+            if context.args and len(context.args) > 0:
+                campaign_id = context.args[0]
+            
+            # Get base URL from environment
+            base_url = os.getenv('BASE_URL', 'https://your-app.repl.co')
+            
+            if campaign_id:
+                # Specific campaign registration
+                # Verify campaign exists and is active
+                if SessionLocal:
+                    db = SessionLocal()
+                    try:
+                        campaign = db.query(Campaign).filter(
+                            Campaign.campaign_id == campaign_id,
+                            Campaign.is_active == True
+                        ).first()
+                        
+                        if campaign:
+                            # Generate campaign registration token
+                            token = generate_registration_token(
+                                telegram_id=telegram_id, 
+                                telegram_username=telegram_username,
+                                token_type="campaign",
+                                campaign_id=campaign_id
+                            )
+                            
+                            campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
+                            
+                            campaign_message = (
+                                f"🎉 {campaign.name}\n\n"
+                                f"🎁 Reward: {campaign.reward_description}\n"
+                                f"💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
+                                f"🎯 Join Group Chat Fighter Rentung\n\n"
+                                f"Klik link di bawah untuk menyertai campaign:\n\n"
+                                f"👉 {campaign_url}\n\n"
+                                f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
+                                f"📝 Pastikan anda deposit minimum yang diperlukan untuk layak mendapat reward!"
+                            )
+                        else:
+                            campaign_message = (
+                                f"❌ Campaign '{campaign_id}' tidak dijumpai atau tidak aktif.\n\n"
+                                f"Gunakan /campaign untuk lihat senarai campaign yang aktif."
+                            )
+                    except Exception as e:
+                        logger.error(f"Error fetching campaign {campaign_id}: {e}")
+                        campaign_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+                    finally:
+                        db.close()
+                else:
+                    campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
+            else:
+                # Show list of active campaigns
+                if SessionLocal:
+                    db = SessionLocal()
+                    try:
+                        active_campaigns = db.query(Campaign).filter(
+                            Campaign.is_active == True
+                        ).order_by(Campaign.id.desc()).all()
+                        
+                        if active_campaigns:
+                            campaign_list = ["🎉 Campaign Aktif:\n"]
+                            for i, campaign in enumerate(active_campaigns, 1):
+                                campaign_list.append(
+                                    f"{i}. **{campaign.name}**\n"
+                                    f"   🎁 {campaign.reward_description}\n"
+                                    f"   💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
+                                    f"   📝 `/campaign {campaign.campaign_id}`\n"
+                                )
+                            
+                            campaign_list.append("\n💡 Gunakan `/campaign [campaign_id]` untuk daftar campaign tertentu")
+                            campaign_message = "\n".join(campaign_list)
+                        else:
+                            campaign_message = (
+                                "📢 Tiada campaign aktif buat masa ini.\n\n"
+                                "🔔 Follow channel kami untuk dapatkan updates campaign terkini!\n"
+                                "📝 Untuk pendaftaran VIP biasa, gunakan /register"
+                            )
+                    except Exception as e:
+                        logger.error(f"Error fetching campaigns: {e}")
+                        campaign_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+                    finally:
+                        db.close()
+                else:
+                    campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
+            
+            await update.message.reply_text(campaign_message, parse_mode='Markdown')
+            logger.info(f"Campaign command sent to {telegram_id}")
+            
+            # Log command to database
+            self.log_conversation(telegram_id, f"/campaign {campaign_id or ''}", campaign_message, "command")
+            
+        except Exception as e:
+            logger.error(f"Campaign command error: {e}")
+            error_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+            await update.message.reply_text(error_message)
+            
+            # Log error command to database
+            self.log_conversation(telegram_id, "/campaign", error_message, "command")
 
     async def agent_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /agent command - redirect to live agent"""
@@ -1218,6 +1381,7 @@ class RentungBot_Ai:
         # Add handlers
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("register", self.register_command))
+        self.application.add_handler(CommandHandler("campaign", self.campaign_command))
         self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
@@ -2022,6 +2186,30 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     func.count(VipRegistration.id).label('count')
                 ).group_by(VipRegistration.brokerage_name).all()
                 
+                # Campaign statistics
+                campaign_registrations = db.query(VipRegistration).filter(
+                    VipRegistration.campaign_id.isnot(None)
+                ).count()
+                
+                regular_registrations = total_registrations - campaign_registrations
+                
+                # Active campaigns
+                active_campaigns_count = db.query(Campaign).filter(
+                    Campaign.is_active == True
+                ).count()
+                
+                # Campaign performance
+                campaign_performance = db.query(
+                    Campaign.name,
+                    Campaign.campaign_id,
+                    func.count(VipRegistration.id).label('registrations'),
+                    func.sum(func.cast(VipRegistration.deposit_amount, Float)).label('total_deposits')
+                ).outerjoin(
+                    VipRegistration, Campaign.campaign_id == VipRegistration.campaign_id
+                ).filter(
+                    Campaign.is_active == True
+                ).group_by(Campaign.id, Campaign.name, Campaign.campaign_id).all()
+                
                 stats = {
                     "total_registrations": total_registrations,
                     "recent_registrations": recent_registrations,
@@ -2029,7 +2217,11 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     "verified_count": verified_count,
                     "rejected_count": rejected_count,
                     "on_hold_count": on_hold_count,
-                    "broker_stats": broker_stats
+                    "broker_stats": broker_stats,
+                    "campaign_registrations": campaign_registrations,
+                    "regular_registrations": regular_registrations,
+                    "active_campaigns_count": active_campaigns_count,
+                    "campaign_performance": campaign_performance
                 }
             except Exception as e:
                 logger.error(f"Error getting admin stats: {e}")
@@ -2041,7 +2233,11 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     "verified_count": 0,
                     "rejected_count": 0,
                     "on_hold_count": 0,
-                    "broker_stats": []
+                    "broker_stats": [],
+                    "campaign_registrations": 0,
+                    "regular_registrations": 0,
+                    "active_campaigns_count": 0,
+                    "campaign_performance": []
                 }
             finally:
                 db.close()
@@ -3529,6 +3725,566 @@ async def check_import_dependencies(admin = Depends(get_current_admin)):
     
     return JSONResponse(content=status)
 
+# CAMPAIGN MANAGEMENT ROUTES
+
+@app.get("/admin/campaigns", response_class=HTMLResponse)
+async def admin_campaigns(request: Request, admin = Depends(get_current_admin)):
+    """Admin campaigns management page"""
+    if not SessionLocal:
+        return RedirectResponse(url="/admin/registrations", status_code=302)
+    
+    db = get_db()
+    if not db:
+        return RedirectResponse(url="/admin/registrations", status_code=302)
+    
+    try:
+        # Get all campaigns
+        campaigns = db.query(Campaign).order_by(Campaign.created_at.desc()).all()
+        
+        # Get campaign statistics
+        campaign_stats = {}
+        for campaign in campaigns:
+            registrations = db.query(VipRegistration).filter(
+                VipRegistration.campaign_id == campaign.campaign_id
+            ).all()
+            
+            stats = {
+                'total_registrations': len(registrations),
+                'verified_count': len([r for r in registrations if r.status == RegistrationStatus.VERIFIED]),
+                'pending_count': len([r for r in registrations if r.status == RegistrationStatus.PENDING]),
+                'total_deposits': sum([float(r.deposit_amount) if r.deposit_amount and r.deposit_amount.replace('.','').isdigit() else 0 for r in registrations])
+            }
+            campaign_stats[campaign.campaign_id] = stats
+        
+        return templates.TemplateResponse("admin/campaigns.html", {
+            "request": request,
+            "campaigns": campaigns,
+            "campaign_stats": campaign_stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading campaigns: {e}")
+        return RedirectResponse(url="/admin/registrations", status_code=302)
+    finally:
+        db.close()
+
+@app.post("/admin/campaigns/create")
+async def create_campaign(
+    name: str = Form(...),
+    description: str = Form(""),
+    min_deposit_amount: str = Form(...),
+    reward_description: str = Form(...),
+    start_date: str = Form(None),
+    end_date: str = Form(None),
+    admin = Depends(get_current_admin)
+):
+    """Create new campaign"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Generate campaign_id from name
+        import re
+        campaign_id = re.sub(r'[^a-z0-9]', '-', name.lower())
+        campaign_id = re.sub(r'-+', '-', campaign_id).strip('-')
+        
+        # Check if campaign_id already exists
+        existing = db.query(Campaign).filter(Campaign.campaign_id == campaign_id).first()
+        if existing:
+            campaign_id = f"{campaign_id}-{int(time.time())}"
+        
+        # Parse dates if provided
+        start_dt = None
+        end_dt = None
+        if start_date:
+            start_dt = datetime.fromisoformat(start_date)
+        if end_date:
+            end_dt = datetime.fromisoformat(end_date)
+        
+        # Create campaign
+        new_campaign = Campaign(
+            campaign_id=campaign_id,
+            name=name,
+            description=description,
+            min_deposit_amount=min_deposit_amount,
+            reward_description=reward_description,
+            start_date=start_dt,
+            end_date=end_dt,
+            created_by=admin.get('username'),
+            is_active=True
+        )
+        
+        db.add(new_campaign)
+        db.commit()
+        
+        logger.info(f"✅ Campaign created: {campaign_id} by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "Campaign created successfully",
+            "campaign_id": campaign_id
+        })
+        
+    except Exception as e:
+        logger.error(f"Error creating campaign: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create campaign: {str(e)}")
+    finally:
+        db.close()
+
+@app.put("/admin/campaigns/{campaign_id}/toggle")
+async def toggle_campaign_status(campaign_id: str, admin = Depends(get_current_admin)):
+    """Toggle campaign active status"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        campaign = db.query(Campaign).filter(Campaign.campaign_id == campaign_id).first()
+        if not campaign:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+        
+        campaign.is_active = not campaign.is_active
+        campaign.updated_at = datetime.utcnow()
+        db.commit()
+        
+        status_text = "activated" if campaign.is_active else "deactivated"
+        logger.info(f"✅ Campaign {campaign_id} {status_text} by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Campaign {status_text} successfully",
+            "is_active": campaign.is_active
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error toggling campaign status: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update campaign status")
+    finally:
+        db.close()
+
+@app.get("/admin/campaigns/{campaign_id}/registrations")
+async def get_campaign_registrations(campaign_id: str, admin = Depends(get_current_admin)):
+    """Get registrations for specific campaign"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        registrations = db.query(VipRegistration).filter(
+            VipRegistration.campaign_id == campaign_id
+        ).order_by(VipRegistration.created_at.desc()).all()
+        
+        return JSONResponse(content={
+            "status": "success",
+            "registrations": [reg.to_dict() for reg in registrations]
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching campaign registrations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch registrations")
+    finally:
+        db.close()
+
+# CAMPAIGN REGISTRATION ROUTES
+
+@app.get("/campaign/{campaign_id}", response_class=HTMLResponse)
+async def campaign_account_setup(request: Request, campaign_id: str, token: str = None):
+    """Campaign-specific account setup page"""
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database not available"
+        })
+    
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database connection failed"
+        })
+    
+    try:
+        # Get campaign details
+        campaign = db.query(Campaign).filter(
+            Campaign.campaign_id == campaign_id,
+            Campaign.is_active == True
+        ).first()
+        
+        if not campaign:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Campaign not found or inactive"
+            })
+        
+        # Check if campaign has expired
+        if campaign.end_date and datetime.utcnow() > campaign.end_date:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Campaign has expired"
+            })
+        
+        # Pass campaign info to template
+        context = {
+            "request": request,
+            "campaign": campaign,
+            "token": token
+        }
+        
+        return templates.TemplateResponse("campaign_account_setup.html", context)
+        
+    except Exception as e:
+        logger.error(f"Error loading campaign {campaign_id}: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Campaign loading failed"
+        })
+    finally:
+        db.close()
+
+@app.post("/campaign/{campaign_id}/continue")
+async def campaign_account_setup_continue(
+    request: Request,
+    campaign_id: str,
+    setup_action: str = Form(...),
+    token: str = Form(None)
+):
+    """Handle campaign account setup continuation"""
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database not available"
+        })
+    
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database connection failed"
+        })
+    
+    try:
+        # Get campaign details
+        campaign = db.query(Campaign).filter(
+            Campaign.campaign_id == campaign_id,
+            Campaign.is_active == True
+        ).first()
+        
+        if not campaign:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Campaign not found or inactive"
+            })
+        
+        # Get user info from token
+        telegram_id = None
+        telegram_username = ""
+        
+        if token:
+            token_data = decode_registration_token(token)
+            if token_data:
+                telegram_id = token_data.get('telegram_id')
+                telegram_username = token_data.get('telegram_username', '')
+        
+        if not telegram_id:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Invalid or expired registration link"
+            })
+        
+        # Check for existing campaign registration
+        existing_registration = db.query(VipRegistration).filter(
+            VipRegistration.telegram_id == telegram_id,
+            VipRegistration.campaign_id == campaign_id
+        ).first()
+        
+        if existing_registration:
+            # Update existing registration
+            existing_registration.account_setup_action = AccountSetupAction(setup_action)
+            existing_registration.account_setup_completed_at = datetime.utcnow()
+            existing_registration.step_completed = 1
+            db.commit()
+            
+            new_token = generate_registration_token(
+                telegram_id, 
+                telegram_username, 
+                "campaign", 
+                existing_registration.id
+            )
+        else:
+            # Create new campaign registration
+            temp_registration = VipRegistration(
+                telegram_id=telegram_id,
+                telegram_username=telegram_username,
+                full_name="",  # Will be filled in step 2
+                email="",      # Will be filled in step 2
+                phone_number="", # Will be filled in step 2
+                account_setup_action=AccountSetupAction(setup_action),
+                account_setup_completed_at=datetime.utcnow(),
+                step_completed=1,
+                brokerage_name="Valetax",
+                campaign_id=campaign.campaign_id,
+                campaign_name=campaign.name,
+                campaign_min_deposit=campaign.min_deposit_amount,
+                campaign_reward=campaign.reward_description,
+                is_campaign_registration=True
+            )
+            db.add(temp_registration)
+            db.flush()  # Get the ID
+            
+            # Add audit log
+            add_audit_log(
+                registration_id=temp_registration.id,
+                action="CAMPAIGN_ACCOUNT_SETUP",
+                old_value=None,
+                new_value=setup_action,
+                admin_user=None,
+                details=f"Campaign account setup completed for campaign {campaign_id}"
+            )
+            
+            db.commit()
+            
+            new_token = generate_registration_token(
+                telegram_id, 
+                telegram_username, 
+                "campaign", 
+                temp_registration.id
+            )
+        
+        # Redirect to campaign registration form
+        base_url = request.base_url
+        registration_url = f"{base_url}campaign/{campaign_id}/register?token={new_token}"
+        
+        return RedirectResponse(url=registration_url, status_code=302)
+        
+    except Exception as e:
+        logger.error(f"Error in campaign account setup continue: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": f"Setup continuation failed: {str(e)}"
+        })
+    finally:
+        db.close()
+
+@app.get("/campaign/{campaign_id}/register", response_class=HTMLResponse)
+async def campaign_registration_form(request: Request, campaign_id: str, token: str):
+    """Campaign registration form"""
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database not available"
+        })
+    
+    # Decode and validate token
+    token_data = decode_registration_token(token)
+    if not token_data:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Invalid or expired registration link. Please request a new link."
+        })
+    
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database connection failed"
+        })
+    
+    try:
+        # Get campaign details
+        campaign = db.query(Campaign).filter(
+            Campaign.campaign_id == campaign_id,
+            Campaign.is_active == True
+        ).first()
+        
+        if not campaign:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Campaign not found or inactive"
+            })
+        
+        # Get registration data if exists
+        registration_id = token_data.get('registration_id')
+        registration_data = None
+        if registration_id:
+            registration_data = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
+        
+        context = {
+            "request": request,
+            "token": token,
+            "campaign": campaign,
+            "registration_data": registration_data,
+            "setup_action": registration_data.account_setup_action.value if registration_data and registration_data.account_setup_action else None
+        }
+        
+        return templates.TemplateResponse("campaign_registration_form.html", context)
+        
+    except Exception as e:
+        logger.error(f"Error loading campaign registration form: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Registration form loading failed"
+        })
+    finally:
+        db.close()
+
+@app.post("/campaign/{campaign_id}/submit")
+async def submit_campaign_registration(
+    request: Request,
+    campaign_id: str,
+    token: str = Form(...),
+    full_name: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    deposit_amount: str = Form(...),
+    client_id: str = Form(""),
+    deposit_proof_1: UploadFile = File(None),
+    deposit_proof_2: UploadFile = File(None),
+    deposit_proof_3: UploadFile = File(None)
+):
+    """Submit campaign registration"""
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database not available"
+        })
+    
+    # Validate token
+    token_data = decode_registration_token(token)
+    if not token_data:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Invalid or expired registration link"
+        })
+    
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Database connection failed"
+        })
+    
+    try:
+        # Get campaign
+        campaign = db.query(Campaign).filter(
+            Campaign.campaign_id == campaign_id,
+            Campaign.is_active == True
+        ).first()
+        
+        if not campaign:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Campaign not found or inactive"
+            })
+        
+        # Validate minimum deposit
+        try:
+            deposit_float = float(deposit_amount)
+            min_deposit_float = float(campaign.min_deposit_amount)
+            if deposit_float < min_deposit_float:
+                return templates.TemplateResponse("error.html", {
+                    "request": request,
+                    "error": f"Minimum deposit for this campaign is {campaign.min_deposit_amount} USD. You entered {deposit_amount} USD."
+                })
+        except ValueError:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Invalid deposit amount format"
+            })
+        
+        # Get registration data
+        telegram_id = token_data.get('telegram_id')
+        registration_id = token_data.get('registration_id')
+        
+        if not registration_id:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Registration data not found"
+            })
+        
+        registration = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
+        if not registration:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Registration not found"
+            })
+        
+        # Handle file uploads
+        deposit_proof_paths = []
+        upload_dir = Path("uploads")
+        upload_dir.mkdir(exist_ok=True)
+        
+        for i, file in enumerate([deposit_proof_1, deposit_proof_2, deposit_proof_3], 1):
+            if file and file.filename:
+                timestamp = int(time.time())
+                filename = f"{timestamp}_{telegram_id}_proof_{i}_{file.filename}"
+                file_path = upload_dir / filename
+                
+                with open(file_path, "wb") as f:
+                    content = await file.read()
+                    f.write(content)
+                
+                deposit_proof_paths.append(str(file_path))
+            else:
+                deposit_proof_paths.append("")
+        
+        # Update registration
+        registration.full_name = full_name
+        registration.email = email
+        registration.phone_number = phone_number
+        registration.deposit_amount = deposit_amount
+        registration.client_id = client_id
+        registration.deposit_proof_1_path = deposit_proof_paths[0]
+        registration.deposit_proof_2_path = deposit_proof_paths[1]
+        registration.deposit_proof_3_path = deposit_proof_paths[2]
+        registration.step_completed = 2
+        registration.ip_address = request.client.host
+        registration.user_agent = request.headers.get('User-Agent', '')
+        
+        # Add audit log
+        add_audit_log(
+            registration_id=registration.id,
+            action="CAMPAIGN_REGISTRATION_SUBMITTED",
+            old_value=None,
+            new_value=f"Campaign: {campaign.name}, Deposit: {deposit_amount}",
+            admin_user=None,
+            details=f"Campaign registration submitted for {campaign.name}"
+        )
+        
+        db.commit()
+        
+        logger.info(f"✅ Campaign registration submitted: {campaign_id} by {telegram_id}")
+        
+        # Show success page
+        return templates.TemplateResponse("campaign_success.html", {
+            "request": request,
+            "campaign": campaign,
+            "registration": registration
+        })
+        
+    except Exception as e:
+        logger.error(f"Error submitting campaign registration: {e}")
+        db.rollback()
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": f"Registration submission failed: {str(e)}"
+        })
+    finally:
+        db.close()
+
 
 # Bot initialization on startup
 async def setup_bot_webhook():
@@ -3699,6 +4455,64 @@ async def migrate_database():
             """))
             conn.commit()
             logger.info("✅ Fixed enum values to uppercase")
+            
+            # Check and add campaign columns
+            campaign_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name IN ('campaign_id', 'campaign_name', 'campaign_min_deposit', 'campaign_reward', 'is_campaign_registration')
+            """))
+            existing_campaign_columns = [row[0] for row in campaign_result]
+            
+            campaign_columns_to_add = {
+                'campaign_id': 'VARCHAR',
+                'campaign_name': 'VARCHAR',
+                'campaign_min_deposit': 'VARCHAR',
+                'campaign_reward': 'VARCHAR',
+                'is_campaign_registration': 'BOOLEAN DEFAULT FALSE'
+            }
+            
+            for column, column_type in campaign_columns_to_add.items():
+                if column not in existing_campaign_columns:
+                    conn.execute(text(f"""
+                        ALTER TABLE vip_registrations 
+                        ADD COLUMN {column} {column_type}
+                    """))
+                    conn.commit()
+                    logger.info(f"✅ Added campaign column: {column}")
+            
+            # Check and create campaigns table
+            campaigns_table_result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'campaigns'
+                )
+            """))
+            campaigns_table_exists = campaigns_table_result.scalar()
+            
+            if not campaigns_table_exists:
+                conn.execute(text("""
+                    CREATE TABLE campaigns (
+                        id SERIAL PRIMARY KEY,
+                        campaign_id VARCHAR UNIQUE NOT NULL,
+                        name VARCHAR NOT NULL,
+                        description TEXT,
+                        min_deposit_amount VARCHAR NOT NULL,
+                        reward_description VARCHAR NOT NULL,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        start_date TIMESTAMP,
+                        end_date TIMESTAMP,
+                        created_by VARCHAR,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                conn.execute(text("""
+                    CREATE INDEX idx_campaigns_campaign_id ON campaigns(campaign_id)
+                """))
+                conn.commit()
+                logger.info("✅ Created campaigns table")
             
             # Check if audit log table exists
             audit_table_result = conn.execute(text("""

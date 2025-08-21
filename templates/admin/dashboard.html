@@ -399,6 +399,137 @@
             </div>
         </div>
 
+        <!-- Campaign Analytics Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="mb-3" style="color: #374151; font-weight: 600;">
+                    <i class="fas fa-bullhorn me-2" style="color: #7C3AED;"></i>
+                    Campaign Analytics
+                </h5>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-white me-3" style="background: #7C3AED;">
+                            <i class="fas fa-bullhorn fa-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.active_campaigns_count or 0 }}</h3>
+                            <small class="text-muted">Active Campaigns</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-white me-3" style="background: #EC4899;">
+                            <i class="fas fa-gift fa-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.campaign_registrations or 0 }}</h3>
+                            <small class="text-muted">Campaign Registrations</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-white me-3" style="background: #10B981;">
+                            <i class="fas fa-user-friends fa-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.regular_registrations or 0 }}</h3>
+                            <small class="text-muted">Regular Registrations</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="stat-icon text-white me-3" style="background: #F59E0B;">
+                            <i class="fas fa-percentage fa-lg"></i>
+                        </div>
+                        <div>
+                            {% set campaign_percentage = (stats.campaign_registrations / stats.total_registrations * 100) if stats.total_registrations > 0 else 0 %}
+                            <h3 class="mb-0">{{ "%.1f"|format(campaign_percentage) }}%</h3>
+                            <small class="text-muted">Campaign Conversion</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campaign Performance Table -->
+        {% if stats.campaign_performance and stats.campaign_performance|length > 0 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header" style="background: #F9FAFB; color: #374151; font-weight: 600; border-bottom: 1px solid #E5E7EB;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Campaign Performance
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Campaign</th>
+                                        <th>Campaign ID</th>
+                                        <th>Registrations</th>
+                                        <th>Total Deposits</th>
+                                        <th>Avg Deposit</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for campaign in stats.campaign_performance %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ campaign[0] or 'Unknown' }}</strong>
+                                        </td>
+                                        <td>
+                                            <code>{{ campaign[1] or 'N/A' }}</code>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ campaign[2] or 0 }}</span>
+                                        </td>
+                                        <td>
+                                            ${{ "{:,.2f}"|format(campaign[3] or 0) }} USD
+                                        </td>
+                                        <td>
+                                            {% if campaign[2] and campaign[2] > 0 and campaign[3] %}
+                                                ${{ "{:,.2f}"|format((campaign[3] / campaign[2])) }} USD
+                                            {% else %}
+                                                $0.00 USD
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="/admin/campaigns/{{ campaign[1] }}/registrations" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Bot Status Section -->
         <div class="row mb-4" id="bot-status-section">
             <div class="col-md-6">

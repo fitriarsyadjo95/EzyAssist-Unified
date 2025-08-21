@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-lg border-0 registration-card">
+            <!-- Success Header -->
+            <div class="card-header bg-gradient-success text-white text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle" style="font-size: 4rem;"></i>
+                </div>
+                <h1 class="mb-1 text-white">🎉 Pendaftaran Berjaya!</h1>
+                <p class="mb-0 opacity-75">
+                    Anda telah berjaya mendaftar untuk campaign: {{ campaign.name }}
+                </p>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <!-- Registration Summary -->
+                <div class="alert alert-success border-0 mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="alert-heading mb-2">
+                                <i class="fas fa-user me-2"></i>
+                                Maklumat Pendaftaran
+                            </h6>
+                            <p class="mb-1"><strong>Nama:</strong> {{ registration.full_name }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ registration.email }}</p>
+                            <p class="mb-0"><strong>Telegram:</strong> @{{ registration.telegram_username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="alert-heading mb-2">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Maklumat Trading
+                            </h6>
+                            <p class="mb-1"><strong>Trading ID:</strong> {{ registration.trading_id }}</p>
+                            <p class="mb-1"><strong>Deposit:</strong> ${{ registration.deposit_amount }} USD</p>
+                            <p class="mb-0"><strong>Campaign:</strong> {{ campaign.name }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Steps -->
+                <div class="text-center mb-4">
+                    <h3 class="text-primary mb-3">Apa Yang Seterusnya?</h3>
+                    <p class="lead text-muted">
+                        Pendaftaran anda sedang diproses. Berikut adalah langkah-langkah seterusnya:
+                    </p>
+                </div>
+
+                <!-- Process Steps -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="bg-primary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px;">
+                                <i class="fas fa-search" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h5 class="text-primary">1. Verification</h5>
+                            <p class="text-muted small">
+                                Tim kami akan verify deposit anda dalam masa 1-3 hari bekerja
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="bg-success text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px;">
+                                <i class="fas fa-gift" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h5 class="text-success">2. Reward Processing</h5>
+                            <p class="text-muted small">
+                                {{ campaign.reward_description }} akan diproses setelah verification
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="bg-info text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px;">
+                                <i class="fab fa-telegram" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h5 class="text-info">3. Group Invitation</h5>
+                            <p class="text-muted small">
+                                Anda akan dijemput ke Group Chat Fighter Rentung melalui Telegram
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Information -->
+                <div class="alert alert-info border-0 mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Maklumat Penting
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Verification Time:</strong> 1-3 hari bekerja (Isnin - Jumaat)</li>
+                        <li><strong>Contact Support:</strong> Jika ada sebarang pertanyaan, hubungi live agent di <a href="https://t.me/Cix_Na" target="_blank">@Cix_Na</a></li>
+                        <li><strong>Telegram Username:</strong> Pastikan username @{{ registration.telegram_username }} adalah betul dan aktif</li>
+                        <li><strong>Deposit Amount:</strong> Jumlah deposit ${{ registration.deposit_amount }} USD akan diverify dengan trading ID {{ registration.trading_id }}</li>
+                    </ul>
+                </div>
+
+                <!-- Campaign Details -->
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title text-primary">
+                            <i class="fas fa-bullhorn me-2"></i>
+                            Campaign Details
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Campaign:</strong> {{ campaign.name }}</p>
+                                <p class="mb-0"><strong>Reward:</strong> {{ campaign.reward_description }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Min Deposit:</strong> ${{ campaign.min_deposit_amount }} USD</p>
+                                <p class="mb-0"><strong>Your Deposit:</strong> ${{ registration.deposit_amount }} USD ✅</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="https://t.me/Cix_Na" target="_blank" class="btn btn-primary btn-lg w-100">
+                            <i class="fab fa-telegram me-2"></i>
+                            Contact Live Agent
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="https://ma.valetaxintl.com" target="_blank" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            Go to Valetax
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Registration ID -->
+                <div class="text-center mt-4 pt-4 border-top">
+                    <small class="text-muted">
+                        <strong>Registration ID:</strong> <code>{{ registration.id }}</code>
+                        <br>
+                        Simpan ID ini untuk rujukan anda
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Campaign Modal (optional) -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareModalLabel">
+                    <i class="fas fa-share-alt me-2"></i>
+                    Share Campaign
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Share this campaign with your friends:</p>
+                <div class="input-group">
+                    <input type="text" class="form-control" 
+                           value="{{ request.base_url }}campaign/{{ campaign.campaign_id }}" 
+                           id="campaignLink" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('campaignLink')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function copyToClipboard(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    navigator.clipboard.writeText(input.value).then(function() {
+        // Show success feedback
+        const button = input.nextElementSibling;
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+        }, 2000);
+    });
+}
+
+// Auto-redirect to Telegram after 10 seconds (optional)
+// setTimeout(() => {
+//     if (confirm('Would you like to contact the live agent now?')) {
+//         window.open('https://t.me/Cix_Na', '_blank');
+//     }
+// }, 10000);
+</script>
+
+<style>
+.bg-gradient-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-info {
+    color: #17a2b8 !important;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+</style>
+{% endblock %}
