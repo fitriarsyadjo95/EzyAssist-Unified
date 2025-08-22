@@ -2133,21 +2133,45 @@ async def admin_login_page(request: Request):
 @app.post("/admin/login")
 async def admin_login(request: Request, username: str = Form(...), password: str = Form(...)):
     """Process admin login"""
-    if authenticate_admin(username, password):
-        session_token = create_admin_session(username)
-        response = RedirectResponse(url="/admin/", status_code=302)
-        response.set_cookie(
-            key="admin_session",
-            value=session_token,
-            max_age=3600,   # 1 hour
-            httponly=True,
-            secure=False  # Set to True in production with HTTPS
-        )
-        return response
-    else:
+    try:
+        logger.info(f"Login attempt for username: {username}")
+        
+        # Test authentication step by step
+        auth_result = authenticate_admin(username, password)
+        logger.info(f"Authentication result: {auth_result}")
+        
+        if auth_result:
+            # Test session creation
+            session_token = create_admin_session(username)
+            logger.info(f"Session token created: {session_token[:10]}...")
+            
+            response = RedirectResponse(url="/admin/", status_code=302)
+            response.set_cookie(
+                key="admin_session",
+                value=session_token,
+                max_age=3600,   # 1 hour
+                httponly=True,
+                secure=False  # Set to True in production with HTTPS
+            )
+            logger.info("Login successful, redirecting to admin dashboard")
+            return response
+        else:
+            logger.warning(f"Login failed for username: {username}")
+            return templates.TemplateResponse("admin/login.html", {
+                "request": request,
+                "error": "Invalid username or password"
+            })
+            
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Return error page instead of 500
         return templates.TemplateResponse("admin/login.html", {
             "request": request,
-            "error": "Invalid username or password"
+            "error": f"Login system error: {str(e)}"
         })
 
 @app.get("/admin/logout")
@@ -3749,10 +3773,53 @@ async def check_import_dependencies(admin = Depends(get_current_admin)):
 async def test_auth_import():
     """Test if auth functions are available"""
     try:
-        from admin_auth import get_current_admin, admin_login_required
-        return {"status": "success", "message": "Auth functions imported successfully"}
+        from admin_auth import get_current_admin, admin_login_required, authenticate_admin, create_admin_session
+        
+        # Test auth function with default credentials
+        test_auth = authenticate_admin("admin@ezymeta.global", "Password123!")
+        
+        return {
+            "status": "success", 
+            "message": "Auth functions imported successfully",
+            "test_auth_result": test_auth,
+            "functions_available": ["get_current_admin", "admin_login_required", "authenticate_admin", "create_admin_session"]
+        }
     except Exception as e:
-        return {"status": "error", "message": f"Auth import failed: {str(e)}"}
+        import traceback
+        return {
+            "status": "error", 
+            "message": f"Auth import failed: {str(e)}",
+            "traceback": traceback.format_exc()
+        }
+
+@app.get("/debug/test-login")
+async def test_login_logic():
+    """Test login logic without form processing"""
+    try:
+        username = "admin@ezymeta.global"
+        password = "Password123!"
+        
+        # Test authentication
+        auth_result = authenticate_admin(username, password)
+        if not auth_result:
+            return {"status": "error", "message": "Authentication failed"}
+            
+        # Test session creation
+        session_token = create_admin_session(username)
+        
+        return {
+            "status": "success",
+            "message": "Login logic working",
+            "auth_result": auth_result,
+            "session_token_length": len(session_token)
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "message": f"Login logic failed: {str(e)}",
+            "traceback": traceback.format_exc()
+        }
 
 @app.post("/admin/manual-migrate")
 async def manual_migrate_database(admin = Depends(get_current_admin)):
