@@ -906,11 +906,14 @@ class RentungBot_Ai:
             "🎯 Pendaftaran VIP dan kempen promosi\n"
             "📊 Maklumat lengkap tentang broker Valetax\n"
             "💡 Soalan perdagangan forex asas\n\n"
-            "Commands yang tersedia:\n"
-            "📝 /register - Pendaftaran VIP biasa\n"
-            "🎉 /campaign - Lihat campaign aktif atau join campaign\n"
+            "📋 **Commands yang tersedia:**\n"
+            "📝 /register - Pendaftaran VIP biasa\n\n"
+            "🎉 **CAMPAIGN SPECIAL:**\n"
+            "💫 /campaign - Lihat semua campaign aktif dengan reward menarik!\n"
+            "💰 /campaign [campaign_id] - Sertai campaign tertentu\n\n"
             "👨‍💼 /agent - Berbual dengan live agent\n\n"
-            "Contoh: /campaign rm50-giveaway"
+            "🔥 **Jangan lepaskan peluang!** \n"
+            "Gunakan /campaign untuk lihat bonus dan reward terkini!"
         )
         
         await update.message.reply_text(welcome_message)
