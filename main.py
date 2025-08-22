@@ -22,6 +22,7 @@ from functools import wraps
 
 # FastAPI and web components
 from fastapi import FastAPI, Request, Form, HTTPException, status, File, UploadFile, Depends
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -112,6 +113,23 @@ async def save_uploaded_file(upload_file: UploadFile) -> Optional[str]:
 
 # Initialize FastAPI app
 app = FastAPI(title="RentungFX Unified System", version="1.0.0")
+
+# Security Headers Middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Add security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com https://ma.valetaxintl.com"
+        
+        return response
+
+# Add security middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Setup templates and static files
 templates = Jinja2Templates(directory="templates")
@@ -3725,19 +3743,83 @@ async def check_import_dependencies(admin = Depends(get_current_admin)):
     
     return JSONResponse(content=status)
 
+# MANUAL MIGRATION ENDPOINTS
+
+@app.get("/debug/auth-test")
+async def test_auth_import():
+    """Test if auth functions are available"""
+    try:
+        from admin_auth import get_current_admin, admin_login_required
+        return {"status": "success", "message": "Auth functions imported successfully"}
+    except Exception as e:
+        return {"status": "error", "message": f"Auth import failed: {str(e)}"}
+
+@app.post("/admin/manual-migrate")
+async def manual_migrate_database(admin = Depends(get_current_admin)):
+    """Manually trigger database migration"""
+    try:
+        await migrate_database()
+        return {"status": "success", "message": "Database migration completed successfully"}
+    except Exception as e:
+        logger.error(f"Manual migration failed: {e}")
+        return {"status": "error", "message": f"Migration failed: {str(e)}"}
+
+@app.get("/admin/db-status")
+async def check_database_status(admin = Depends(get_current_admin)):
+    """Check database table status"""
+    if not engine:
+        return {"status": "error", "message": "Database not connected"}
+    
+    try:
+        with engine.connect() as conn:
+            # Check for campaigns table
+            campaigns_result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'campaigns'
+                )
+            """))
+            campaigns_exists = campaigns_result.scalar()
+            
+            # Check for campaign columns in vip_registrations
+            columns_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name LIKE '%campaign%'
+            """))
+            campaign_columns = [row[0] for row in columns_result]
+            
+            # Check campaigns count if table exists
+            campaigns_count = 0
+            if campaigns_exists:
+                count_result = conn.execute(text("SELECT COUNT(*) FROM campaigns"))
+                campaigns_count = count_result.scalar()
+            
+            return {
+                "status": "success",
+                "campaigns_table_exists": campaigns_exists,
+                "campaigns_count": campaigns_count,
+                "campaign_columns": campaign_columns,
+                "database_connected": True
+            }
+    except Exception as e:
+        return {"status": "error", "message": f"Database check failed: {str(e)}"}
+
 # CAMPAIGN MANAGEMENT ROUTES
 
 @app.get("/admin/campaigns", response_class=HTMLResponse)
 async def admin_campaigns(request: Request, admin = Depends(get_current_admin)):
     """Admin campaigns management page"""
-    if not SessionLocal:
-        return RedirectResponse(url="/admin/registrations", status_code=302)
-    
-    db = get_db()
-    if not db:
-        return RedirectResponse(url="/admin/registrations", status_code=302)
-    
     try:
+        if not SessionLocal:
+            logger.error("SessionLocal not available for campaigns page")
+            return RedirectResponse(url="/admin/registrations", status_code=302)
+        
+        db = get_db()
+        if not db:
+            logger.error("Database connection failed for campaigns page")
+            return RedirectResponse(url="/admin/registrations", status_code=302)
         # Get all campaigns
         campaigns = db.query(Campaign).order_by(Campaign.created_at.desc()).all()
         
@@ -3764,9 +3846,17 @@ async def admin_campaigns(request: Request, admin = Depends(get_current_admin)):
         
     except Exception as e:
         logger.error(f"Error loading campaigns: {e}")
-        return RedirectResponse(url="/admin/registrations", status_code=302)
+        if 'db' in locals():
+            db.close()
+        # Return error page instead of redirect for debugging
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Campaign management page failed to load: {str(e)}",
+            "translations": {}
+        })
     finally:
-        db.close()
+        if 'db' in locals():
+            db.close()
 
 @app.post("/admin/campaigns/create")
 async def create_campaign(
@@ -3836,6 +3926,7 @@ async def create_campaign(
     finally:
         db.close()
 
+@app.post("/admin/campaigns/{campaign_id}/toggle")
 @app.put("/admin/campaigns/{campaign_id}/toggle")
 async def toggle_campaign_status(campaign_id: str, admin = Depends(get_current_admin)):
     """Toggle campaign active status"""
