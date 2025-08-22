@@ -4947,6 +4947,92 @@ async def admin_campaigns(request: Request):
                     font-family: 'Inter', sans-serif;
                     font-size: 14px;
                 }}
+                .sidebar {{
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    height: 100vh;
+                    width: 250px;
+                    background: #FFFFFF;
+                    border-right: 1px solid #E5E7EB;
+                    box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+                    z-index: 1000;
+                    overflow-y: auto;
+                }}
+                .sidebar-header {{
+                    padding: 20px;
+                    border-bottom: 1px solid #E5E7EB;
+                    background: #F9FAFB;
+                }}
+                .sidebar-brand {{
+                    color: #111827;
+                    font-weight: 600;
+                    font-size: 20px;
+                    text-decoration: none;
+                }}
+                .sidebar-brand:hover {{
+                    color: #2563EB;
+                    text-decoration: none;
+                }}
+                .sidebar-nav {{
+                    padding: 16px 0;
+                }}
+                .nav-item {{
+                    margin: 4px 12px;
+                }}
+                .nav-link {{
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 16px;
+                    color: #4B5563;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
+                }}
+                .nav-link:hover {{
+                    background: #EBF4FF;
+                    color: #2563EB;
+                    text-decoration: none;
+                }}
+                .nav-link.active {{
+                    background: #2563EB;
+                    color: #FFFFFF;
+                }}
+                .nav-link i {{
+                    width: 20px;
+                    margin-right: 12px;
+                    text-align: center;
+                }}
+                .nav-submenu {{
+                    margin-left: 12px;
+                    border-left: 2px solid #E5E7EB;
+                    padding-left: 0;
+                }}
+                .nav-submenu .nav-item {{
+                    margin: 2px 0;
+                }}
+                .nav-submenu .nav-link {{
+                    padding: 8px 16px;
+                    font-size: 13px;
+                    color: #6B7280;
+                    margin-left: 8px;
+                    border-radius: 4px;
+                }}
+                .nav-submenu .nav-link:hover {{
+                    background: #F3F4F6;
+                    color: #374151;
+                }}
+                .nav-submenu .nav-link.active {{
+                    background: #EBF4FF;
+                    color: #2563EB;
+                    border-left: 3px solid #2563EB;
+                }}
+                .nav-submenu .nav-link i {{
+                    width: 16px;
+                    margin-right: 8px;
+                    font-size: 12px;
+                }}
                 .main-content {{
                     margin-left: 250px;
                     min-height: 100vh;
