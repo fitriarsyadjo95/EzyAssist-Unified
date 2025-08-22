@@ -2395,7 +2395,7 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                                 <a href="/admin/bot-activity" class="btn btn-info me-2">
                                     <i class="fas fa-chart-line me-1"></i>Bot Activity
                                 </a>
-                                <a href="/admin/campaigns" class="btn btn-success">
+                                <a href="/admin/campaigns-new" class="btn btn-success">
                                     <i class="fas fa-bullhorn me-1"></i>Manage Campaigns
                                 </a>
                             </div>
