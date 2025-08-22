@@ -901,19 +901,19 @@ class RentungBot_Ai:
         self.reset_daily_tracking()
         
         welcome_message = (
-            f"Selamat datang ke RentungBot_Ai, {user.first_name}! 🤖✨\n\n"
-            "Saya adalah bot pintar yang membantu dengan:\n"
-            "🎯 Pendaftaran VIP dan kempen promosi\n"
-            "📊 Maklumat lengkap tentang broker Valetax\n"
-            "💡 Soalan perdagangan forex asas\n\n"
-            "📋 **Commands yang tersedia:**\n"
-            "📝 /register - Pendaftaran VIP biasa\n\n"
-            "🎉 **CAMPAIGN SPECIAL:**\n"
-            "💫 /campaign - Lihat semua campaign aktif dengan reward menarik!\n"
-            "💰 /campaign [campaign_id] - Sertai campaign tertentu\n\n"
-            "👨‍💼 /agent - Berbual dengan live agent\n\n"
-            "🔥 **Jangan lepaskan peluang!** \n"
-            "Gunakan /campaign untuk lihat bonus dan reward terkini!"
+            f"Eh {user.first_name}! Welcome to RentungBot_Ai! 🤖✨\n\n"
+            "Aku ni bot yang boleh tolong kau dengan:\n"
+            "🎯 Daftar VIP & join campaign best-best\n"
+            "📊 Info pasal broker Valetax\n"
+            "💡 Tanya-tanya pasal forex trading\n\n"
+            "📋 **Apa yang boleh kau buat:**\n"
+            "📝 /register - Daftar VIP macam biasa\n\n"
+            "🎉 **NAK DAPAT DUIT FREE?**\n"
+            "💫 /campaign - Tengok semua campaign ada bonus sedap!\n"
+            "💰 /campaign [campaign_id] - Terus join campaign yang kau nak\n\n"
+            "👨‍💼 /agent - Nak cakap dengan orang live\n\n"
+            "🔥 **Jangan bodoh-bodoh miss!** \n"
+            "Tekan /campaign sekarang - mana tau ada bonus RM50 ke, rebate ke!"
         )
         
         await update.message.reply_text(welcome_message)
