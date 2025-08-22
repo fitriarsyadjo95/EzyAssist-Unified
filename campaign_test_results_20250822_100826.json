@@ -1,0 +1,660 @@
+{
+  "test_summary": {
+    "total_tests": 43,
+    "passed_tests": 20,
+    "failed_tests": [
+      {
+        "test": "Security - Protected URL",
+        "passed": false,
+        "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/campaigns",
+        "details": null,
+        "timestamp": "2025-08-22T10:08:24.820650"
+      },
+      {
+        "test": "Security - Protected URL",
+        "passed": false,
+        "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/campaigns/create",
+        "details": null,
+        "timestamp": "2025-08-22T10:08:24.836537"
+      },
+      {
+        "test": "Security - Protected URL",
+        "passed": false,
+        "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/",
+        "details": null,
+        "timestamp": "2025-08-22T10:08:24.871509"
+      }
+    ],
+    "success_rate": 46.51162790697674,
+    "categories": {
+      "Connectivity": [
+        {
+          "test": "Server Connectivity",
+          "passed": true,
+          "message": "Server responding (Status: 200)",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:15.894753"
+        }
+      ],
+      "Authentication": [
+        {
+          "test": "Admin Login Page Access",
+          "passed": true,
+          "message": "",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:16.418963"
+        },
+        {
+          "test": "Admin Authentication",
+          "passed": true,
+          "message": "Login successful",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:16.446793"
+        },
+        {
+          "test": "Error Handling - Unauthorized Access",
+          "passed": false,
+          "message": "Admin pages not properly protected",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.056137"
+        },
+        {
+          "test": "Performance - Admin Dashboard Availability",
+          "passed": false,
+          "message": "Page not accessible",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:25.507233"
+        }
+      ],
+      "Dashboard": [
+        {
+          "test": "Dashboard Analytics Access",
+          "passed": false,
+          "message": "Cannot access dashboard",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:23.038266"
+        }
+      ],
+      "Campaign Management": [
+        {
+          "test": "Campaign Management - Create Campaign Button",
+          "passed": false,
+          "message": "'Create Campaign' not found",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627572"
+        },
+        {
+          "test": "Campaign Management - Campaign Table Headers",
+          "passed": false,
+          "message": "'Campaign ID' not found",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627593"
+        },
+        {
+          "test": "Campaign Management - Registration Link Column",
+          "passed": false,
+          "message": "'Registration Link' not found",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627607"
+        },
+        {
+          "test": "Campaign Management - Actions Column",
+          "passed": false,
+          "message": "'Actions' not found",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627615"
+        },
+        {
+          "test": "Campaign Management - Campaign Modal",
+          "passed": false,
+          "message": "'createCampaignModal' not found",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627621"
+        },
+        {
+          "test": "Campaign Management - Copy Functionality",
+          "passed": false,
+          "message": "'copyToClipboard' not found",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627626"
+        },
+        {
+          "test": "Campaign Management - Bootstrap UI",
+          "passed": true,
+          "message": "",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:17.627662"
+        },
+        {
+          "test": "Campaign Creation - Success",
+          "passed": true,
+          "message": "Created campaign: automated-test-campaign-1755828498",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:18.170592"
+        },
+        {
+          "test": "Campaign Creation - Verification",
+          "passed": false,
+          "message": "Campaign not found in admin list",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:19.203049"
+        },
+        {
+          "test": "Campaign Validation - Duplicate Handling",
+          "passed": true,
+          "message": "System auto-generated unique ID",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:19.734365"
+        },
+        {
+          "test": "Campaign Validation - Invalid Data",
+          "passed": false,
+          "message": "Invalid data was accepted",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:19.759274"
+        },
+        {
+          "test": "Campaign Toggle - Deactivation",
+          "passed": true,
+          "message": "",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:20.302490"
+        },
+        {
+          "test": "Campaign Toggle - Reactivation",
+          "passed": true,
+          "message": "",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:21.346433"
+        },
+        {
+          "test": "Campaign Public Access - HTTP Status",
+          "passed": false,
+          "message": "Campaign page inaccessible: No response",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:21.890789"
+        },
+        {
+          "test": "Campaign Analytics - Registrations API",
+          "passed": true,
+          "message": "",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:22.989592"
+        },
+        {
+          "test": "Campaign Analytics - Data Structure",
+          "passed": true,
+          "message": "Found 0 registrations",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:22.989619"
+        },
+        {
+          "test": "Error Handling - Invalid Campaign",
+          "passed": false,
+          "message": "No response to invalid request",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:23.571555"
+        },
+        {
+          "test": "Performance - Campaign Management Response Time",
+          "passed": true,
+          "message": "0.04s",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:25.543259"
+        },
+        {
+          "test": "Performance - Campaign Page Availability",
+          "passed": false,
+          "message": "Page not accessible",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:25.571962"
+        }
+      ],
+      "Registration Flow": [
+        {
+          "test": "Registration Flow - Account Setup Continue",
+          "passed": false,
+          "message": "No response from endpoint",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:22.421585"
+        },
+        {
+          "test": "Registration Flow - Registration Form",
+          "passed": false,
+          "message": "No response from form endpoint",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:22.440048"
+        },
+        {
+          "test": "Registration Flow - Form Submission",
+          "passed": false,
+          "message": "No response from submit endpoint",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:22.461305"
+        },
+        {
+          "test": "Error Handling - Malformed URL",
+          "passed": false,
+          "message": "Poor handling: https://ezyassist-unified-production.up.railway.app/campaign/",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:23.597836"
+        },
+        {
+          "test": "Error Handling - Malformed URL",
+          "passed": false,
+          "message": "Poor handling: https://ezyassist-unified-production.up.railway.app/campaign/test-campaign/invalid-endpoint",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:23.616408"
+        },
+        {
+          "test": "Error Handling - Malformed URL",
+          "passed": false,
+          "message": "Poor handling: https://ezyassist-unified-production.up.railway.app/admin/campaigns/invalid/registrations",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:23.790191"
+        },
+        {
+          "test": "Performance - Homepage Response Time",
+          "passed": true,
+          "message": "0.03s",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:25.464303"
+        },
+        {
+          "test": "Performance - Concurrent Requests",
+          "passed": true,
+          "message": "5/5 successful, avg: 0.06s",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:25.644343"
+        }
+      ],
+      "Analytics": [],
+      "Error Handling": [],
+      "Security": [
+        {
+          "test": "Security - X-Content-Type-Options Header",
+          "passed": true,
+          "message": "nosniff",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.579093"
+        },
+        {
+          "test": "Security - X-Frame-Options Header",
+          "passed": true,
+          "message": "DENY",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.579115"
+        },
+        {
+          "test": "Security - X-XSS-Protection Header",
+          "passed": true,
+          "message": "1; mode=block",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.579119"
+        },
+        {
+          "test": "Security - Protected URL",
+          "passed": false,
+          "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/campaigns",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.820650"
+        },
+        {
+          "test": "Security - Protected URL",
+          "passed": false,
+          "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/campaigns/create",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.836537"
+        },
+        {
+          "test": "Security - Protected URL",
+          "passed": false,
+          "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.871509"
+        },
+        {
+          "test": "Security - Input Validation",
+          "passed": true,
+          "message": "Input sanitized or rejected",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.893154"
+        },
+        {
+          "test": "Security - Input Validation",
+          "passed": true,
+          "message": "Input sanitized or rejected",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.915840"
+        },
+        {
+          "test": "Security - Input Validation",
+          "passed": true,
+          "message": "Input sanitized or rejected",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:24.933307"
+        }
+      ],
+      "Performance": [],
+      "Other": [
+        {
+          "test": "Test Cleanup",
+          "passed": true,
+          "message": "Manual cleanup required for campaign: automated-test-campaign-1755828498",
+          "details": null,
+          "timestamp": "2025-08-22T10:08:26.148372"
+        }
+      ]
+    },
+    "test_campaign_id": "automated-test-campaign-1755828498"
+  },
+  "detailed_results": [
+    {
+      "test": "Server Connectivity",
+      "passed": true,
+      "message": "Server responding (Status: 200)",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:15.894753"
+    },
+    {
+      "test": "Admin Login Page Access",
+      "passed": true,
+      "message": "",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:16.418963"
+    },
+    {
+      "test": "Admin Authentication",
+      "passed": true,
+      "message": "Login successful",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:16.446793"
+    },
+    {
+      "test": "Campaign Management - Create Campaign Button",
+      "passed": false,
+      "message": "'Create Campaign' not found",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627572"
+    },
+    {
+      "test": "Campaign Management - Campaign Table Headers",
+      "passed": false,
+      "message": "'Campaign ID' not found",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627593"
+    },
+    {
+      "test": "Campaign Management - Registration Link Column",
+      "passed": false,
+      "message": "'Registration Link' not found",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627607"
+    },
+    {
+      "test": "Campaign Management - Actions Column",
+      "passed": false,
+      "message": "'Actions' not found",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627615"
+    },
+    {
+      "test": "Campaign Management - Campaign Modal",
+      "passed": false,
+      "message": "'createCampaignModal' not found",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627621"
+    },
+    {
+      "test": "Campaign Management - Copy Functionality",
+      "passed": false,
+      "message": "'copyToClipboard' not found",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627626"
+    },
+    {
+      "test": "Campaign Management - Bootstrap UI",
+      "passed": true,
+      "message": "",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:17.627662"
+    },
+    {
+      "test": "Campaign Creation - Success",
+      "passed": true,
+      "message": "Created campaign: automated-test-campaign-1755828498",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:18.170592"
+    },
+    {
+      "test": "Campaign Creation - Verification",
+      "passed": false,
+      "message": "Campaign not found in admin list",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:19.203049"
+    },
+    {
+      "test": "Campaign Validation - Duplicate Handling",
+      "passed": true,
+      "message": "System auto-generated unique ID",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:19.734365"
+    },
+    {
+      "test": "Campaign Validation - Invalid Data",
+      "passed": false,
+      "message": "Invalid data was accepted",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:19.759274"
+    },
+    {
+      "test": "Campaign Toggle - Deactivation",
+      "passed": true,
+      "message": "",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:20.302490"
+    },
+    {
+      "test": "Campaign Toggle - Reactivation",
+      "passed": true,
+      "message": "",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:21.346433"
+    },
+    {
+      "test": "Campaign Public Access - HTTP Status",
+      "passed": false,
+      "message": "Campaign page inaccessible: No response",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:21.890789"
+    },
+    {
+      "test": "Registration Flow - Account Setup Continue",
+      "passed": false,
+      "message": "No response from endpoint",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:22.421585"
+    },
+    {
+      "test": "Registration Flow - Registration Form",
+      "passed": false,
+      "message": "No response from form endpoint",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:22.440048"
+    },
+    {
+      "test": "Registration Flow - Form Submission",
+      "passed": false,
+      "message": "No response from submit endpoint",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:22.461305"
+    },
+    {
+      "test": "Campaign Analytics - Registrations API",
+      "passed": true,
+      "message": "",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:22.989592"
+    },
+    {
+      "test": "Campaign Analytics - Data Structure",
+      "passed": true,
+      "message": "Found 0 registrations",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:22.989619"
+    },
+    {
+      "test": "Dashboard Analytics Access",
+      "passed": false,
+      "message": "Cannot access dashboard",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:23.038266"
+    },
+    {
+      "test": "Error Handling - Invalid Campaign",
+      "passed": false,
+      "message": "No response to invalid request",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:23.571555"
+    },
+    {
+      "test": "Error Handling - Malformed URL",
+      "passed": false,
+      "message": "Poor handling: https://ezyassist-unified-production.up.railway.app/campaign/",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:23.597836"
+    },
+    {
+      "test": "Error Handling - Malformed URL",
+      "passed": false,
+      "message": "Poor handling: https://ezyassist-unified-production.up.railway.app/campaign/test-campaign/invalid-endpoint",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:23.616408"
+    },
+    {
+      "test": "Error Handling - Malformed URL",
+      "passed": false,
+      "message": "Poor handling: https://ezyassist-unified-production.up.railway.app/admin/campaigns/invalid/registrations",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:23.790191"
+    },
+    {
+      "test": "Error Handling - Unauthorized Access",
+      "passed": false,
+      "message": "Admin pages not properly protected",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.056137"
+    },
+    {
+      "test": "Security - X-Content-Type-Options Header",
+      "passed": true,
+      "message": "nosniff",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.579093"
+    },
+    {
+      "test": "Security - X-Frame-Options Header",
+      "passed": true,
+      "message": "DENY",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.579115"
+    },
+    {
+      "test": "Security - X-XSS-Protection Header",
+      "passed": true,
+      "message": "1; mode=block",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.579119"
+    },
+    {
+      "test": "Security - Protected URL",
+      "passed": false,
+      "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/campaigns",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.820650"
+    },
+    {
+      "test": "Security - Protected URL",
+      "passed": false,
+      "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/campaigns/create",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.836537"
+    },
+    {
+      "test": "Security - Protected URL",
+      "passed": false,
+      "message": "No authentication required for https://ezyassist-unified-production.up.railway.app/admin/",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.871509"
+    },
+    {
+      "test": "Security - Input Validation",
+      "passed": true,
+      "message": "Input sanitized or rejected",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.893154"
+    },
+    {
+      "test": "Security - Input Validation",
+      "passed": true,
+      "message": "Input sanitized or rejected",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.915840"
+    },
+    {
+      "test": "Security - Input Validation",
+      "passed": true,
+      "message": "Input sanitized or rejected",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:24.933307"
+    },
+    {
+      "test": "Performance - Homepage Response Time",
+      "passed": true,
+      "message": "0.03s",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:25.464303"
+    },
+    {
+      "test": "Performance - Admin Dashboard Availability",
+      "passed": false,
+      "message": "Page not accessible",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:25.507233"
+    },
+    {
+      "test": "Performance - Campaign Management Response Time",
+      "passed": true,
+      "message": "0.04s",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:25.543259"
+    },
+    {
+      "test": "Performance - Campaign Page Availability",
+      "passed": false,
+      "message": "Page not accessible",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:25.571962"
+    },
+    {
+      "test": "Performance - Concurrent Requests",
+      "passed": true,
+      "message": "5/5 successful, avg: 0.06s",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:25.644343"
+    },
+    {
+      "test": "Test Cleanup",
+      "passed": true,
+      "message": "Manual cleanup required for campaign: automated-test-campaign-1755828498",
+      "details": null,
+      "timestamp": "2025-08-22T10:08:26.148372"
+    }
+  ],
+  "test_environment": {
+    "base_url": "https://ezyassist-unified-production.up.railway.app",
+    "admin_username": "admin@ezymeta.global",
+    "test_campaign_id": "automated-test-campaign-1755828498",
+    "timestamp": "2025-08-22T10:08:26.652156"
+  }
+}
