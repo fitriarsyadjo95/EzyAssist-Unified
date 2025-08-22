@@ -1,0 +1,3 @@
+# Requirements for Campaign System Test Scripts
+requests>=2.25.0
+urllib3>=1.26.0
