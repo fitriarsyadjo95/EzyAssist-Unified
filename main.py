@@ -4929,52 +4929,187 @@ async def admin_campaigns(request: Request):
                 finally:
                     db.close()
         
-        # Create simple campaigns HTML page
+        # Create campaigns HTML page with consistent styling
+        sidebar_html = get_admin_sidebar_html("campaigns")
         campaigns_html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Campaign Management - RentungFX Admin</title>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                body {{
+                    background: #F3F4F6;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 14px;
+                }}
+                .main-content {{
+                    margin-left: 250px;
+                    min-height: 100vh;
+                }}
+                .topbar {{
+                    background: #FFFFFF;
+                    border-bottom: 1px solid #E5E7EB;
+                    padding: 16px 24px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }}
+                .user-menu {{
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }}
+                .user-avatar {{
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: #2563EB;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 14px;
+                    font-weight: 500;
+                }}
+                .card {{
+                    background: #FFFFFF;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    border: 1px solid #E5E7EB;
+                }}
+                .card-header {{
+                    background: #F9FAFB;
+                    color: #374151;
+                    font-weight: 600;
+                    border-bottom: 1px solid #E5E7EB;
+                }}
+                .table {{
+                    color: #374151;
+                    font-size: 14px;
+                }}
+                .table thead th {{
+                    background: #F9FAFB;
+                    color: #374151;
+                    font-weight: 600;
+                    border-color: #E5E7EB;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.025em;
+                }}
+                .table tbody tr:hover {{
+                    background: #F3F4F6;
+                }}
+                .table td, .table th {{
+                    border-color: #E5E7EB;
+                    padding: 12px;
+                }}
+                .btn-primary {{
+                    background: #2563EB;
+                    border-color: #2563EB;
+                    border-radius: 6px;
+                    font-weight: 500;
+                }}
+                .btn-primary:hover {{
+                    background: #1D4ED8;
+                    border-color: #1D4ED8;
+                }}
+                .btn-success {{
+                    background: #22C55E;
+                    border-color: #22C55E;
+                    border-radius: 6px;
+                    font-weight: 500;
+                }}
+                .btn-success:hover {{
+                    background: #16A34A;
+                    border-color: #16A34A;
+                }}
+                .btn-outline-primary {{
+                    color: #2563EB;
+                    border-color: #2563EB;
+                    border-radius: 6px;
+                    font-weight: 500;
+                }}
+                .btn-outline-primary:hover {{
+                    background: #2563EB;
+                    border-color: #2563EB;
+                }}
+                .btn-outline-warning {{
+                    color: #F59E0B;
+                    border-color: #F59E0B;
+                    border-radius: 6px;
+                    font-weight: 500;
+                }}
+                .btn-outline-warning:hover {{
+                    background: #F59E0B;
+                    border-color: #F59E0B;
+                }}
+                h2, h3, h4, h5 {{
+                    color: #111827;
+                    font-weight: 600;
+                }}
+                .badge.bg-success {{
+                    background-color: #22C55E !important;
+                }}
+                .badge.bg-secondary {{
+                    background-color: #6B7280 !important;
+                }}
+            </style>
         </head>
-        <body class="bg-light">
-            <nav class="navbar navbar-dark bg-dark">
-                <div class="container-fluid">
-                    <a href="/admin/" class="navbar-brand"><i class="fas fa-shield-alt me-2"></i>RentungFX Admin</a>
-                    <a href="/admin/logout" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-sign-out-alt me-1"></i>Logout
-                    </a>
-                </div>
-            </nav>
+        <body>
+            {sidebar_html}
             
-            <div class="container-fluid mt-4">
-                <div class="row">
-                    <div class="col-12">
-                        <h2><i class="fas fa-bullhorn me-2"></i>Campaign Management</h2>
-                        
-                        <div class="card mt-4">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Active Campaigns</h5>
-                                <button class="btn btn-primary btn-sm" onclick="createCampaign()">
-                                    <i class="fas fa-plus me-1"></i>Create Campaign
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Campaign Name</th>
-                                                <th>Campaign ID</th>
-                                                <th>Min Deposit</th>
-                                                <th>Reward</th>
-                                                <th>Status</th>
-                                                <th>Registrations</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+            <div class="main-content">
+                <!-- Top Bar -->
+                <div class="topbar">
+                    <div>
+                        <h4 class="mb-0" style="color: #111827; font-weight: 600;">
+                            <i class="fas fa-bullhorn me-2"></i>
+                            Campaign Management
+                        </h4>
+                    </div>
+                    <div class="user-menu">
+                        <div class="user-avatar">
+                            A
+                        </div>
+                        <span style="color: #4B5563; font-weight: 500;">Admin</span>
+                    </div>
+                </div>
+                
+                <!-- Campaign Content -->
+                <div class="container-fluid p-4">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-list me-2"></i>
+                                        Campaign Management
+                                    </h5>
+                                    <button class="btn btn-primary btn-sm" onclick="createCampaign()">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Create Campaign
+                                    </button>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Campaign Name</th>
+                                                    <th>Campaign ID</th>
+                                                    <th>Min Deposit</th>
+                                                    <th>Reward</th>
+                                                    <th>Status</th>
+                                                    <th>Registrations</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
         """
         
         # Add campaign rows
@@ -5010,40 +5145,66 @@ async def admin_campaigns(request: Request):
             """
         
         campaigns_html += f"""
-                                        </tbody>
-                                    </table>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="row mt-4">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Campaign Statistics</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <p><strong>Total Campaigns:</strong> {len(campaigns)}</p>
-                                        <p><strong>Active Campaigns:</strong> {len([c for c in campaigns if c.is_active])}</p>
-                                        <p><strong>Total Campaign Registrations:</strong> {sum([stats.get('total_registrations', 0) for stats in campaign_stats.values()])}</p>
+                    </div>
+                    
+                    <!-- Statistics Row -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Campaign Statistics
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="p-3">
+                                                <div class="h4 text-primary mb-1">{len(campaigns)}</div>
+                                                <div class="text-muted small">Total Campaigns</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-3">
+                                                <div class="h4 text-success mb-1">{len([c for c in campaigns if c.is_active])}</div>
+                                                <div class="text-muted small">Active Campaigns</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-3">
+                                                <div class="h4 text-info mb-1">{sum([stats.get('total_registrations', 0) for stats in campaign_stats.values()])}</div>
+                                                <div class="text-muted small">Total Registrations</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Actions</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <a href="/admin/" class="btn btn-secondary me-2">
-                                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
-                                        </a>
-                                        <a href="/admin/registrations" class="btn btn-primary me-2">
-                                            <i class="fas fa-users me-1"></i>View Registrations
-                                        </a>
-                                        <button onclick="createCampaign()" class="btn btn-success">
-                                            <i class="fas fa-plus me-1"></i>New Campaign
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-tools me-2"></i>
+                                        Quick Actions
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                                        <button onclick="createCampaign()" class="btn btn-primary">
+                                            <i class="fas fa-plus me-1"></i>
+                                            Create New Campaign
                                         </button>
+                                        <a href="/admin/registrations" class="btn btn-outline-secondary">
+                                            <i class="fas fa-users me-1"></i>
+                                            View All Registrations
+                                        </a>
                                     </div>
                                 </div>
                             </div>
