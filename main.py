@@ -3943,6 +3943,30 @@ async def test_login_logic():
 
 # Debug endpoint removed due to Cookie import issue
 
+@app.get("/debug/campaigns-test")
+async def debug_campaigns_test():
+    """Test campaigns page rendering"""
+    return HTMLResponse("""
+    <!DOCTYPE html>
+    <html>
+    <head><title>Debug Campaigns Test</title></head>
+    <body>
+        <h1>Debug Campaigns Test Page</h1>
+        <p>This is a test to verify the campaigns route is working.</p>
+        <a href="/admin/">Back to Dashboard</a>
+    </body>
+    </html>
+    """, status_code=200)
+
+@app.get("/debug/campaigns-auth")  
+async def debug_campaigns_auth(request: Request):
+    """Test campaigns authentication"""
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return {"message": "Authentication failed - would redirect", "redirect": True}
+    else:
+        return {"message": "Authentication passed", "redirect": False}
+
 @app.post("/debug/test-form-login")
 async def test_form_login(request: Request):
     """Test form processing for login"""
