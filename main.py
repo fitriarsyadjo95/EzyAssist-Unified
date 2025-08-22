@@ -2297,13 +2297,120 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
         bot_health = {"status": "error", "uptime": "Unknown"}
 
     try:
-        return templates.TemplateResponse("admin/dashboard.html", {
-            "request": request,
-            "admin": admin,
-            "stats": stats,
-            "bot_stats": bot_stats,
-            "bot_health": bot_health
-        })
+        # Create a simple working dashboard without complex formatting
+        dashboard_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Admin Dashboard - RentungFX</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        </head>
+        <body class="bg-light">
+            <nav class="navbar navbar-dark bg-dark">
+                <div class="container-fluid">
+                    <span class="navbar-brand"><i class="fas fa-shield-alt me-2"></i>RentungFX Admin</span>
+                    <a href="/admin/logout" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="container-fluid mt-4">
+                <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview</h2>
+                
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-primary">{stats.get('total_registrations', 0)}</h3>
+                                <p>Total Registrations</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-warning">{stats.get('pending_count', 0)}</h3>
+                                <p>Pending Review</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-success">{stats.get('verified_count', 0)}</h3>
+                                <p>Verified</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-danger">{stats.get('rejected_count', 0)}</h3>
+                                <p>Rejected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-robot me-2"></i>Bot Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Status:</strong> {bot_health.get('status', 'Unknown')}</p>
+                                <p><strong>Uptime:</strong> {bot_health.get('uptime', 'Unknown')}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-bullhorn me-2"></i>Campaigns</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Active Campaigns:</strong> {stats.get('active_campaigns_count', 0)}</p>
+                                <p><strong>Campaign Registrations:</strong> {stats.get('campaign_registrations', 0)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-link me-2"></i>Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <a href="/admin/registrations" class="btn btn-primary me-2">
+                                    <i class="fas fa-users me-1"></i>View Registrations
+                                </a>
+                                <a href="/admin/registrations?status=pending" class="btn btn-warning me-2">
+                                    <i class="fas fa-clock me-1"></i>Pending ({stats.get('pending_count', 0)})
+                                </a>
+                                <a href="/admin/bot-activity" class="btn btn-info me-2">
+                                    <i class="fas fa-chart-line me-1"></i>Bot Activity
+                                </a>
+                                <a href="/admin/campaigns" class="btn btn-success">
+                                    <i class="fas fa-bullhorn me-1"></i>Manage Campaigns
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        </body>
+        </html>
+        """
+        
+        return HTMLResponse(dashboard_html, status_code=200)
+        
     except Exception as template_error:
         logger.error(f"Template rendering error: {str(template_error)}")
         # Return a simple HTML response with error details
