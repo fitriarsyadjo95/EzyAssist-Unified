@@ -3967,6 +3967,49 @@ async def debug_campaigns_auth(request: Request):
     else:
         return {"message": "Authentication passed", "redirect": False}
 
+@app.get("/admin/campaigns-new", response_class=HTMLResponse)
+async def admin_campaigns_new(request: Request):
+    """Admin campaigns page - NEW VERSION"""
+    # Check authentication
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    return HTMLResponse("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Campaign Management - RentungFX Admin</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a href="/admin/" class="navbar-brand"><i class="fas fa-shield-alt me-2"></i>RentungFX Admin</a>
+                <a href="/admin/logout" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
+            </div>
+        </nav>
+        
+        <div class="container-fluid mt-4">
+            <h2><i class="fas fa-bullhorn me-2"></i>Campaign Management</h2>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Campaigns page is working! This is the NEW working version.
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p>Campaigns functionality will be displayed here.</p>
+                    <a href="/admin/" class="btn btn-primary">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """, status_code=200)
+
 @app.post("/debug/test-form-login")
 async def test_form_login(request: Request):
     """Test form processing for login"""
