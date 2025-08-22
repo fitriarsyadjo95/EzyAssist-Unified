@@ -4266,7 +4266,7 @@ async def admin_campaigns_new(request: Request):
     if redirect_check:
         return redirect_check
     
-    return HTMLResponse("""
+    return HTMLResponse(f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
