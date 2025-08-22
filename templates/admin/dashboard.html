@@ -458,7 +458,7 @@
                         </div>
                         <div>
                             {% set campaign_percentage = (stats.campaign_registrations / stats.total_registrations * 100) if stats.total_registrations > 0 else 0 %}
-                            <h3 class="mb-0">{{ "%.1f"|format(campaign_percentage) }}%</h3>
+                            <h3 class="mb-0">{{ campaign_percentage|round(1) }}%</h3>
                             <small class="text-muted">Campaign Conversion</small>
                         </div>
                     </div>
@@ -503,11 +503,11 @@
                                             <span class="badge bg-primary">{{ campaign[2] or 0 }}</span>
                                         </td>
                                         <td>
-                                            ${{ "{:,.2f}"|format(campaign[3] or 0) }} USD
+                                            ${{ (campaign[3] or 0)|round(2) }} USD
                                         </td>
                                         <td>
                                             {% if campaign[2] and campaign[2] > 0 and campaign[3] %}
-                                                ${{ "{:,.2f}"|format((campaign[3] / campaign[2])) }} USD
+                                                ${{ (campaign[3] / campaign[2])|round(2) }} USD
                                             {% else %}
                                                 $0.00 USD
                                             {% endif %}
@@ -694,7 +694,7 @@
                                             {% set percentage = (broker[1] / stats.total_registrations * 100) if stats.total_registrations > 0 else 0 %}
                                             <div class="progress" style="height: 20px; width: 100px;">
                                                 <div class="progress-bar" style="width: {{ percentage }}%">
-                                                    {{ "%.1f"|format(percentage) }}%
+                                                    {{ percentage|round(1) }}%
                                                 </div>
                                             </div>
                                         </td>
