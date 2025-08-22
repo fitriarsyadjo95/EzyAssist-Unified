@@ -3821,6 +3821,47 @@ async def test_login_logic():
             "traceback": traceback.format_exc()
         }
 
+@app.get("/debug/admin-dashboard")
+async def debug_admin_dashboard(request: Request, admin_session: str = Cookie(None)):
+    """Debug admin dashboard with minimal processing"""
+    try:
+        # Verify session
+        session_data = verify_admin_session(admin_session)
+        if not session_data:
+            return {"error": "Invalid session", "debug": True}
+        
+        # Minimal stats for testing
+        stats = {
+            "total_registrations": 0,
+            "recent_registrations": 0,
+            "pending_count": 0,
+            "verified_count": 0,
+            "rejected_count": 0,
+            "on_hold_count": 0,
+            "broker_stats": [],
+            "campaign_registrations": 0,
+            "regular_registrations": 0,
+            "active_campaigns_count": 0,
+            "campaign_performance": []
+        }
+        
+        bot_stats = {"debug": True, "status": "testing"}
+        bot_health = {"status": "debug", "uptime": "Testing"}
+        
+        # Try template rendering
+        return templates.TemplateResponse("admin/dashboard.html", {
+            "request": request,
+            "admin": session_data,
+            "stats": stats,
+            "bot_stats": bot_stats,
+            "bot_health": bot_health
+        })
+        
+    except Exception as e:
+        logger.error(f"Debug dashboard error: {str(e)}")
+        import traceback
+        return {"error": str(e), "debug": True, "type": type(e).__name__, "traceback": traceback.format_exc()}
+
 @app.post("/debug/test-form-login")
 async def test_form_login(request: Request):
     """Test form processing for login"""
