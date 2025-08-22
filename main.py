@@ -4235,16 +4235,32 @@ def get_admin_sidebar_html(active_page="dashboard"):
     '''
 
 @app.get("/debug/campaigns-test")
-async def debug_campaigns_test():
+async def debug_campaigns_test(request: Request):
     """Test campaigns page rendering"""
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+        
     return HTMLResponse("""
     <!DOCTYPE html>
     <html>
-    <head><title>Debug Campaigns Test</title></head>
-    <body>
-        <h1>Debug Campaigns Test Page</h1>
-        <p>This is a test to verify the campaigns route is working.</p>
-        <a href="/admin/">Back to Dashboard</a>
+    <head><title>Simple Campaigns Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <div class="container mt-4">
+            <h1>🎯 Simple Campaigns Test Page</h1>
+            <p>This is a test to verify campaigns page is working.</p>
+            <div class="card">
+                <div class="card-body">
+                    <h5>Navigation Test</h5>
+                    <a href="/admin/" class="btn btn-primary me-2">Dashboard</a>
+                    <a href="/admin/registrations" class="btn btn-secondary me-2">Registrations</a>
+                    <a href="/admin/campaigns-new" class="btn btn-success me-2">Full Campaigns</a>
+                    <a href="/admin/logout" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
     </body>
     </html>
     """, status_code=200)
