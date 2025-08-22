@@ -2440,51 +2440,7 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
             </style>
         </head>
         <body>
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <a href="/admin/" class="sidebar-brand">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        RentungFX Admin
-                    </a>
-                    <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
-                        Version 2.1
-                    </div>
-                </div>
-                <nav class="sidebar-nav">
-                    <div class="nav-item">
-                        <a href="/admin/" class="nav-link active">
-                            <i class="fas fa-tachometer-alt"></i>
-                            Dashboard
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="/admin/registrations" class="nav-link">
-                            <i class="fas fa-users"></i>
-                            Registrations
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="/admin/campaigns-new" class="nav-link">
-                            <i class="fas fa-bullhorn"></i>
-                            Campaigns
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="/admin/bot-activity" class="nav-link">
-                            <i class="fas fa-chart-line"></i>
-                            Bot Activity
-                        </a>
-                    </div>
-                </nav>
-                <!-- Logout button at bottom -->
-                <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
-                    <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Logout
-                    </a>
-                </div>
-            </div>
+            {get_admin_sidebar_html("dashboard")}
 
             <!-- Main Content -->
             <div class="main-content">
@@ -4193,6 +4149,91 @@ async def test_login_logic():
 
 # Debug endpoint removed due to Cookie import issue
 
+def get_admin_sidebar_html(active_page="dashboard"):
+    """Generate standardized admin sidebar HTML"""
+    return f'''
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/" class="sidebar-brand">
+                <i class="fas fa-shield-alt me-2"></i>
+                RentungFX Admin
+            </a>
+            <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
+                Version 2.1
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin/" class="nav-link{' active' if active_page == 'dashboard' else ''}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/registrations" class="nav-link{' active' if active_page == 'registrations' else ''}">
+                    <i class="fas fa-users"></i>
+                    Registrations
+                </a>
+                {'''<div class="nav-submenu">
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            Pending Review
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=on_hold" class="nav-link">
+                            <i class="fas fa-pause"></i>
+                            On Hold
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/admin/registrations?status=verified" class="nav-link">
+                            <i class="fas fa-check-circle"></i>
+                            Verified Users
+                        </a>
+                    </div>
+                </div>''' if active_page == 'registrations' else ''}
+            </div>
+            <div class="nav-item">
+                <a href="/admin/campaigns-new" class="nav-link{' active' if active_page == 'campaigns' else ''}">
+                    <i class="fas fa-bullhorn"></i>
+                    Campaigns
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/bot-activity" class="nav-link{' active' if active_page == 'bot-activity' else ''}">
+                    <i class="fas fa-chart-line"></i>
+                    Bot Activity
+                </a>
+            </div>
+        </nav>
+        <!-- Settings and Admin Users at bottom -->
+        <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/settings" class="nav-link{' active' if active_page == 'settings' else ''}">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+            <div class="nav-item" style="margin: 4px 12px;">
+                <a href="/admin/admin-users" class="nav-link{' active' if active_page == 'admin-users' else ''}">
+                    <i class="fas fa-user-shield"></i>
+                    Admin Users
+                </a>
+            </div>
+        </div>
+        <!-- Logout button at bottom -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+            <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+    '''
+
 @app.get("/debug/campaigns-test")
 async def debug_campaigns_test():
     """Test campaigns page rendering"""
@@ -4366,51 +4407,7 @@ async def admin_campaigns_new(request: Request):
         </style>
     </head>
     <body>
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <a href="/admin/" class="sidebar-brand">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    RentungFX Admin
-                </a>
-                <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
-                    Version 2.1
-                </div>
-            </div>
-            <nav class="sidebar-nav">
-                <div class="nav-item">
-                    <a href="/admin/" class="nav-link">
-                        <i class="fas fa-tachometer-alt"></i>
-                        Dashboard
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="/admin/registrations" class="nav-link">
-                        <i class="fas fa-users"></i>
-                        Registrations
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="/admin/campaigns-new" class="nav-link active">
-                        <i class="fas fa-bullhorn"></i>
-                        Campaigns
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="/admin/bot-activity" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
-                        Bot Activity
-                    </a>
-                </div>
-            </nav>
-            <!-- Logout button at bottom -->
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
-                <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </a>
-            </div>
-        </div>
+        {get_admin_sidebar_html("campaigns")}
 
         <!-- Main Content -->
         <div class="main-content">
