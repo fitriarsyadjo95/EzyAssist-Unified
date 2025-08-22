@@ -4197,7 +4197,7 @@ def get_admin_sidebar_html(active_page="dashboard"):
                 </div>''' if active_page == 'registrations' else ''}
             </div>
             <div class="nav-item">
-                <a href="/admin/campaigns-new" class="nav-link{' active' if active_page == 'campaigns' else ''}">
+                <a href="/debug/campaigns-test" class="nav-link{' active' if active_page == 'campaigns' else ''}">
                     <i class="fas fa-bullhorn"></i>
                     Campaigns
                 </a>
