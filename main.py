@@ -2595,7 +2595,7 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                                         </a>
                                     </div>
                                     <div class="col-lg-3 col-md-6 mb-2">
-                                        <a href="/debug/campaigns-test" class="btn btn-success w-100">
+                                        <a href="/admin/campaigns" class="btn btn-success w-100">
                                             <i class="fas fa-bullhorn me-1"></i>
                                             Manage Campaigns
                                         </a>
@@ -4200,7 +4200,7 @@ def get_admin_sidebar_html(active_page="dashboard"):
                 </div>''' if active_page == 'registrations' else ''}
             </div>
             <div class="nav-item">
-                <a href="/debug/campaigns-test" class="nav-link{' active' if active_page == 'campaigns' else ''}">
+                <a href="/admin/campaigns" class="nav-link{' active' if active_page == 'campaigns' else ''}">
                     <i class="fas fa-bullhorn"></i>
                     Campaigns
                 </a>
