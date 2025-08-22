@@ -3821,6 +3821,91 @@ async def test_login_logic():
             "traceback": traceback.format_exc()
         }
 
+@app.post("/debug/test-form-login")
+async def test_form_login(request: Request):
+    """Test form processing for login"""
+    try:
+        # Get raw form data
+        form_data = await request.form()
+        username = form_data.get('username')
+        password = form_data.get('password')
+        
+        logger.info(f"Form data received - username: {username}, password: {'[MASKED]' if password else None}")
+        
+        if not username or not password:
+            return {"status": "error", "message": "Missing username or password in form data"}
+        
+        # Test auth
+        auth_result = authenticate_admin(username, password)
+        
+        return {
+            "status": "success",
+            "message": "Form processing working",
+            "username_received": username,
+            "password_received": bool(password),
+            "auth_result": auth_result
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "message": f"Form processing failed: {str(e)}",
+            "traceback": traceback.format_exc()
+        }
+
+@app.post("/admin/login-alt")
+async def admin_login_alternative(request: Request):
+    """Alternative admin login route without Form dependencies"""
+    try:
+        # Get form data manually
+        form_data = await request.form()
+        username = form_data.get('username')
+        password = form_data.get('password')
+        
+        logger.info(f"Alternative login attempt for username: {username}")
+        
+        if not username or not password:
+            return templates.TemplateResponse("admin/login.html", {
+                "request": request,
+                "error": "Username and password are required"
+            })
+        
+        # Test authentication
+        auth_result = authenticate_admin(username, password)
+        logger.info(f"Authentication result: {auth_result}")
+        
+        if auth_result:
+            # Create session
+            session_token = create_admin_session(username)
+            logger.info(f"Session token created successfully")
+            
+            response = RedirectResponse(url="/admin/", status_code=302)
+            response.set_cookie(
+                key="admin_session",
+                value=session_token,
+                max_age=3600,
+                httponly=True,
+                secure=False
+            )
+            logger.info("Alternative login successful")
+            return response
+        else:
+            logger.warning(f"Alternative login failed for username: {username}")
+            return templates.TemplateResponse("admin/login.html", {
+                "request": request,
+                "error": "Invalid username or password"
+            })
+            
+    except Exception as e:
+        logger.error(f"Alternative login error: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        return templates.TemplateResponse("admin/login.html", {
+            "request": request,
+            "error": f"Login system error: {str(e)}"
+        })
+
 @app.post("/admin/manual-migrate")
 async def manual_migrate_database(admin = Depends(get_current_admin)):
     """Manually trigger database migration"""
