@@ -4407,7 +4407,66 @@ async def admin_campaigns_new(request: Request):
         </style>
     </head>
     <body>
-        {get_admin_sidebar_html("campaigns")}
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin/" class="sidebar-brand">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    RentungFX Admin
+                </a>
+                <div style="font-size: 11px; color: #6B7280; margin-top: 4px; text-align: center;">
+                    Version 2.1
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="/admin/" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/admin/registrations" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        Registrations
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/admin/campaigns-new" class="nav-link active">
+                        <i class="fas fa-bullhorn"></i>
+                        Campaigns
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/admin/bot-activity" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        Bot Activity
+                    </a>
+                </div>
+            </nav>
+            <!-- Settings and Admin Users at bottom -->
+            <div style="position: absolute; bottom: 60px; left: 0; right: 0; padding: 12px 0; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+                <div class="nav-item" style="margin: 4px 12px;">
+                    <a href="/admin/settings" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </div>
+                <div class="nav-item" style="margin: 4px 12px;">
+                    <a href="/admin/admin-users" class="nav-link">
+                        <i class="fas fa-user-shield"></i>
+                        Admin Users
+                    </a>
+                </div>
+            </div>
+            <!-- Logout button at bottom -->
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
+                <a href="/admin/logout" class="nav-link" style="margin: 0; background: #DC2626; color: white; justify-content: center;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <div class="main-content">
