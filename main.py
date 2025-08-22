@@ -2296,13 +2296,26 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
         bot_stats = {"error": "Could not load bot statistics"}
         bot_health = {"status": "error", "uptime": "Unknown"}
 
-    return templates.TemplateResponse("admin/dashboard.html", {
-        "request": request,
-        "admin": admin,
-        "stats": stats,
-        "bot_stats": bot_stats,
-        "bot_health": bot_health
-    })
+    try:
+        return templates.TemplateResponse("admin/dashboard.html", {
+            "request": request,
+            "admin": admin,
+            "stats": stats,
+            "bot_stats": bot_stats,
+            "bot_health": bot_health
+        })
+    except Exception as template_error:
+        logger.error(f"Template rendering error: {str(template_error)}")
+        # Return a simple HTML response with error details
+        return HTMLResponse(
+            f"""<html><body>
+            <h1>Admin Dashboard Error</h1>
+            <p>Template Error: {str(template_error)}</p>
+            <p>Stats: {stats}</p>
+            <p>Admin: {admin}</p>
+            </body></html>""", 
+            status_code=500
+        )
 
 @app.get("/admin/bot-status")
 async def get_bot_status(admin = Depends(get_current_admin)):
