@@ -5176,10 +5176,20 @@ async def admin_campaigns(request: Request):
                                         <i class="fas fa-list me-2"></i>
                                         Campaign Management
                                     </h5>
-                                    <button class="btn btn-primary btn-sm" onclick="createCampaign()">
-                                        <i class="fas fa-plus me-1"></i>
-                                        Create Campaign
-                                    </button>
+                                    <div class="btn-group">
+                                        <button class="btn btn-danger btn-sm" onclick="deactivateAllCampaigns()" title="Deactivate all campaigns">
+                                            <i class="fas fa-power-off me-1"></i>
+                                            Deactivate All
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="showActiveCampaignsOnly()" id="filterBtn" title="Toggle show active only">
+                                            <i class="fas fa-eye me-1"></i>
+                                            Show Active Only
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="createCampaign()">
+                                            <i class="fas fa-plus me-1"></i>
+                                            Create Campaign
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
@@ -5217,8 +5227,8 @@ async def admin_campaigns(request: Request):
                                                     <a href="/admin/campaigns/{campaign.campaign_id}/registrations" class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye me-1"></i>View
                                                     </a>
-                                                    <button onclick="toggleCampaign('{campaign.campaign_id}')" class="btn btn-sm btn-outline-warning">
-                                                        <i class="fas fa-toggle-{'on' if campaign.is_active else 'off'} me-1"></i>Toggle
+                                                    <button onclick="toggleCampaign('{campaign.campaign_id}')" class="btn btn-sm {'btn-success' if campaign.is_active else 'btn-secondary'}" title="{'Click to deactivate' if campaign.is_active else 'Click to activate'}">
+                                                        <i class="fas fa-toggle-{'on' if campaign.is_active else 'off'} me-1"></i>{'Active' if campaign.is_active else 'Inactive'}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -5358,6 +5368,82 @@ async def admin_campaigns(request: Request):
                     .catch(error => {{
                         alert('Error: ' + error.message);
                     }});
+                }}
+                
+                function deactivateAllCampaigns() {{
+                    if (!confirm('Are you sure you want to deactivate ALL campaigns? This will stop all campaign registrations.')) {{
+                        return;
+                    }}
+                    
+                    const campaigns = document.querySelectorAll('button[onclick*="toggleCampaign"]');
+                    let activeCount = 0;
+                    
+                    // Count active campaigns
+                    campaigns.forEach(button => {{
+                        const row = button.closest('tr');
+                        const statusBadge = row.querySelector('.badge');
+                        if (statusBadge && statusBadge.textContent.trim() === 'Active') {{
+                            activeCount++;
+                        }}
+                    }});
+                    
+                    if (activeCount === 0) {{
+                        alert('No active campaigns to deactivate.');
+                        return;
+                    }}
+                    
+                    let processed = 0;
+                    campaigns.forEach(button => {{
+                        const row = button.closest('tr');
+                        const statusBadge = row.querySelector('.badge');
+                        if (statusBadge && statusBadge.textContent.trim() === 'Active') {{
+                            const campaignId = button.getAttribute('onclick').match(/toggleCampaign\\('([^']+)'\\)/)[1];
+                            
+                            fetch('/admin/campaigns/' + campaignId + '/toggle', {{
+                                method: 'POST',
+                                headers: {{ 'Content-Type': 'application/json' }}
+                            }})
+                            .then(response => response.json())
+                            .then(data => {{
+                                processed++;
+                                if (processed === activeCount) {{
+                                    alert(`Successfully deactivated ${{activeCount}} campaigns!`);
+                                    location.reload();
+                                }}
+                            }})
+                            .catch(error => {{
+                                console.error('Error deactivating campaign:', error);
+                            }});
+                        }}
+                    }});
+                }}
+                
+                let showActiveOnly = false;
+                function showActiveCampaignsOnly() {{
+                    const table = document.querySelector('.table tbody');
+                    const filterBtn = document.getElementById('filterBtn');
+                    const rows = table.querySelectorAll('tr');
+                    
+                    showActiveOnly = !showActiveOnly;
+                    
+                    if (showActiveOnly) {{
+                        rows.forEach(row => {{
+                            const statusBadge = row.querySelector('.badge');
+                            if (statusBadge && statusBadge.textContent.trim() === 'Inactive') {{
+                                row.style.display = 'none';
+                            }}
+                        }});
+                        filterBtn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Show All';
+                        filterBtn.classList.remove('btn-warning');
+                        filterBtn.classList.add('btn-info');
+                    }} else {{
+                        rows.forEach(row => {{
+                            row.style.display = '';
+                        }});
+                        filterBtn.innerHTML = '<i class="fas fa-eye me-1"></i>Show Active Only';
+                        filterBtn.classList.remove('btn-info');
+                        filterBtn.classList.add('btn-warning');
+                    }}
                 }}
             </script>
         </body>
