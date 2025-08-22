@@ -4083,54 +4083,242 @@ async def check_database_status(admin = Depends(get_current_admin)):
 # CAMPAIGN MANAGEMENT ROUTES
 
 @app.get("/admin/campaigns", response_class=HTMLResponse)
-async def admin_campaigns(request: Request, admin = Depends(get_current_admin)):
+async def admin_campaigns(request: Request):
     """Admin campaigns management page"""
     try:
-        if not SessionLocal:
-            logger.error("SessionLocal not available for campaigns page")
-            return RedirectResponse(url="/admin/registrations", status_code=302)
+        # Check authentication
+        redirect_check = admin_login_required(request)
+        if redirect_check:
+            return redirect_check
         
-        db = get_db()
-        if not db:
-            logger.error("Database connection failed for campaigns page")
-            return RedirectResponse(url="/admin/registrations", status_code=302)
-        # Get all campaigns
-        campaigns = db.query(Campaign).order_by(Campaign.created_at.desc()).all()
-        
-        # Get campaign statistics
+        campaigns = []
         campaign_stats = {}
-        for campaign in campaigns:
-            registrations = db.query(VipRegistration).filter(
-                VipRegistration.campaign_id == campaign.campaign_id
-            ).all()
-            
-            stats = {
-                'total_registrations': len(registrations),
-                'verified_count': len([r for r in registrations if r.status == RegistrationStatus.VERIFIED]),
-                'pending_count': len([r for r in registrations if r.status == RegistrationStatus.PENDING]),
-                'total_deposits': sum([float(r.deposit_amount) if r.deposit_amount and r.deposit_amount.replace('.','').isdigit() else 0 for r in registrations])
-            }
-            campaign_stats[campaign.campaign_id] = stats
         
-        return templates.TemplateResponse("admin/campaigns.html", {
-            "request": request,
-            "campaigns": campaigns,
-            "campaign_stats": campaign_stats
-        })
+        if SessionLocal:
+            db = get_db()
+            if db:
+                try:
+                    # Get all campaigns
+                    campaigns = db.query(Campaign).order_by(Campaign.created_at.desc()).all()
+                    
+                    # Get campaign statistics
+                    for campaign in campaigns:
+                        registrations = db.query(VipRegistration).filter(
+                            VipRegistration.campaign_id == campaign.campaign_id
+                        ).all()
+                        
+                        stats = {
+                            'total_registrations': len(registrations),
+                            'verified_count': len([r for r in registrations if r.status == RegistrationStatus.VERIFIED]),
+                            'pending_count': len([r for r in registrations if r.status == RegistrationStatus.PENDING]),
+                            'total_deposits': sum([float(r.deposit_amount) if r.deposit_amount and r.deposit_amount.replace('.','').isdigit() else 0 for r in registrations])
+                        }
+                        campaign_stats[campaign.campaign_id] = stats
+                        
+                except Exception as e:
+                    logger.error(f"Error fetching campaigns: {e}")
+                finally:
+                    db.close()
+        
+        # Create simple campaigns HTML page
+        campaigns_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Campaign Management - RentungFX Admin</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        </head>
+        <body class="bg-light">
+            <nav class="navbar navbar-dark bg-dark">
+                <div class="container-fluid">
+                    <a href="/admin/" class="navbar-brand"><i class="fas fa-shield-alt me-2"></i>RentungFX Admin</a>
+                    <a href="/admin/logout" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="container-fluid mt-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h2><i class="fas fa-bullhorn me-2"></i>Campaign Management</h2>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Active Campaigns</h5>
+                                <button class="btn btn-primary btn-sm" onclick="createCampaign()">
+                                    <i class="fas fa-plus me-1"></i>Create Campaign
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Campaign Name</th>
+                                                <th>Campaign ID</th>
+                                                <th>Min Deposit</th>
+                                                <th>Reward</th>
+                                                <th>Status</th>
+                                                <th>Registrations</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+        """
+        
+        # Add campaign rows
+        if campaigns:
+            for campaign in campaigns:
+                stats = campaign_stats.get(campaign.campaign_id, {})
+                status_badge = "success" if campaign.is_active else "secondary"
+                status_text = "Active" if campaign.is_active else "Inactive"
+                
+                campaigns_html += f"""
+                                            <tr>
+                                                <td><strong>{campaign.name or 'Unnamed'}</strong></td>
+                                                <td><code>{campaign.campaign_id}</code></td>
+                                                <td>{campaign.min_deposit_amount}</td>
+                                                <td>{campaign.reward_description}</td>
+                                                <td><span class="badge bg-{status_badge}">{status_text}</span></td>
+                                                <td>{stats.get('total_registrations', 0)} registrations</td>
+                                                <td>
+                                                    <a href="/admin/campaigns/{campaign.campaign_id}/registrations" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i>View
+                                                    </a>
+                                                    <button onclick="toggleCampaign('{campaign.campaign_id}')" class="btn btn-sm btn-outline-warning">
+                                                        <i class="fas fa-toggle-{'on' if campaign.is_active else 'off'} me-1"></i>Toggle
+                                                    </button>
+                                                </td>
+                                            </tr>
+                """
+        else:
+            campaigns_html += """
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">No campaigns found</td>
+                                            </tr>
+            """
+        
+        campaigns_html += f"""
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Campaign Statistics</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><strong>Total Campaigns:</strong> {len(campaigns)}</p>
+                                        <p><strong>Active Campaigns:</strong> {len([c for c in campaigns if c.is_active])}</p>
+                                        <p><strong>Total Campaign Registrations:</strong> {sum([stats.get('total_registrations', 0) for stats in campaign_stats.values()])}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Actions</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <a href="/admin/" class="btn btn-secondary me-2">
+                                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                                        </a>
+                                        <a href="/admin/registrations" class="btn btn-primary me-2">
+                                            <i class="fas fa-users me-1"></i>View Registrations
+                                        </a>
+                                        <button onclick="createCampaign()" class="btn btn-success">
+                                            <i class="fas fa-plus me-1"></i>New Campaign
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                function toggleCampaign(campaignId) {{
+                    if (!confirm('Toggle campaign status for: ' + campaignId + '?')) return;
+                    
+                    fetch('/admin/campaigns/' + campaignId + '/toggle', {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/json' }}
+                    }})
+                    .then(response => response.json())
+                    .then(data => {{
+                        if (data.success) {{
+                            alert('Campaign status updated successfully!');
+                            location.reload();
+                        }} else {{
+                            alert('Error: ' + (data.detail || 'Failed to update campaign status'));
+                        }}
+                    }})
+                    .catch(error => {{
+                        alert('Error: ' + error.message);
+                    }});
+                }}
+                
+                function createCampaign() {{
+                    const campaignId = prompt('Enter Campaign ID:');
+                    if (!campaignId) return;
+                    
+                    const name = prompt('Enter Campaign Name:');
+                    if (!name) return;
+                    
+                    const minDeposit = prompt('Enter Minimum Deposit Amount:');
+                    if (!minDeposit) return;
+                    
+                    const reward = prompt('Enter Reward Description:');
+                    if (!reward) return;
+                    
+                    fetch('/admin/campaigns/create', {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/json' }},
+                        body: JSON.stringify({{
+                            campaign_id: campaignId,
+                            name: name,
+                            min_deposit_amount: minDeposit,
+                            reward_description: reward,
+                            description: 'Campaign created via admin panel'
+                        }})
+                    }})
+                    .then(response => response.json())
+                    .then(data => {{
+                        if (data.success) {{
+                            alert('Campaign created successfully!');
+                            location.reload();
+                        }} else {{
+                            alert('Error: ' + (data.detail || 'Failed to create campaign'));
+                        }}
+                    }})
+                    .catch(error => {{
+                        alert('Error: ' + error.message);
+                    }});
+                }}
+            </script>
+        </body>
+        </html>
+        """
+        
+        return HTMLResponse(campaigns_html, status_code=200)
         
     except Exception as e:
-        logger.error(f"Error loading campaigns: {e}")
-        if 'db' in locals():
-            db.close()
-        # Return error page instead of redirect for debugging
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error_message": f"Campaign management page failed to load: {str(e)}",
-            "translations": {}
-        })
-    finally:
-        if 'db' in locals():
-            db.close()
+        logger.error(f"Error loading campaigns page: {e}")
+        return HTMLResponse(f"""
+        <html><body>
+            <h1>Campaign Management Error</h1>
+            <p>Error: {str(e)}</p>
+            <a href="/admin/">Back to Dashboard</a>
+        </body></html>
+        """, status_code=500)
 
 @app.post("/admin/campaigns/create")
 async def create_campaign(
