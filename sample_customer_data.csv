@@ -1,0 +1,6 @@
+telegram_id,telegram_username,full_name,email,phone_number,brokerage_name,deposit_amount,client_id,status
+1001234567,sample_user1,Ahmad Rahman,ahmad.rahman@gmail.com,+60123456789,Valetax,100,VT001,VERIFIED
+1001234568,sample_user2,Siti Nurhaliza,siti.nurhaliza@hotmail.com,+60198765432,Valetax,250,VT002,VERIFIED
+1001234569,sample_user3,Muhammad Ali,muhammad.ali@yahoo.com,+60176543210,Valetax,500,VT003,VERIFIED
+1001234570,,Fatimah Zahra,fatimah.zahra@gmail.com,+60134567890,Valetax,150,,PENDING
+1001234571,trader_pro,Hassan Ibrahim,hassan.ibrahim@outlook.com,+60187654321,Valetax,1000,VT005,VERIFIED
