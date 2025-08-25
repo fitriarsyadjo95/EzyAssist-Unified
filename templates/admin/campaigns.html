@@ -413,85 +413,127 @@ function deleteInactiveCampaigns() {
 }
 
 // Form validation and AJAX submission
-document.getElementById('createCampaignForm').addEventListener('submit', function(e) {
-    e.preventDefault(); // Always prevent default form submission
-    
-    const campaignName = document.getElementById('campaignName').value;
-    const minDeposit = document.getElementById('minDeposit').value;
-    const rewardDescription = document.getElementById('rewardDescription').value;
-    
-    // Validation
-    if (!campaignName.trim()) {
-        alert('Campaign name is required');
-        return false;
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('createCampaignForm');
+    if (!form) {
+        console.error('Campaign form not found');
+        return;
     }
-    
-    if (!minDeposit || minDeposit <= 0) {
-        alert('Please enter a valid minimum deposit amount');
-        return false;
-    }
-    
-    if (!rewardDescription.trim()) {
-        alert('Reward description is required');
-        return false;
-    }
-    
-    // Prepare form data
-    const formData = new FormData(this);
-    
-    // Show loading state
-    const submitButton = this.querySelector('button[type="submit"]');
-    const originalText = submitButton.innerHTML;
-    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
-    submitButton.disabled = true;
-    
-    // Submit via AJAX
-    fetch('/admin/campaigns/create', {
-        method: 'POST',
-        body: formData
-    })
-    .then(async response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            // Try to get error details from response
-            let errorMessage = `HTTP error! status: ${response.status}`;
-            try {
-                const errorData = await response.json();
-                if (errorData.detail) {
-                    errorMessage = errorData.detail;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Always prevent default form submission
+        
+        const campaignName = document.getElementById('campaignName').value;
+        const minDeposit = document.getElementById('minDeposit').value;
+        const rewardDescription = document.getElementById('rewardDescription').value;
+        
+        // Enhanced validation
+        if (!campaignName.trim()) {
+            alert('Campaign name is required');
+            document.getElementById('campaignName').focus();
+            return false;
+        }
+        
+        if (!minDeposit || minDeposit <= 0) {
+            alert('Please enter a valid minimum deposit amount (greater than 0)');
+            document.getElementById('minDeposit').focus();
+            return false;
+        }
+        
+        if (!rewardDescription.trim()) {
+            alert('Reward description is required');
+            document.getElementById('rewardDescription').focus();
+            return false;
+        }
+        
+        // Prepare form data
+        const formData = new FormData(this);
+        
+        // Add debug logging
+        console.log('Submitting campaign form with data:', {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            min_deposit_amount: formData.get('min_deposit_amount'),
+            reward_description: formData.get('reward_description'),
+            start_date: formData.get('start_date'),
+            end_date: formData.get('end_date')
+        });
+        
+        // Show loading state
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+        submitButton.disabled = true;
+        
+        // Submit via AJAX
+        fetch('/admin/campaigns/create', {
+            method: 'POST',
+            body: formData
+        })
+        .then(async response => {
+            console.log('Response status:', response.status);
+            if (response.ok) {
+                return response.json();
+            } else {
+                // Try to get error details from response
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    console.log('Error response:', errorData);
+                    if (errorData.detail) {
+                        errorMessage = errorData.detail;
+                    }
+                } catch (e) {
+                    console.log('Could not parse error response as JSON');
+                    // Try to get text response
+                    try {
+                        const errorText = await response.text();
+                        if (errorText) {
+                            errorMessage = `Server error: ${errorText.substring(0, 200)}`;
+                        }
+                    } catch (e2) {
+                        // Fallback if response isn't JSON or text
+                    }
                 }
-            } catch (e) {
-                // Fallback if response isn't JSON
+                throw new Error(errorMessage);
             }
-            throw new Error(errorMessage);
-        }
-    })
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Campaign created successfully!');
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('createCampaignModal'));
-            modal.hide();
-            // Reset form
-            this.reset();
-            // Reload page to show new campaign
-            location.reload();
-        } else {
-            alert(data.message || 'Failed to create campaign');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error creating campaign: ' + error.message);
-    })
-    .finally(() => {
-        // Restore button state
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
+        })
+        .then(data => {
+            console.log('Success response:', data);
+            if (data.status === 'success') {
+                alert(`Campaign created successfully! Campaign ID: ${data.campaign_id}`);
+                // Close modal
+                const modalEl = document.getElementById('createCampaignModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Create and hide modal if instance doesn't exist
+                    const newModal = new bootstrap.Modal(modalEl);
+                    newModal.hide();
+                }
+                // Reset form
+                this.reset();
+                // Reload page to show new campaign
+                setTimeout(() => location.reload(), 500);
+            } else {
+                alert(data.message || 'Failed to create campaign');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating campaign:', error);
+            alert('Error creating campaign: ' + error.message);
+        })
+        .finally(() => {
+            // Restore button state
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        });
     });
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </div>
 </body>
 </html>
