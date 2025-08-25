@@ -5192,6 +5192,96 @@ async def delete_all_campaigns(admin = Depends(get_current_admin)):
     finally:
         db.close()
 
+@app.delete("/admin/campaigns/{campaign_id}")
+async def delete_campaign_by_id(campaign_id: str, admin = Depends(get_current_admin)):
+    """Delete a specific campaign by campaign_id"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Find the campaign
+        campaign = db.query(Campaign).filter(Campaign.campaign_id == campaign_id).first()
+        if not campaign:
+            raise HTTPException(status_code=404, detail=f"Campaign with ID '{campaign_id}' not found")
+        
+        # Remove campaign associations from registrations
+        registrations_updated = db.query(VipRegistration).filter(
+            VipRegistration.campaign_id == campaign_id
+        ).update({"campaign_id": None}, synchronize_session=False)
+        
+        # Delete the campaign
+        db.delete(campaign)
+        db.commit()
+        
+        logger.info(f"✅ Deleted campaign: {campaign_id} by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Campaign '{campaign_id}' deleted successfully",
+            "registrations_updated": registrations_updated
+        })
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting campaign {campaign_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete campaign: {str(e)}")
+    finally:
+        db.close()
+
+@app.delete("/admin/campaigns/delete-by-db-id/{db_id}")
+async def delete_campaign_by_db_id(db_id: int, admin = Depends(get_current_admin)):
+    """Delete a specific campaign by database ID (for campaigns with empty campaign_id)"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Find the campaign by database ID
+        campaign = db.query(Campaign).filter(Campaign.id == db_id).first()
+        if not campaign:
+            raise HTTPException(status_code=404, detail=f"Campaign with database ID {db_id} not found")
+        
+        campaign_info = f"ID {campaign.id} (campaign_id: '{campaign.campaign_id}', name: '{campaign.name}')"
+        
+        # Remove campaign associations from registrations (using campaign_id if it exists)
+        registrations_updated = 0
+        if campaign.campaign_id:
+            registrations_updated = db.query(VipRegistration).filter(
+                VipRegistration.campaign_id == campaign.campaign_id
+            ).update({"campaign_id": None}, synchronize_session=False)
+        
+        # Delete the campaign
+        db.delete(campaign)
+        db.commit()
+        
+        logger.info(f"✅ Deleted campaign {campaign_info} by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Campaign {campaign_info} deleted successfully",
+            "registrations_updated": registrations_updated
+        })
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting campaign with DB ID {db_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete campaign: {str(e)}")
+    finally:
+        db.close()
+
 @app.delete("/admin/campaigns/delete-inactive")
 async def delete_inactive_campaigns(admin = Depends(get_current_admin)):
     """Delete all inactive campaigns and remove their associations from registrations"""
