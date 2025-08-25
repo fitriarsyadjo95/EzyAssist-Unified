@@ -7,10 +7,16 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Campaign Management</h5>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
-                        <i class="fas fa-plus me-1"></i>
-                        Create Campaign
-                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteInactiveCampaigns()">
+                            <i class="fas fa-trash me-1"></i>
+                            Delete Inactive
+                        </button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                            <i class="fas fa-plus me-1"></i>
+                            Create Campaign
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% if campaigns %}
@@ -186,6 +192,56 @@ function toggleCampaign(campaignId, isActive) {
         .catch(error => {
             console.error('Error:', error);
             alert('Error toggling campaign status');
+        });
+    }
+}
+
+function deleteInactiveCampaigns() {
+    const confirmMessage = 'Are you sure you want to DELETE ALL INACTIVE campaigns?\n\nThis action cannot be undone. Only active campaigns will be kept.';
+    
+    if (confirm(confirmMessage)) {
+        // Show loading state (you could add a loading indicator here)
+        
+        fetch('/admin/campaigns/delete-inactive', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(async response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.detail) {
+                        errorMessage = errorData.detail;
+                    }
+                } catch (e) {
+                    // Fallback if response isn't JSON
+                }
+                throw new Error(errorMessage);
+            }
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                let message = data.message;
+                if (data.campaigns_deleted > 0) {
+                    message += `\n\nDeleted campaigns: ${data.deleted_campaign_ids.join(', ')}`;
+                    if (data.registrations_updated > 0) {
+                        message += `\nUpdated ${data.registrations_updated} registration(s)`;
+                    }
+                }
+                alert(message);
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to delete inactive campaigns');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting inactive campaigns: ' + error.message);
         });
     }
 }
