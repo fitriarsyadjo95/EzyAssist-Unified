@@ -5463,6 +5463,29 @@ async def admin_campaigns(request: Request):
         </body></html>
         """, status_code=500)
 
+@app.get("/admin/campaigns/delete-inactive-page", response_class=HTMLResponse)
+async def admin_delete_inactive_page(request: Request):
+    """Delete inactive campaigns page"""
+    try:
+        # Check authentication
+        redirect_check = admin_login_required(request)
+        if redirect_check:
+            return redirect_check
+        
+        return templates.TemplateResponse("admin/delete_inactive.html", {
+            "request": request,
+            "title": "Delete Inactive Campaigns"
+        })
+    except Exception as e:
+        logger.error(f"Error loading delete inactive page: {e}")
+        return HTMLResponse(f"""
+        <html><body>
+            <h1>Delete Inactive Campaigns Error</h1>
+            <p>Error: {str(e)}</p>
+            <a href="/admin/campaigns">Back to Campaigns</a>
+        </body></html>
+        """, status_code=500)
+
 @app.post("/admin/campaigns/create")
 async def create_campaign(
     name: str = Form(...),

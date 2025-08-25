@@ -1,0 +1,107 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash me-2"></i>
+                        Delete Inactive Campaigns
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This action will permanently delete all inactive campaigns and cannot be undone.
+                        Active campaigns will remain untouched.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p>This action will:</p>
+                        <ul>
+                            <li>Delete all campaigns where <code>is_active = false</code></li>
+                            <li>Remove campaign associations from related registrations</li>
+                            <li>Keep all active campaigns and their data</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-danger" onclick="deleteInactiveCampaigns()">
+                            <i class="fas fa-trash me-2"></i>
+                            Delete All Inactive Campaigns
+                        </button>
+                        <a href="/admin/campaigns" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Campaigns
+                        </a>
+                    </div>
+                    
+                    <div id="result" class="mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteInactiveCampaigns() {
+    const confirmMessage = 'Are you sure you want to DELETE ALL INACTIVE campaigns?\n\nThis action cannot be undone. Only active campaigns will be kept.';
+    
+    if (confirm(confirmMessage)) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Deleting inactive campaigns...</div>';
+        resultDiv.style.display = 'block';
+        
+        fetch('/admin/campaigns/delete-inactive', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(async response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.detail) {
+                        errorMessage = errorData.detail;
+                    }
+                } catch (e) {
+                    // Fallback if response isn't JSON
+                }
+                throw new Error(errorMessage);
+            }
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                let html = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>' + data.message + '</div>';
+                if (data.campaigns_deleted > 0) {
+                    html += '<div class="mt-2"><strong>Deleted campaigns:</strong><ul>';
+                    data.deleted_campaign_ids.forEach(id => {
+                        html += `<li><code>${id}</code></li>`;
+                    });
+                    html += '</ul></div>';
+                    if (data.registrations_updated > 0) {
+                        html += `<p class="text-muted">Updated ${data.registrations_updated} registration(s)</p>`;
+                    }
+                    html += '<a href="/admin/campaigns" class="btn btn-primary mt-2">View Updated Campaign List</a>';
+                } else {
+                    html += '<a href="/admin/campaigns" class="btn btn-primary mt-2">Back to Campaigns</a>';
+                }
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times me-2"></i>' + (data.message || 'Failed to delete inactive campaigns') + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Error deleting inactive campaigns: ' + error.message + '</div>';
+        });
+    }
+}
+</script>
+{% endblock %}
