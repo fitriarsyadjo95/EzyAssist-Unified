@@ -4940,6 +4940,29 @@ async def admin_campaigns(request: Request):
         </body></html>
         """, status_code=500)
 
+@app.get("/admin/campaigns/delete-specific-page", response_class=HTMLResponse)
+async def admin_delete_specific_page(request: Request):
+    """Delete specific campaign page"""
+    try:
+        # Check authentication
+        redirect_check = admin_login_required(request)
+        if redirect_check:
+            return redirect_check
+        
+        return templates.TemplateResponse("admin/delete_specific.html", {
+            "request": request,
+            "title": "Delete Specific Campaign"
+        })
+    except Exception as e:
+        logger.error(f"Error loading delete specific page: {e}")
+        return HTMLResponse(f"""
+        <html><body>
+            <h1>Delete Specific Campaign Error</h1>
+            <p>Error: {str(e)}</p>
+            <a href="/admin/campaigns">Back to Campaigns</a>
+        </body></html>
+        """, status_code=500)
+
 @app.get("/admin/campaigns/delete-inactive-page", response_class=HTMLResponse)
 async def admin_delete_inactive_page(request: Request):
     """Delete inactive campaigns page"""
