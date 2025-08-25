@@ -1178,52 +1178,71 @@ class RentungBot_Ai:
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle incoming messages"""
-        user = update.effective_user
-        telegram_id = str(user.id)
-        message_text = update.message.text
-
-        # Track activity
-        self.message_count += 1
-        self.last_activity = datetime.utcnow()
-        self.user_sessions[telegram_id] = self.last_activity
-
-        # Check if new user
-        is_new_user = telegram_id not in self.engagement_scores
-
-        # Update engagement score
-        if telegram_id not in self.engagement_scores:
-            self.engagement_scores[telegram_id] = 0
-        self.engagement_scores[telegram_id] += 1
-
-        # Update daily stats in database
-        self.update_daily_stats(telegram_id, 'message', is_new_user)
-        self.reset_daily_tracking()
-
-        # Update last seen (removed Supabase dependency)
-
-        # Show typing indicator
-        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
-        
-        # Process message through conversation engine
         try:
-            response = await self.conversation_engine.process_message(
-                message_text, 
-                telegram_id, 
-                self.engagement_scores[telegram_id],
-                user.username or ""
-            )
+            user = update.effective_user
+            telegram_id = str(user.id)
+            message_text = update.message.text
+            
+            logger.info(f"🤖 Processing message from {telegram_id} ({user.first_name}): {message_text}")
+
+            # Track activity
+            self.message_count += 1
+            self.last_activity = datetime.utcnow()
+            self.user_sessions[telegram_id] = self.last_activity
+
+            # Check if new user
+            is_new_user = telegram_id not in self.engagement_scores
+
+            # Update engagement score
+            if telegram_id not in self.engagement_scores:
+                self.engagement_scores[telegram_id] = 0
+            self.engagement_scores[telegram_id] += 1
+
+            # Update daily stats in database
+            try:
+                self.update_daily_stats(telegram_id, 'message', is_new_user)
+                self.reset_daily_tracking()
+            except Exception as e:
+                logger.error(f"Error updating daily stats: {e}")
+
+            # Show typing indicator
+            try:
+                await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
+            except Exception as e:
+                logger.error(f"Error sending typing action: {e}")
+            
+            # Process message through conversation engine
+            try:
+                logger.info(f"🧠 Sending to conversation engine...")
+                response = await self.conversation_engine.process_message(
+                    message_text, 
+                    telegram_id, 
+                    self.engagement_scores[telegram_id],
+                    user.username or ""
+                )
+                logger.info(f"💭 Got response from conversation engine: {response[:100]}...")
+            except Exception as e:
+                logger.error(f"❌ Conversation engine error: {e}", exc_info=True)
+                response = None
+
+            # Ensure we have a valid response
+            if not response or response.strip() == "":
+                response = (
+                    "Maaf awak, saya ada masalah nak jawab soalan ni. "
+                    "Boleh cuba tanya lagi atau tanya soalan lain?"
+                )
+                logger.warning(f"Using fallback response")
+
+            logger.info(f"📤 Sending reply to user...")
+            await update.message.reply_text(response)
+            logger.info(f"✅ Message handled successfully")
+            
         except Exception as e:
-            logger.error(f"Conversation engine error: {e}")
-            response = None
-
-        # Ensure we have a valid response
-        if not response or response.strip() == "":
-            response = (
-                "Maaf awak, saya ada masalah nak jawab soalan ni. "
-                "Boleh cuba tanya lagi atau tanya soalan lain?"
-            )
-
-        await update.message.reply_text(response)
+            logger.error(f"❌ Critical error in handle_message: {e}", exc_info=True)
+            try:
+                await update.message.reply_text("Maaf, saya menghadapi masalah teknikal. Sila cuba lagi.")
+            except Exception as e2:
+                logger.error(f"❌ Failed to send error message: {e2}")
         
         # Log conversation to database
         self.log_conversation(telegram_id, message_text, response, "chat")
@@ -1901,19 +1920,75 @@ async def handle_telegram_webhook(request: Request):
     """Handle incoming Telegram updates"""
     try:
         data = await request.json()
+        logger.info(f"📨 Received webhook data: {data}")
         
         if not bot_instance or not bot_instance.application:
-            logger.error("Bot not ready")
+            logger.error("❌ Bot not ready")
             return JSONResponse(content={'error': 'Bot not ready'}, status_code=500)
+        
+        # Extract message info for logging
+        if 'message' in data:
+            msg = data['message']
+            user_info = f"User {msg.get('from', {}).get('id')} ({msg.get('from', {}).get('first_name', 'Unknown')})"
+            message_text = msg.get('text', '[No text]')
+            logger.info(f"📝 Message from {user_info}: {message_text}")
         
         update = Update.de_json(data, bot_instance.application.bot)
         await bot_instance.application.process_update(update)
         
+        logger.info("✅ Webhook processed successfully")
         return JSONResponse(content={'status': 'ok'})
         
     except Exception as e:
-        logger.error(f"Webhook error: {e}")
+        logger.error(f"❌ Webhook error: {e}", exc_info=True)
         return JSONResponse(content={'error': 'Server error'}, status_code=500)
+
+@app.get("/bot-status")
+async def bot_status():
+    """Check bot status and configuration"""
+    try:
+        webhook_info = None
+        bot_info = None
+        
+        if bot_instance and bot_instance.application:
+            try:
+                # Get bot info
+                bot_info = await bot_instance.application.bot.get_me()
+                bot_info = {
+                    "id": bot_info.id,
+                    "username": bot_info.username,
+                    "first_name": bot_info.first_name
+                }
+            except Exception as e:
+                bot_info = {"error": str(e)}
+                
+            try:
+                # Get webhook info
+                webhook_info = await bot_instance.application.bot.get_webhook_info()
+                webhook_info = {
+                    "url": webhook_info.url,
+                    "has_custom_certificate": webhook_info.has_custom_certificate,
+                    "pending_update_count": webhook_info.pending_update_count,
+                    "last_error_date": webhook_info.last_error_date,
+                    "last_error_message": webhook_info.last_error_message,
+                    "max_connections": webhook_info.max_connections
+                }
+            except Exception as e:
+                webhook_info = {"error": str(e)}
+        
+        return JSONResponse(content={
+            "bot_instance_exists": bot_instance is not None,
+            "application_exists": bot_instance.application is not None if bot_instance else False,
+            "bot_token_configured": bool(os.getenv('TELEGRAM_BOT_TOKEN')),
+            "webhook_url_configured": bool(os.getenv('TELEGRAM_WEBHOOK_URL')),
+            "bot_info": bot_info,
+            "webhook_info": webhook_info,
+            "message_count": bot_instance.message_count if bot_instance else 0,
+            "last_activity": bot_instance.last_activity.isoformat() if bot_instance and bot_instance.last_activity else None
+        })
+        
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # Helper functions for notifications
 async def send_registration_pending(telegram_id: str, registration_data: dict):
