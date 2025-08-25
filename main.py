@@ -1969,7 +1969,7 @@ async def bot_status():
                     "url": webhook_info.url,
                     "has_custom_certificate": webhook_info.has_custom_certificate,
                     "pending_update_count": webhook_info.pending_update_count,
-                    "last_error_date": webhook_info.last_error_date,
+                    "last_error_date": webhook_info.last_error_date.isoformat() if webhook_info.last_error_date else None,
                     "last_error_message": webhook_info.last_error_message,
                     "max_connections": webhook_info.max_connections
                 }
