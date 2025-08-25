@@ -177,10 +177,10 @@ function toggleCampaign(campaignId, isActive) {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.status === 'success') {
                 location.reload();
             } else {
-                alert('Error toggling campaign status');
+                alert(data.message || 'Error toggling campaign status');
             }
         })
         .catch(error => {
@@ -190,29 +190,74 @@ function toggleCampaign(campaignId, isActive) {
     }
 }
 
-// Form validation
+// Form validation and AJAX submission
 document.getElementById('createCampaignForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Always prevent default form submission
+    
     const campaignName = document.getElementById('campaignName').value;
     const minDeposit = document.getElementById('minDeposit').value;
     const rewardDescription = document.getElementById('rewardDescription').value;
     
+    // Validation
     if (!campaignName.trim()) {
-        e.preventDefault();
         alert('Campaign name is required');
         return false;
     }
     
     if (!minDeposit || minDeposit <= 0) {
-        e.preventDefault();
         alert('Please enter a valid minimum deposit amount');
         return false;
     }
     
     if (!rewardDescription.trim()) {
-        e.preventDefault();
         alert('Reward description is required');
         return false;
     }
+    
+    // Prepare form data
+    const formData = new FormData(this);
+    
+    // Show loading state
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+    submitButton.disabled = true;
+    
+    // Submit via AJAX
+    fetch('/admin/campaigns/create', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Campaign created successfully!');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCampaignModal'));
+            modal.hide();
+            // Reset form
+            this.reset();
+            // Reload page to show new campaign
+            location.reload();
+        } else {
+            alert(data.message || 'Failed to create campaign');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating campaign. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    });
 });
 </script>
 {% endblock %}
