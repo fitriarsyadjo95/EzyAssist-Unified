@@ -5486,6 +5486,54 @@ async def admin_delete_inactive_page(request: Request):
         </body></html>
         """, status_code=500)
 
+@app.get("/debug/campaigns-db")
+async def debug_campaigns_db():
+    """Debug endpoint to check campaigns table and data"""
+    if not SessionLocal:
+        return {"error": "Database not available", "database_url": "Not configured"}
+    
+    db = get_db()
+    if not db:
+        return {"error": "Database connection failed"}
+    
+    try:
+        # Check if campaigns table exists
+        from sqlalchemy import text
+        table_exists = db.execute(text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'campaigns'
+            )
+        """)).scalar()
+        
+        # Get all campaigns
+        campaigns = db.query(Campaign).all()
+        campaigns_data = [c.to_dict() for c in campaigns]
+        
+        # Check table schema
+        schema_result = db.execute(text("""
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns 
+            WHERE table_name = 'campaigns'
+            ORDER BY ordinal_position
+        """)).fetchall()
+        
+        schema = [dict(row._mapping) for row in schema_result] if schema_result else []
+        
+        return {
+            "database_url_set": bool(DATABASE_URL),
+            "table_exists": table_exists,
+            "campaigns_count": len(campaigns_data),
+            "campaigns": campaigns_data,
+            "table_schema": schema,
+            "engine_info": str(engine) if engine else None
+        }
+        
+    except Exception as e:
+        return {"error": f"Database query failed: {str(e)}"}
+    finally:
+        db.close()
+
 @app.post("/admin/campaigns/create")
 async def create_campaign(
     name: str = Form(...),
