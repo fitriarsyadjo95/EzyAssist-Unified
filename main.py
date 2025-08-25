@@ -5594,6 +5594,55 @@ async def get_campaign_registrations(campaign_id: str, admin = Depends(get_curre
     finally:
         db.close()
 
+@app.delete("/admin/campaigns/delete-all")
+async def delete_all_campaigns(admin = Depends(get_current_admin)):
+    """Delete all campaigns and remove campaign associations from registrations"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Count campaigns before deletion
+        campaigns_count = db.query(Campaign).count()
+        
+        # Count registrations with campaign associations
+        campaign_registrations_count = db.query(VipRegistration).filter(
+            VipRegistration.campaign_id.isnot(None)
+        ).count()
+        
+        logger.info(f"Starting campaign cleanup: {campaigns_count} campaigns, {campaign_registrations_count} campaign registrations")
+        
+        # Start transaction
+        # Step 1: Remove campaign associations from registrations
+        if campaign_registrations_count > 0:
+            db.query(VipRegistration).filter(
+                VipRegistration.campaign_id.isnot(None)
+            ).update({"campaign_id": None}, synchronize_session=False)
+            logger.info(f"Removed campaign associations from {campaign_registrations_count} registrations")
+        
+        # Step 2: Delete all campaigns
+        campaigns_deleted = db.query(Campaign).delete(synchronize_session=False)
+        logger.info(f"Deleted {campaigns_deleted} campaigns")
+        
+        db.commit()
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": "All campaigns deleted successfully",
+            "campaigns_deleted": campaigns_deleted,
+            "registrations_updated": campaign_registrations_count
+        })
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting all campaigns: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete campaigns: {str(e)}")
+    finally:
+        db.close()
+
 # CAMPAIGN REGISTRATION ROUTES
 
 @app.get("/campaign/{campaign_id}", response_class=HTMLResponse)
