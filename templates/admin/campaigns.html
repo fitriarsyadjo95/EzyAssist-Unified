@@ -104,10 +104,9 @@
             <form id="createCampaignForm" method="POST" action="/admin/campaigns/create">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="campaignId" class="form-label">Campaign ID</label>
-                        <input type="text" class="form-control" id="campaignId" name="campaign_id" 
-                               placeholder="e.g., rm50-giveaway-jan2025" required>
-                        <div class="form-text">Unique identifier for the campaign (letters, numbers, hyphens only)</div>
+                        <label for="description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="2" placeholder="Brief description of the campaign"></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="campaignName" class="form-label">Campaign Name</label>
@@ -124,6 +123,20 @@
                         <label for="rewardDescription" class="form-label">Reward Description</label>
                         <textarea class="form-control" id="rewardDescription" name="reward_description" 
                                   rows="3" placeholder="RM50 cash reward upon successful deposit verification" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date (Optional)</label>
+                                <input type="datetime-local" class="form-control" id="startDate" name="start_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">End Date (Optional)</label>
+                                <input type="datetime-local" class="form-control" id="endDate" name="end_date">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -179,12 +192,25 @@ function toggleCampaign(campaignId, isActive) {
 
 // Form validation
 document.getElementById('createCampaignForm').addEventListener('submit', function(e) {
-    const campaignId = document.getElementById('campaignId').value;
-    const validPattern = /^[a-z0-9-]+$/;
+    const campaignName = document.getElementById('campaignName').value;
+    const minDeposit = document.getElementById('minDeposit').value;
+    const rewardDescription = document.getElementById('rewardDescription').value;
     
-    if (!validPattern.test(campaignId)) {
+    if (!campaignName.trim()) {
         e.preventDefault();
-        alert('Campaign ID can only contain lowercase letters, numbers, and hyphens');
+        alert('Campaign name is required');
+        return false;
+    }
+    
+    if (!minDeposit || minDeposit <= 0) {
+        e.preventDefault();
+        alert('Please enter a valid minimum deposit amount');
+        return false;
+    }
+    
+    if (!rewardDescription.trim()) {
+        e.preventDefault();
+        alert('Reward description is required');
         return false;
     }
 });
