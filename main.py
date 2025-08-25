@@ -4902,37 +4902,32 @@ async def admin_campaigns(request: Request):
             return redirect_check
         
         campaigns = []
-        campaign_stats = {}
         
         if SessionLocal:
             db = get_db()
             if db:
                 try:
                     # Get all campaigns
-                    campaigns = db.query(Campaign).order_by(Campaign.created_at.desc()).all()
+                    campaigns_from_db = db.query(Campaign).order_by(Campaign.created_at.desc()).all()
                     
-                    # Get campaign statistics
-                    for campaign in campaigns:
+                    # Add registration count to each campaign
+                    for campaign in campaigns_from_db:
                         registrations = db.query(VipRegistration).filter(
                             VipRegistration.campaign_id == campaign.campaign_id
-                        ).all()
-                        
-                        stats = {
-                            'total_registrations': len(registrations),
-                            'verified_count': len([r for r in registrations if r.status == RegistrationStatus.VERIFIED]),
-                            'pending_count': len([r for r in registrations if r.status == RegistrationStatus.PENDING]),
-                            'total_deposits': sum([float(r.deposit_amount) if r.deposit_amount and r.deposit_amount.replace('.','').isdigit() else 0 for r in registrations])
-                        }
-                        campaign_stats[campaign.campaign_id] = stats
+                        ).count()
+                        campaign.registration_count = registrations
+                        campaigns.append(campaign)
                         
                 except Exception as e:
                     logger.error(f"Error fetching campaigns: {e}")
                 finally:
                     db.close()
         
-        # Create campaigns HTML page with consistent styling
-        sidebar_html = get_admin_sidebar_html("campaigns")
-        campaigns_html = f"""
+        return templates.TemplateResponse("admin/campaigns.html", {
+            "request": request,
+            "campaigns": campaigns,
+            "title": "Campaign Management"
+        })
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -5451,7 +5446,8 @@ async def admin_campaigns(request: Request):
         </html>
         """
         
-        return HTMLResponse(campaigns_html, status_code=200)
+        # This was causing the issue - using inline HTML instead of template
+        # return HTMLResponse(campaigns_html, status_code=200)
         
     except Exception as e:
         logger.error(f"Error loading campaigns page: {e}")
