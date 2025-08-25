@@ -5643,6 +5643,67 @@ async def delete_all_campaigns(admin = Depends(get_current_admin)):
     finally:
         db.close()
 
+@app.delete("/admin/campaigns/delete-inactive")
+async def delete_inactive_campaigns(admin = Depends(get_current_admin)):
+    """Delete all inactive campaigns and remove their associations from registrations"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Count inactive campaigns before deletion
+        inactive_campaigns = db.query(Campaign).filter(Campaign.is_active == False).all()
+        inactive_count = len(inactive_campaigns)
+        
+        if inactive_count == 0:
+            return JSONResponse(content={
+                "status": "success",
+                "message": "No inactive campaigns found to delete",
+                "campaigns_deleted": 0,
+                "registrations_updated": 0
+            })
+        
+        # Get campaign IDs for logging
+        inactive_campaign_ids = [c.campaign_id for c in inactive_campaigns]
+        logger.info(f"Starting inactive campaign cleanup: {inactive_count} inactive campaigns: {inactive_campaign_ids}")
+        
+        # Count registrations with inactive campaign associations
+        inactive_campaign_registrations_count = db.query(VipRegistration).filter(
+            VipRegistration.campaign_id.in_(inactive_campaign_ids)
+        ).count()
+        
+        # Start transaction
+        # Step 1: Remove inactive campaign associations from registrations
+        if inactive_campaign_registrations_count > 0:
+            db.query(VipRegistration).filter(
+                VipRegistration.campaign_id.in_(inactive_campaign_ids)
+            ).update({"campaign_id": None}, synchronize_session=False)
+            logger.info(f"Removed inactive campaign associations from {inactive_campaign_registrations_count} registrations")
+        
+        # Step 2: Delete inactive campaigns
+        campaigns_deleted = db.query(Campaign).filter(Campaign.is_active == False).delete(synchronize_session=False)
+        logger.info(f"Deleted {campaigns_deleted} inactive campaigns: {inactive_campaign_ids}")
+        
+        db.commit()
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Successfully deleted {campaigns_deleted} inactive campaigns",
+            "campaigns_deleted": campaigns_deleted,
+            "registrations_updated": inactive_campaign_registrations_count,
+            "deleted_campaign_ids": inactive_campaign_ids
+        })
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting inactive campaigns: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete inactive campaigns: {str(e)}")
+    finally:
+        db.close()
+
 # CAMPAIGN REGISTRATION ROUTES
 
 @app.get("/campaign/{campaign_id}", response_class=HTMLResponse)
