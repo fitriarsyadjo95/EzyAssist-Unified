@@ -5812,6 +5812,15 @@ async def submit_campaign_registration(
         registration.ip_address = request.client.host
         registration.user_agent = request.headers.get('User-Agent', '')
         
+        # Track campaign information
+        registration.campaign_id = campaign_id
+        registration.campaign_name = campaign.name
+        registration.campaign_min_deposit = campaign.min_deposit_amount
+        registration.campaign_reward = campaign.reward_description
+        registration.is_campaign_registration = True
+        
+        logger.info(f"🎯 Setting campaign tracking - Campaign ID: {campaign_id}, Name: {campaign.name}, Registration ID: {registration.id}")
+        
         # Add audit log
         add_audit_log(
             registration_id=registration.id,
