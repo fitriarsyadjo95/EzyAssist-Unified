@@ -942,7 +942,7 @@ class RentungBot_Ai:
             token = generate_registration_token(telegram_id, telegram_username)
             
             # Get base URL from environment or construct it
-            base_url = os.getenv('BASE_URL', 'https://your-app.repl.co')
+            base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
             registration_url = f"{base_url}/?token={token}"
             
             register_message = (
@@ -973,6 +973,9 @@ class RentungBot_Ai:
         telegram_id = str(user.id)
         telegram_username = user.username or ""
         
+        logger.info(f"📢 Campaign command triggered by {telegram_id} ({user.first_name})")
+        logger.info(f"🔧 Command args: {context.args}")
+        
         # Track activity
         self.command_usage['campaign'] = self.command_usage.get('campaign', 0) + 1
         self.last_activity = datetime.utcnow()
@@ -987,9 +990,10 @@ class RentungBot_Ai:
             campaign_id = None
             if context.args and len(context.args) > 0:
                 campaign_id = context.args[0]
+                logger.info(f"🎯 Specific campaign requested: {campaign_id}")
             
             # Get base URL from environment
-            base_url = os.getenv('BASE_URL', 'https://your-app.repl.co')
+            base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
             
             if campaign_id:
                 # Specific campaign registration
@@ -1003,6 +1007,8 @@ class RentungBot_Ai:
                         ).first()
                         
                         if campaign:
+                            logger.info(f"✅ Campaign found: {campaign.name}")
+                            
                             # Generate campaign registration token
                             token = generate_registration_token(
                                 telegram_id=telegram_id, 
@@ -1010,8 +1016,10 @@ class RentungBot_Ai:
                                 token_type="campaign",
                                 campaign_id=campaign_id
                             )
+                            logger.info(f"🔑 Generated token: {token[:20]}...")
                             
                             campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
+                            logger.info(f"🔗 Generated campaign URL: {campaign_url}")
                             
                             campaign_message = (
                                 f"🎉 {campaign.name}\n\n"
