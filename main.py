@@ -1976,6 +1976,14 @@ async def bot_status():
             except Exception as e:
                 webhook_info = {"error": str(e)}
         
+        # Safely get last activity
+        last_activity = None
+        if bot_instance and hasattr(bot_instance, 'last_activity') and bot_instance.last_activity:
+            try:
+                last_activity = bot_instance.last_activity.isoformat()
+            except:
+                last_activity = str(bot_instance.last_activity)
+        
         return JSONResponse(content={
             "bot_instance_exists": bot_instance is not None,
             "application_exists": bot_instance.application is not None if bot_instance else False,
@@ -1984,7 +1992,7 @@ async def bot_status():
             "bot_info": bot_info,
             "webhook_info": webhook_info,
             "message_count": bot_instance.message_count if bot_instance else 0,
-            "last_activity": bot_instance.last_activity.isoformat() if bot_instance and bot_instance.last_activity else None
+            "last_activity": last_activity
         })
         
     except Exception as e:
