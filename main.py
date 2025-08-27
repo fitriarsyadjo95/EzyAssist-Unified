@@ -6378,24 +6378,28 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
         if registration_id:
             registration_data = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
         
-        context = {
+        # Generate form hash for security
+        form_hash = generate_form_hash()
+        
+        # Prepare template data using same structure as main VIP registration
+        template_data = {
             "request": request,
+            "telegram_id": telegram_id,
+            "telegram_username": telegram_username,
             "token": token,
-            "campaign": campaign,
-            "registration_data": registration_data,
+            "form_hash": form_hash,
+            "translations": TRANSLATIONS['ms'],
+            "token_type": token_data.get('token_type', 'campaign_with_setup'),
+            "existing_registration": registration_data.to_dict() if registration_data else None,
+            "is_resubmission": registration_data is not None,
             "setup_action": setup_action,
-            "lang": "ms",
-            "translations": {
-                "title": f"{campaign.name} - Registration Form",
-                "error_title": "Ralat Pendaftaran", 
-                "back_to_telegram": "Kembali ke Telegram",
-                "registration_title": "Pendaftaran Campaign",
-                "submit": "Hantar",
-                "cancel": "Batal"
-            }
+            "campaign": campaign,
+            "is_campaign_registration": True,
+            "form_action": f"/campaign/{campaign_id}/submit",
+            "page_title": f"Complete {campaign.name} Registration"
         }
         
-        return templates.TemplateResponse("campaign_registration_form.html", context)
+        return templates.TemplateResponse("simple_form.html", template_data)
         
     except Exception as e:
         logger.error(f"❌ Error loading campaign registration form: {e}")
@@ -6417,6 +6421,7 @@ async def submit_campaign_registration(
     full_name: str = Form(...),
     email: str = Form(...),
     phone_number: str = Form(...),
+    brokerage_name: str = Form(...),
     deposit_amount: str = Form(...),
     client_id: str = Form(""),
     deposit_proof_1: UploadFile = File(None),
