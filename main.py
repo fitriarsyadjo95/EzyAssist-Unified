@@ -5545,6 +5545,33 @@ async def admin_delete_inactive_page(request: Request):
         </body></html>
         """, status_code=500)
 
+@app.get("/debug/test-campaign-token")
+async def debug_test_campaign_token():
+    """Generate test campaign registration token for debugging"""
+    try:
+        # Generate test token
+        token = generate_registration_token(
+            telegram_id="123456789", 
+            telegram_username="testuser",
+            token_type="campaign",
+            campaign_id="rm50-bonus"
+        )
+        
+        base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
+        campaign_url = f"{base_url}/campaign/rm50-bonus/register?token={token}"
+        
+        return {
+            "success": True,
+            "token": token[:50] + "...",
+            "test_url": campaign_url,
+            "message": "Use this URL to test registration flow"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @app.get("/debug/campaigns-db")
 async def debug_campaigns_db():
     """Debug endpoint to check campaigns table and data"""
