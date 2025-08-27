@@ -1455,10 +1455,40 @@ class RentungBot_Ai:
                 # Route commands manually - this is now the primary routing mechanism
                 if message_text.startswith('/campaign ') or message_text == '/campaign':
                     logger.info(f"➡️ Routing to campaign_command: {message_text}")
+                    
+                    # Manually parse command arguments since context.args is None
+                    command_parts = message_text.split()
+                    if len(command_parts) > 1:
+                        # Extract campaign ID from "/campaign rm50-bonus"
+                        campaign_arg = command_parts[1]
+                        logger.info(f"🔍 Manually parsed campaign argument: {campaign_arg}")
+                        
+                        # Create a new context with the args
+                        from telegram.ext import CallbackContext
+                        # Modify context.args manually
+                        if not hasattr(context, 'args') or context.args is None:
+                            context.args = [campaign_arg]
+                        else:
+                            context.args = [campaign_arg]
+                        logger.info(f"🔧 Set context.args to: {context.args}")
+                    
                     await self.campaign_command(update, context)
                     return
                 elif message_text.startswith('/kempen ') or message_text == '/kempen':
                     logger.info(f"🔧 Manually routing to campaign_command (kempen): {message_text}")
+                    
+                    # Manually parse command arguments for kempen command
+                    command_parts = message_text.split()
+                    if len(command_parts) > 1:
+                        campaign_arg = command_parts[1]
+                        logger.info(f"🔍 Manually parsed kempen argument: {campaign_arg}")
+                        
+                        if not hasattr(context, 'args') or context.args is None:
+                            context.args = [campaign_arg]
+                        else:
+                            context.args = [campaign_arg]
+                        logger.info(f"🔧 Set context.args to: {context.args}")
+                    
                     await self.campaign_command(update, context)
                     return
                 elif message_text.startswith('/register') or message_text == '/register':
