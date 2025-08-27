@@ -299,11 +299,18 @@ class ConversationEngine:
             broker_info = get_broker_info(mentioned_brokers[0])
             if broker_info:
                 if language == 'ms':
-                    response = f"**Maklumat {broker_info['name']}:**\n\n"
-                    response += f"**Peraturan:** {', '.join(broker_info['regulation']['primary_regulators'])}\n"
-                    response += f"**Deposit Minimum:** {list(broker_info['trading_conditions']['account_types'].values())[0]['minimum_deposit']}\n"
-                    response += f"**Leverage Maksimum:** {broker_info['trading_conditions']['maximum_leverage']}\n"
-                    response += f"**Platform:** {', '.join(broker_info['platforms_tools']['trading_platforms'])}\n\n"
+                    # Use the comprehensive overview for detailed broker information
+                    if 'overview' in broker_info and len(broker_info['overview']) > 100:
+                        # Use the detailed overview instead of short format
+                        response = f"**{broker_info['name']}:**\n\n"
+                        response += f"{broker_info['overview']}\n\n"
+                    else:
+                        # Fallback to short format if no detailed overview
+                        response = f"**Maklumat {broker_info['name']}:**\n\n"
+                        response += f"**Peraturan:** {', '.join(broker_info['regulation']['primary_regulators'])}\n"
+                        response += f"**Deposit Minimum:** {list(broker_info['trading_conditions']['account_types'].values())[0]['minimum_deposit']}\n"
+                        response += f"**Leverage Maksimum:** {broker_info['trading_conditions']['maximum_leverage']}\n"
+                        response += f"**Platform:** {', '.join(broker_info['platforms_tools']['trading_platforms'])}\n\n"
 
                     # Add warnings for risky brokers
                     if 'major_warnings' in broker_info:
