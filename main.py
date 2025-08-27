@@ -6202,7 +6202,15 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
             "token": token,
             "campaign": campaign,
             "registration_data": registration_data,
-            "setup_action": registration_data.account_setup_action.value if registration_data and registration_data.account_setup_action else None
+            "setup_action": registration_data.account_setup_action.value if registration_data and registration_data.account_setup_action else None,
+            "lang": "ms",
+            "translations": {
+                "error_title": "Ralat Pendaftaran", 
+                "back_to_telegram": "Kembali ke Telegram",
+                "registration_title": "Pendaftaran Campaign",
+                "submit": "Hantar",
+                "cancel": "Batal"
+            }
         }
         
         return templates.TemplateResponse("campaign_registration_form.html", context)
