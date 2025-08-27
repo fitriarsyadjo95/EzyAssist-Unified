@@ -647,10 +647,17 @@
                                             <small>{{ reg.created_at.strftime('%Y-%m-%d %H:%M') if reg.created_at else 'N/A' }}</small>
                                         </td>
                                         <td>
-                                            <a href="/admin/registrations/{{ reg.id }}" class="btn btn-primary btn-sm btn-view">
-                                                <i class="fas fa-eye me-1"></i>
-                                                View
-                                            </a>
+                                            <div class="btn-group" role="group">
+                                                <a href="/admin/registrations/{{ reg.id }}" class="btn btn-primary btn-sm btn-view">
+                                                    <i class="fas fa-eye me-1"></i>
+                                                    View
+                                                </a>
+                                                <button type="button" class="btn btn-danger btn-sm" 
+                                                        onclick="deleteRegistration({{ reg.id }}, '{{ reg.full_name }}')"
+                                                        title="Delete registration permanently">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -925,6 +932,43 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
+
+        // Delete registration function
+        async function deleteRegistration(registrationId, fullName) {
+            const confirmMessage = `Are you sure you want to PERMANENTLY DELETE the registration for "${fullName}"?\n\nThis action cannot be undone and will:\n• Remove the registration from the database\n• Delete all associated audit logs\n• Make this data unrecoverable\n\nType "DELETE" to confirm:`;
+            
+            const userInput = prompt(confirmMessage);
+            
+            if (userInput !== "DELETE") {
+                if (userInput !== null) {
+                    alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/registrations/${registrationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ ${result.message}`);
+                    // Reload the page to refresh the registration list
+                    window.location.reload();
+                } else {
+                    alert(`❌ Failed to delete registration: ${result.detail || 'Unknown error'}`);
+                }
+                
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('❌ Error deleting registration: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>

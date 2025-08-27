@@ -3762,6 +3762,68 @@ async def update_admin_notes(
     finally:
         db.close()
 
+@app.delete("/admin/registrations/{registration_id}")
+async def delete_registration(registration_id: int, admin = Depends(get_current_admin)):
+    """Delete a specific registration record (admin only)"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Find the registration
+        registration = db.query(VipRegistration).filter(
+            VipRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Store registration info for logging
+        registration_info = {
+            "id": registration.id,
+            "telegram_id": registration.telegram_id,
+            "full_name": registration.full_name,
+            "email": registration.email,
+            "status": registration.status.value if registration.status else "unknown"
+        }
+        
+        # Delete related audit logs first (if any exist)
+        try:
+            db.query(RegistrationAuditLog).filter(
+                RegistrationAuditLog.registration_id == registration_id
+            ).delete()
+        except Exception as audit_error:
+            logger.warning(f"Could not delete audit logs for registration {registration_id}: {audit_error}")
+        
+        # Delete the registration
+        db.delete(registration)
+        db.commit()
+        
+        logger.info(f"✅ Registration deleted by {admin.get('username', 'admin')} - ID: {registration_id}, Name: {registration_info['full_name']}, Email: {registration_info['email']}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Registration for {registration_info['full_name']} has been permanently deleted",
+            "deleted_registration": {
+                "id": registration_info["id"],
+                "name": registration_info["full_name"],
+                "email": registration_info["email"],
+                "status": registration_info["status"]
+            }
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting registration {registration_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to delete registration")
+    finally:
+        db.close()
+
 @app.post("/admin/registrations/delete-all")
 async def delete_all_registrations(admin = Depends(get_current_admin)):
     """Delete all registration records (admin only)"""
