@@ -1218,16 +1218,32 @@ class RentungBot_Ai:
                     campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
             
             logger.info(f"📤 About to send campaign response to {telegram_id}: {campaign_message[:100]}...")
-            await send_long_message(update, campaign_message, parse_mode='Markdown')
-            logger.info(f"✅ Campaign message sent successfully to {telegram_id}")
+            logger.info(f"📊 Message length: {len(campaign_message)} characters")
+            logger.info(f"📨 Using send_long_message with parse_mode='Markdown'")
+            
+            try:
+                await send_long_message(update, campaign_message, parse_mode='Markdown')
+                logger.info(f"✅ Campaign message sent successfully to {telegram_id}")
+            except Exception as send_error:
+                logger.error(f"❌ send_long_message failed: {send_error}")
+                raise send_error  # Re-raise to trigger the outer exception handler
             
             # Log command to database
             self.log_conversation(telegram_id, f"/campaign {campaign_id or ''}", campaign_message, "command")
             
         except Exception as e:
             logger.error(f"Campaign command error: {e}")
+            logger.error(f"Campaign command error details: {str(e)}")
+            logger.error(f"Campaign command error type: {type(e)}")
+            import traceback
+            logger.error(f"Campaign command traceback: {traceback.format_exc()}")
+            
             error_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
-            await update.message.reply_text(error_message)
+            try:
+                await update.message.reply_text(error_message)
+                logger.info(f"✅ Error message sent successfully")
+            except Exception as send_error:
+                logger.error(f"Failed to send error message: {send_error}")
             
             # Log error command to database
             self.log_conversation(telegram_id, "/campaign", error_message, "command")
