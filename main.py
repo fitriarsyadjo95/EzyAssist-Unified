@@ -428,7 +428,7 @@ TRANSLATIONS = {
 }
 
 # Utility functions
-def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None) -> str:
+def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None, campaign_id: str = None) -> str:
     """Generate secure registration token with support for different types"""
     try:
         # Set expiry based on token type
@@ -450,6 +450,10 @@ def generate_registration_token(telegram_id: str, telegram_username: str = "", t
         # Include registration_id for resubmission tokens
         if token_type == "resubmission" and registration_id:
             payload['registration_id'] = registration_id
+            
+        # Include campaign_id for campaign tokens
+        if token_type == "campaign" and campaign_id:
+            payload['campaign_id'] = campaign_id
         
         secret = os.getenv('JWT_SECRET_KEY')
         if not secret:
