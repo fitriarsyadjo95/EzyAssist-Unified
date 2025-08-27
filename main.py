@@ -1007,6 +1007,11 @@ class RentungBot_Ai:
         logger.info(f"📢 Campaign command triggered by {telegram_id} ({user.first_name})")
         logger.info(f"🔧 Command args: {context.args}")
         
+        # Enhanced debugging for campaign command
+        logger.info(f"📊 Command usage stats: {self.command_usage}")
+        logger.info(f"⚡ Bot application status: {bool(self.application)}")
+        logger.info(f"🔗 SessionLocal status: {bool(SessionLocal)}")
+        
         # Track activity
         self.command_usage['campaign'] = self.command_usage.get('campaign', 0) + 1
         self.last_activity = datetime.utcnow()
@@ -1144,8 +1149,9 @@ class RentungBot_Ai:
                 else:
                     campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
             
+            logger.info(f"📤 About to send campaign response to {telegram_id}: {campaign_message[:100]}...")
             await update.message.reply_text(campaign_message, parse_mode='Markdown')
-            logger.info(f"Campaign command sent to {telegram_id}")
+            logger.info(f"✅ Campaign message sent successfully to {telegram_id}")
             
             # Log command to database
             self.log_conversation(telegram_id, f"/campaign {campaign_id or ''}", campaign_message, "command")
@@ -2015,7 +2021,14 @@ async def handle_telegram_webhook(request: Request):
             msg = data['message']
             user_info = f"User {msg.get('from', {}).get('id')} ({msg.get('from', {}).get('first_name', 'Unknown')})"
             message_text = msg.get('text', '[No text]')
-            logger.info(f"📝 Message from {user_info}: {message_text}")
+            
+            # Identify if this is a command
+            if message_text.startswith('/'):
+                logger.info(f"🔧 COMMAND from {user_info}: {message_text}")
+                if 'campaign' in message_text or 'kempen' in message_text:
+                    logger.info(f"🎯 CAMPAIGN COMMAND detected: {message_text}")
+            else:
+                logger.info(f"📝 Message from {user_info}: {message_text}")
         
         update = Update.de_json(data, bot_instance.application.bot)
         await bot_instance.application.process_update(update)
