@@ -1722,10 +1722,10 @@ class RentungBot_Ai:
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
         self.application.add_error_handler(self.error_handler)
 
-        logger.info("✅ Bot setup completed")
+        logger.info("✅ Bot setup completed - v2.0 with command routing fix")
         return self.application
 
-# Initialize bot instance
+# Initialize bot instance - Force deployment 2024-08-27 22:30
 bot_instance = RentungBot_Ai()
 
 # FastAPI Routes
