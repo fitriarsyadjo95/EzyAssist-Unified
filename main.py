@@ -999,7 +999,7 @@ class RentungBot_Ai:
             self.log_conversation(telegram_id, "/register", error_message, "command")
 
     async def campaign_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /campaign command - show active campaigns or specific campaign registration"""
+        """Handle /campaign or /kempen command - show active campaigns or specific campaign registration"""
         user = update.effective_user
         telegram_id = str(user.id)
         telegram_username = user.username or ""
@@ -1480,6 +1480,7 @@ class RentungBot_Ai:
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("register", self.register_command))
         self.application.add_handler(CommandHandler("campaign", self.campaign_command))
+        self.application.add_handler(CommandHandler("kempen", self.campaign_command))  # Malay version of campaign
         self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
