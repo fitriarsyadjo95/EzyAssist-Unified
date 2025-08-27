@@ -6275,13 +6275,13 @@ async def campaign_continue(request: Request, campaign_id: str, token: str = For
                 telegram_id=telegram_id,
                 telegram_username=telegram_username or "",
                 step_completed=0,
-                status=RegistrationStatus.IN_PROGRESS,
-                account_setup_action=AccountSetupAction(setup_action.upper())
+                status=RegistrationStatus.PENDING,
+                account_setup_action=AccountSetupAction(setup_action)
             )
             db.add(registration)
         else:
             # Update existing registration
-            registration.account_setup_action = AccountSetupAction(setup_action.upper())
+            registration.account_setup_action = AccountSetupAction(setup_action)
         
         # Mark Step 1 as completed
         registration.step_completed = 1
