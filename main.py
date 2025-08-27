@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RentungFX Unified System - Combines Telegram Bot and Registration Form
-Updated: 2025-08-27 06:15:00 - Force deployment with enum fixes
+Updated: 2025-08-27 06:25:00 - CRITICAL: Force deployment with campaign continue fix
 """
 
 import os
@@ -6242,7 +6242,8 @@ async def campaign_account_setup(request: Request, campaign_id: str, token: str 
 @app.post("/campaign/{campaign_id}/continue")
 async def campaign_continue(request: Request, campaign_id: str, token: str = Form(...), setup_action: str = Form(...)):
     """Continue from campaign account setup to registration form (Step 2)"""
-    logger.info(f"🔄 Campaign continue: campaign_id={campaign_id}, setup_action={setup_action}")
+    logger.info(f"🔄 NEW FIXED Campaign continue: campaign_id={campaign_id}, setup_action={setup_action}")
+    logger.info(f"🔄 Using TOKEN-BASED approach (not database record creation)")
     
     # Verify token
     telegram_id, telegram_username, token_data = verify_registration_token(token)
