@@ -6141,14 +6141,24 @@ async def campaign_account_setup_continue_old(
         db.close()
 
 @app.get("/campaign/{campaign_id}", response_class=HTMLResponse)
-async def campaign_account_setup(request: Request, campaign_id: str, token: str):
+async def campaign_account_setup(request: Request, campaign_id: str, token: str = None):
     """Campaign account setup page (Step 1)"""
-    logger.info(f"🔍 Campaign account setup accessed: campaign_id={campaign_id}, token={token[:20]}...")
+    logger.info(f"🔍 Campaign account setup accessed: campaign_id={campaign_id}, token={token[:20] if token else 'None'}...")
     
     if not SessionLocal:
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    # Check if token is provided
+    if not token:
+        logger.warning(f"❌ Missing registration token")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
             "lang": "ms",
             "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
