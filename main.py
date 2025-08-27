@@ -594,6 +594,58 @@ def get_admin_setting(key: str, default_value: str = None):
             db.close()
         return default_value
 
+def split_long_message(message: str, max_length: int = 4000) -> list:
+    """Split a long message into chunks that fit Telegram's limits"""
+    if len(message) <= max_length:
+        return [message]
+    
+    chunks = []
+    current_chunk = ""
+    
+    # Split by lines first to avoid breaking sentences
+    lines = message.split('\n')
+    
+    for line in lines:
+        # If adding this line would exceed the limit
+        if len(current_chunk) + len(line) + 1 > max_length:
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+                current_chunk = ""
+            
+            # If the line itself is too long, split it by words
+            if len(line) > max_length:
+                words = line.split(' ')
+                for word in words:
+                    if len(current_chunk) + len(word) + 1 > max_length:
+                        if current_chunk:
+                            chunks.append(current_chunk.strip())
+                            current_chunk = ""
+                    current_chunk += word + " "
+            else:
+                current_chunk = line + "\n"
+        else:
+            current_chunk += line + "\n"
+    
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+    
+    return chunks
+
+async def send_long_message(update, message: str, parse_mode=None):
+    """Send a message, splitting it if it's too long"""
+    chunks = split_long_message(message)
+    
+    for i, chunk in enumerate(chunks):
+        if i > 0:
+            # Add a small delay between chunks to avoid rate limiting
+            import asyncio
+            await asyncio.sleep(0.5)
+        
+        if parse_mode:
+            await update.message.reply_text(chunk, parse_mode=parse_mode)
+        else:
+            await update.message.reply_text(chunk)
+
 def set_admin_setting(key: str, value: str, description: str = None, admin_user: str = None):
     """Set admin setting value"""
     if not SessionLocal:
@@ -1081,6 +1133,9 @@ class RentungBot_Ai:
                                 )
                             else:
                                 # Generate campaign registration token
+                                logger.info(f"🔄 About to generate token for campaign {campaign_id}")
+                                logger.info(f"🔄 User details: {telegram_id}, {telegram_username}")
+                                
                                 token = generate_registration_token(
                                     telegram_id=telegram_id, 
                                     telegram_username=telegram_username,
@@ -1088,9 +1143,18 @@ class RentungBot_Ai:
                                     campaign_id=campaign_id
                                 )
                                 logger.info(f"🔑 Generated token: {token[:20]}...")
+                                logger.info(f"🌐 Base URL: {base_url}")
                                 
                                 campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
-                                logger.info(f"🔗 Generated campaign URL: {campaign_url}")
+                                logger.info(f"🔗 Final campaign URL: {campaign_url}")
+                                
+                                # Validate URL components
+                                if not token:
+                                    logger.error(f"❌ Token generation failed!")
+                                if not campaign_id:
+                                    logger.error(f"❌ Campaign ID is empty!")
+                                if not base_url:
+                                    logger.error(f"❌ Base URL is empty!")
                                 
                                 campaign_message = (
                                     f"🎉 {campaign.name}\n\n"
@@ -1150,7 +1214,7 @@ class RentungBot_Ai:
                     campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
             
             logger.info(f"📤 About to send campaign response to {telegram_id}: {campaign_message[:100]}...")
-            await update.message.reply_text(campaign_message, parse_mode='Markdown')
+            await send_long_message(update, campaign_message, parse_mode='Markdown')
             logger.info(f"✅ Campaign message sent successfully to {telegram_id}")
             
             # Log command to database
@@ -1251,7 +1315,7 @@ class RentungBot_Ai:
             f"• `/campaign` untuk Campaign"
         )
         
-        await update.message.reply_text(choice_message, parse_mode='Markdown')
+        await send_long_message(update, choice_message, parse_mode='Markdown')
         
         # Log the choice display
         self.log_conversation(telegram_id, "daftar", choice_message, "choice_menu")
@@ -1311,7 +1375,7 @@ class RentungBot_Ai:
         else:
             campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
         
-        await update.message.reply_text(campaign_message, parse_mode='Markdown')
+        await send_long_message(update, campaign_message, parse_mode='Markdown')
         
         # Log the campaign selection display  
         self.log_conversation(telegram_id, "daftar kempen", campaign_message, "campaign_selection")
@@ -1430,7 +1494,7 @@ class RentungBot_Ai:
                 logger.warning(f"Using fallback response")
 
             logger.info(f"📤 Sending reply to user...")
-            await update.message.reply_text(response)
+            await send_long_message(update, response)
             logger.info(f"✅ Message handled successfully")
             
         except Exception as e:
