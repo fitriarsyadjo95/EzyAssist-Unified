@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RentungFX Unified System - Combines Telegram Bot and Registration Form
-Updated: 2025-08-27 05:45:00 - Force deployment with debug endpoint
+Updated: 2025-08-27 06:15:00 - Force deployment with enum fixes
 """
 
 import os
