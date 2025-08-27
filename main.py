@@ -1056,7 +1056,7 @@ class RentungBot_Ai:
         telegram_id = str(user.id)
         telegram_username = user.username or ""
         
-        logger.info(f"📢 Campaign command triggered by {telegram_id} ({user.first_name})")
+        logger.info(f"📢 [CAMPAIGN_COMMAND] Properly routed to campaign_command by {telegram_id} ({user.first_name})")
         logger.info(f"🔧 Command args: {context.args}")
         
         # Enhanced debugging for campaign command
@@ -1419,7 +1419,8 @@ class RentungBot_Ai:
             telegram_id = str(user.id)
             message_text = update.message.text
             
-            logger.info(f"🤖 Processing message from {telegram_id} ({user.first_name}): {message_text}")
+            logger.info(f"🤖 [HANDLE_MESSAGE] Processing message from {telegram_id} ({user.first_name}): {message_text}")
+            logger.info(f"🎯 Message type detection: {'COMMAND' if message_text.startswith('/') else 'REGULAR MESSAGE'}")
 
             # Track activity
             self.message_count += 1
@@ -1446,6 +1447,38 @@ class RentungBot_Ai:
                 await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
             except Exception as e:
                 logger.error(f"Error sending typing action: {e}")
+            
+            # SAFETY NET: Explicit command detection (should not reach here normally)
+            if message_text.startswith('/'):
+                logger.warning(f"⚠️ ROUTING ISSUE: Command {message_text} reached handle_message instead of CommandHandler!")
+                
+                # Route commands manually as a safety net
+                if message_text.startswith('/campaign ') or message_text == '/campaign':
+                    logger.info(f"🔧 Manually routing to campaign_command: {message_text}")
+                    await self.campaign_command(update, context)
+                    return
+                elif message_text.startswith('/kempen ') or message_text == '/kempen':
+                    logger.info(f"🔧 Manually routing to campaign_command (kempen): {message_text}")
+                    await self.campaign_command(update, context)
+                    return
+                elif message_text.startswith('/register') or message_text == '/register':
+                    logger.info(f"🔧 Manually routing to register_command: {message_text}")
+                    await self.register_command(update, context)
+                    return
+                elif message_text.startswith('/start') or message_text == '/start':
+                    logger.info(f"🔧 Manually routing to start_command: {message_text}")
+                    await self.start_command(update, context)
+                    return
+                elif message_text.startswith('/agent') or message_text == '/agent':
+                    logger.info(f"🔧 Manually routing to agent_command: {message_text}")
+                    await self.agent_command(update, context)
+                    return
+                elif message_text.startswith('/clear') or message_text == '/clear':
+                    logger.info(f"🔧 Manually routing to clear_command: {message_text}")
+                    await self.clear_command(update, context)
+                    return
+                else:
+                    logger.warning(f"⚠️ Unknown command reached handle_message: {message_text}")
             
             # Check for registration keywords first (before conversation engine)
             message_lower = message_text.lower().strip()
