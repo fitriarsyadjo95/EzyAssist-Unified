@@ -1448,16 +1448,13 @@ class RentungBot_Ai:
             except Exception as e:
                 logger.error(f"Error sending typing action: {e}")
             
-            # SAFETY NET: Explicit command detection (should not reach here normally)
+            # SAFETY NET: Explicit command detection and routing
             if message_text.startswith('/'):
-                logger.error(f"🚨 CRITICAL ROUTING ISSUE: Command {message_text} reached handle_message instead of CommandHandler!")
-                logger.error(f"🚨 This indicates the CommandHandler is not working properly!")
-                logger.error(f"🚨 Update object: {update}")
-                logger.error(f"🚨 Context args: {context.args if context else 'No context'}")
+                logger.info(f"🔧 SAFETY NET: Command {message_text} reached handle_message, routing manually")
                 
-                # Route commands manually as a safety net
+                # Route commands manually - this is now the primary routing mechanism
                 if message_text.startswith('/campaign ') or message_text == '/campaign':
-                    logger.error(f"🔧 EMERGENCY ROUTING to campaign_command: {message_text}")
+                    logger.info(f"➡️ Routing to campaign_command: {message_text}")
                     await self.campaign_command(update, context)
                     return
                 elif message_text.startswith('/kempen ') or message_text == '/kempen':
@@ -1715,14 +1712,17 @@ class RentungBot_Ai:
 
         self.application = Application.builder().token(self.token).build()
 
-        # Add handlers
+        # Add handlers - CommandHandlers MUST be registered first for priority
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("register", self.register_command))
         self.application.add_handler(CommandHandler("campaign", self.campaign_command))
         self.application.add_handler(CommandHandler("kempen", self.campaign_command))  # Malay version of campaign
         self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+        
+        # MessageHandler comes LAST to catch non-command messages
+        # All commands should be handled by CommandHandlers above
+        self.application.add_handler(MessageHandler(filters.TEXT, self.handle_message))
         self.application.add_error_handler(self.error_handler)
 
         logger.info("✅ Bot setup completed - v2.0 with command routing fix")
