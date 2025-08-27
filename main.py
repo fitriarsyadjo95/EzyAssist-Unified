@@ -5981,10 +5981,10 @@ async def campaign_account_setup_continue(
         telegram_username = ""
         
         if token:
-            token_data = decode_registration_token(token)
-            if token_data:
-                telegram_id = token_data.get('telegram_id')
-                telegram_username = token_data.get('telegram_username', '')
+            telegram_id, telegram_username, token_data = verify_registration_token(token)
+            if not token_data:
+                telegram_id = None
+                telegram_username = ""
         
         if not telegram_id:
             return templates.TemplateResponse("error.html", {
@@ -6076,7 +6076,7 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
         })
     
     # Decode and validate token
-    token_data = decode_registration_token(token)
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
     if not token_data:
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -6150,7 +6150,7 @@ async def submit_campaign_registration(
         })
     
     # Validate token
-    token_data = decode_registration_token(token)
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
     if not token_data:
         return templates.TemplateResponse("error.html", {
             "request": request,
