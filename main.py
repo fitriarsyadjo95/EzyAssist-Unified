@@ -6069,6 +6069,8 @@ async def campaign_account_setup_continue(
 @app.get("/campaign/{campaign_id}/register", response_class=HTMLResponse)
 async def campaign_registration_form(request: Request, campaign_id: str, token: str):
     """Campaign registration form"""
+    logger.info(f"🔍 Campaign registration form accessed: campaign_id={campaign_id}, token={token[:20]}...")
+    
     if not SessionLocal:
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -6076,8 +6078,12 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
         })
     
     # Decode and validate token
+    logger.info(f"🔍 Verifying registration token...")
     telegram_id, telegram_username, token_data = verify_registration_token(token)
+    logger.info(f"🔍 Token verification result: telegram_id={telegram_id}, username={telegram_username}, token_data={token_data is not None}")
+    
     if not token_data:
+        logger.warning(f"❌ Invalid or expired token")
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error": "Invalid or expired registration link. Please request a new link."
@@ -6120,10 +6126,11 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
         return templates.TemplateResponse("campaign_registration_form.html", context)
         
     except Exception as e:
-        logger.error(f"Error loading campaign registration form: {e}")
+        logger.error(f"❌ Error loading campaign registration form: {e}")
+        logger.error(f"❌ Full error traceback: {traceback.format_exc()}")
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error": "Registration form loading failed"
+            "error": f"Registration form loading failed: {str(e)}"
         })
     finally:
         db.close()
