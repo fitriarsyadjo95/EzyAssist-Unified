@@ -6490,33 +6490,33 @@ async def submit_campaign_registration(
                 "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
-        # Get registration data
+        # Get token data for campaign registration
         telegram_id = token_data.get('telegram_id')
-        registration_id = token_data.get('registration_id')
+        telegram_username = token_data.get('telegram_username', '')
+        campaign_id_from_token = token_data.get('campaign_id')
+        setup_action = token_data.get('setup_action')
         
-        if not registration_id:
+        # Verify campaign ID matches
+        if campaign_id_from_token != campaign_id:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error_message": "Registration data not found",
+                "error_message": "Campaign ID mismatch in token",
                 "lang": "ms",
                 "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
-        registration = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
-        if not registration:
-            return templates.TemplateResponse("error.html", {
-                "request": request,
-                "error_message": "Registration not found",
-                "lang": "ms",
-                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
-            })
+        # Check for existing registration to prevent duplicates
+        existing_registration = db.query(VipRegistration).filter(
+            VipRegistration.telegram_id == telegram_id,
+            VipRegistration.campaign_id == campaign_id,
+            VipRegistration.step_completed >= 2
+        ).first()
         
-        # Check if this registration is already completed
-        if registration.step_completed >= 2:
+        if existing_registration:
             logger.warning(f"🚫 Duplicate campaign registration attempt by {telegram_id} for campaign {campaign_id}")
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error_message": f"You have already completed registration for this campaign. Current status: {registration.status.value}. If you need to update information, please contact admin.",
+                "error_message": f"You have already completed registration for this campaign. Current status: {existing_registration.status.value if existing_registration.status else 'PENDING'}. If you need to update information, please contact admin.",
                 "lang": "ms",
                 "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
@@ -6540,27 +6540,37 @@ async def submit_campaign_registration(
             else:
                 deposit_proof_paths.append("")
         
-        # Update registration
-        registration.full_name = full_name
-        registration.email = email
-        registration.phone_number = phone_number
-        registration.deposit_amount = deposit_amount
-        registration.client_id = client_id
-        registration.deposit_proof_1_path = deposit_proof_paths[0]
-        registration.deposit_proof_2_path = deposit_proof_paths[1]
-        registration.deposit_proof_3_path = deposit_proof_paths[2]
-        registration.step_completed = 2
-        registration.ip_address = request.client.host
-        registration.user_agent = request.headers.get('User-Agent', '')
+        # Create new registration record
+        registration = VipRegistration(
+            telegram_id=telegram_id,
+            telegram_username=telegram_username or "",
+            full_name=full_name,
+            email=email,
+            phone_number=phone_number,
+            deposit_amount=deposit_amount,
+            client_id=client_id,
+            brokerage_name="Valetax",  # Force to Valetax for campaigns
+            deposit_proof_1_path=deposit_proof_paths[0],
+            deposit_proof_2_path=deposit_proof_paths[1],
+            deposit_proof_3_path=deposit_proof_paths[2],
+            step_completed=2,  # Full registration completed
+            ip_address=request.client.host,
+            user_agent=request.headers.get('User-Agent', ''),
+            # Campaign-specific fields
+            campaign_id=campaign_id,
+            campaign_name=campaign.name,
+            campaign_min_deposit=campaign.min_deposit_amount,
+            campaign_reward=campaign.reward_description,
+            is_campaign_registration=True,
+            # Setup action from token
+            account_setup_action=AccountSetupAction(setup_action.upper()) if setup_action else None,
+            account_setup_completed_at=datetime.utcnow()
+        )
         
-        # Track campaign information
-        registration.campaign_id = campaign_id
-        registration.campaign_name = campaign.name
-        registration.campaign_min_deposit = campaign.min_deposit_amount
-        registration.campaign_reward = campaign.reward_description
-        registration.is_campaign_registration = True
+        db.add(registration)
+        db.flush()  # Get the ID
         
-        logger.info(f"🎯 Setting campaign tracking - Campaign ID: {campaign_id}, Name: {campaign.name}, Registration ID: {registration.id}")
+        logger.info(f"🎯 Created campaign registration - Campaign ID: {campaign_id}, Name: {campaign.name}, Registration ID: {registration.id}")
         
         # Add audit log
         add_audit_log(
