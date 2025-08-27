@@ -914,6 +914,45 @@ def initialize_default_admin():
             db.rollback()
             db.close()
 
+def initialize_default_campaigns():
+    """Initialize default campaigns if they don't exist"""
+    if not SessionLocal:
+        return
+    
+    try:
+        db = get_db()
+        if db:
+            # Check if rm50-bonus campaign exists
+            existing_campaign = db.query(Campaign).filter(
+                Campaign.campaign_id == "rm50-bonus"
+            ).first()
+            
+            if not existing_campaign:
+                # Create default rm50-bonus campaign
+                default_campaign = Campaign(
+                    campaign_id="rm50-bonus",
+                    name="RM50 Bonus Campaign",
+                    description="Get RM50 bonus when you deposit minimum amount and join our Fighter Rentung group",
+                    min_deposit_amount="100",
+                    reward_description="RM50 Cash Bonus",
+                    is_active=True,
+                    created_by="system"
+                )
+                
+                db.add(default_campaign)
+                db.commit()
+                logger.info("✅ Default rm50-bonus campaign created")
+            else:
+                logger.info("✅ rm50-bonus campaign already exists")
+            
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error creating default campaigns: {e}")
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+
 # Telegram Bot Class
 class RentungBot_Ai:
     def __init__(self):
@@ -1150,7 +1189,7 @@ class RentungBot_Ai:
                                 logger.info(f"🔑 Generated token: {token[:20]}...")
                                 logger.info(f"🌐 Base URL: {base_url}")
                                 
-                                campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
+                                campaign_url = f"{base_url}/campaign/{campaign_id}/register?token={token}"
                                 logger.info(f"🔗 Final campaign URL: {campaign_url}")
                                 
                                 # Validate URL components
@@ -6578,6 +6617,9 @@ async def startup_event():
             
             # Initialize default admin
             initialize_default_admin()
+            
+            # Initialize default campaigns
+            initialize_default_campaigns()
             
         except Exception as e:
             logger.error(f"Database setup failed: {e}")
