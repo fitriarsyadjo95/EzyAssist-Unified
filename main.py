@@ -938,6 +938,37 @@ class RentungBot_Ai:
         self.reset_daily_tracking()
         
         try:
+            # Check if user already has a completed registration
+            if SessionLocal:
+                db = get_db()
+                if db:
+                    try:
+                        existing_registration = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
+                        if existing_registration and existing_registration.step_completed >= 2:
+                            status_text = {
+                                'PENDING': 'Menunggu semakan admin',
+                                'VERIFIED': 'Diluluskan ✅',
+                                'REJECTED': 'Ditolak ❌',
+                                'ON_HOLD': 'Dalam tindakan 🔄'
+                            }.get(existing_registration.status.value, existing_registration.status.value)
+                            
+                            duplicate_message = (
+                                f"⚠️ Anda sudah mempunyai pendaftaran VIP\n\n"
+                                f"📋 Status: {status_text}\n"
+                                f"👤 Nama: {existing_registration.full_name}\n"
+                                f"📧 Email: {existing_registration.email}\n\n"
+                                f"🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran anda, sila hubungi admin.\n\n"
+                                f"💡 Untuk campaign terkini, gunakan /campaign"
+                            )
+                            
+                            await update.message.reply_text(duplicate_message)
+                            self.log_conversation(telegram_id, "/register", duplicate_message, "command")
+                            return
+                    except Exception as e:
+                        logger.error(f"Error checking existing registration: {e}")
+                    finally:
+                        db.close()
+            
             # Generate registration token
             token = generate_registration_token(telegram_id, telegram_username)
             
@@ -1009,28 +1040,46 @@ class RentungBot_Ai:
                         if campaign:
                             logger.info(f"✅ Campaign found: {campaign.name}")
                             
-                            # Generate campaign registration token
-                            token = generate_registration_token(
-                                telegram_id=telegram_id, 
-                                telegram_username=telegram_username,
-                                token_type="campaign",
-                                campaign_id=campaign_id
-                            )
-                            logger.info(f"🔑 Generated token: {token[:20]}...")
+                            # Check if user already has completed registration
+                            existing_registration = db.query(Registration).filter(
+                                Registration.telegram_id == telegram_id,
+                                Registration.step_completed >= 2
+                            ).first()
                             
-                            campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
-                            logger.info(f"🔗 Generated campaign URL: {campaign_url}")
-                            
-                            campaign_message = (
-                                f"🎉 {campaign.name}\n\n"
-                                f"🎁 Reward: {campaign.reward_description}\n"
-                                f"💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
-                                f"🎯 Join Group Chat Fighter Rentung\n\n"
-                                f"Klik link di bawah untuk menyertai campaign:\n\n"
-                                f"👉 {campaign_url}\n\n"
-                                f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
-                                f"📝 Pastikan anda deposit minimum yang diperlukan untuk layak mendapat reward!"
-                            )
+                            if existing_registration:
+                                logger.warning(f"🚫 User {telegram_id} already has completed registration, campaign access denied")
+                                campaign_message = (
+                                    f"✅ Anda sudah mempunyai pendaftaran yang lengkap!\n\n"
+                                    f"📋 Status: {existing_registration.status.value}\n"
+                                    f"📧 Email: {existing_registration.email}\n"
+                                    f"📱 No. Tel: {existing_registration.phone_number}\n\n"
+                                    f"Jika anda perlu mengemaskini maklumat atau mempunyai sebarang pertanyaan, "
+                                    f"sila hubungi admin.\n\n"
+                                    f"📞 Untuk bantuan: /help"
+                                )
+                            else:
+                                # Generate campaign registration token
+                                token = generate_registration_token(
+                                    telegram_id=telegram_id, 
+                                    telegram_username=telegram_username,
+                                    token_type="campaign",
+                                    campaign_id=campaign_id
+                                )
+                                logger.info(f"🔑 Generated token: {token[:20]}...")
+                                
+                                campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
+                                logger.info(f"🔗 Generated campaign URL: {campaign_url}")
+                                
+                                campaign_message = (
+                                    f"🎉 {campaign.name}\n\n"
+                                    f"🎁 Reward: {campaign.reward_description}\n"
+                                    f"💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
+                                    f"🎯 Join Group Chat Fighter Rentung\n\n"
+                                    f"Klik link di bawah untuk menyertai campaign:\n\n"
+                                    f"👉 {campaign_url}\n\n"
+                                    f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
+                                    f"📝 Pastikan anda deposit minimum yang diperlukan untuk layak mendapat reward!"
+                                )
                         else:
                             campaign_message = (
                                 f"❌ Campaign '{campaign_id}' tidak dijumpai atau tidak aktif.\n\n"
@@ -1769,8 +1818,17 @@ async def submit_registration(
                             "translations": TRANSLATIONS['ms']
                         })
                 else:
-                    # Check if user has completed Step 1 (account setup)
+                    # Check if user already has a completed registration
                     existing_setup = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
+                    
+                    if existing_setup and existing_setup.step_completed >= 2:
+                        # User already has a completed registration - prevent duplicate
+                        logger.warning(f"🚫 Duplicate registration attempt by {telegram_id} ({full_name})")
+                        return templates.TemplateResponse("error.html", {
+                            "request": request,
+                            "error_message": f"Anda sudah mempunyai pendaftaran yang lengkap. Status semasa: {existing_setup.status.value}. Jika anda perlu mengemaskini maklumat, sila hubungi admin.",
+                            "translations": TRANSLATIONS['ms']
+                        })
                     
                     if existing_setup and existing_setup.step_completed >= 1:
                         # User completed Step 1, update existing record with Step 2 data
@@ -5778,6 +5836,14 @@ async def submit_campaign_registration(
             return templates.TemplateResponse("error.html", {
                 "request": request,
                 "error": "Registration not found"
+            })
+        
+        # Check if this registration is already completed
+        if registration.step_completed >= 2:
+            logger.warning(f"🚫 Duplicate campaign registration attempt by {telegram_id} for campaign {campaign_id}")
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"You have already completed registration for this campaign. Current status: {registration.status.value}. If you need to update information, please contact admin."
             })
         
         # Handle file uploads
