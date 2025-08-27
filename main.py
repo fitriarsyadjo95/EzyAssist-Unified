@@ -1220,14 +1220,21 @@ class RentungBot_Ai:
             
             logger.info(f"📤 About to send campaign response to {telegram_id}: {campaign_message[:100]}...")
             logger.info(f"📊 Message length: {len(campaign_message)} characters")
-            logger.info(f"📨 Using send_long_message with parse_mode='Markdown'")
+            logger.info(f"📨 Using send_long_message without parse_mode to avoid Markdown issues")
             
             try:
-                await send_long_message(update, campaign_message, parse_mode='Markdown')
+                # Remove parse_mode to avoid Markdown parsing issues with URLs
+                await send_long_message(update, campaign_message)
                 logger.info(f"✅ Campaign message sent successfully to {telegram_id}")
             except Exception as send_error:
                 logger.error(f"❌ send_long_message failed: {send_error}")
-                raise send_error  # Re-raise to trigger the outer exception handler
+                # Try without parse_mode as a fallback
+                try:
+                    await update.message.reply_text(campaign_message)
+                    logger.info(f"✅ Campaign message sent successfully as fallback (no parse_mode)")
+                except Exception as fallback_error:
+                    logger.error(f"❌ Fallback send also failed: {fallback_error}")
+                    raise send_error  # Re-raise original error
             
             # Log command to database
             self.log_conversation(telegram_id, f"/campaign {campaign_id or ''}", campaign_message, "command")
