@@ -18,6 +18,7 @@ import hashlib
 import time
 import uuid
 import shutil
+import traceback
 from pathlib import Path
 from functools import wraps
 
@@ -1233,10 +1234,10 @@ class RentungBot_Ai:
             
         except Exception as e:
             logger.error(f"Campaign command error: {e}")
-            logger.error(f"Campaign command error details: {str(e)}")
-            logger.error(f"Campaign command error type: {type(e)}")
-            import traceback
-            logger.error(f"Campaign command traceback: {traceback.format_exc()}")
+            try:
+                logger.error(f"Campaign command traceback: {traceback.format_exc()}")
+            except Exception:
+                pass
             
             error_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
             try:
@@ -1246,7 +1247,10 @@ class RentungBot_Ai:
                 logger.error(f"Failed to send error message: {send_error}")
             
             # Log error command to database
-            self.log_conversation(telegram_id, "/campaign", error_message, "command")
+            try:
+                self.log_conversation(telegram_id, "/campaign", error_message, "command")
+            except Exception:
+                pass
 
     async def agent_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /agent command - redirect to live agent"""
