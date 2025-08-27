@@ -429,7 +429,7 @@ TRANSLATIONS = {
 }
 
 # Utility functions
-def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None, campaign_id: str = None) -> str:
+def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None, campaign_id: str = None, setup_action: str = None) -> str:
     """Generate secure registration token with support for different types"""
     try:
         # Set expiry based on token type
@@ -453,8 +453,12 @@ def generate_registration_token(telegram_id: str, telegram_username: str = "", t
             payload['registration_id'] = registration_id
             
         # Include campaign_id for campaign tokens
-        if token_type == "campaign" and campaign_id:
+        if token_type in ["campaign", "campaign_with_setup"] and campaign_id:
             payload['campaign_id'] = campaign_id
+            
+        # Include setup_action for campaign setup tokens
+        if token_type == "campaign_with_setup" and setup_action:
+            payload['setup_action'] = setup_action
         
         secret = os.getenv('JWT_SECRET_KEY')
         if not secret:
@@ -6268,27 +6272,26 @@ async def campaign_continue(request: Request, campaign_id: str, token: str = For
         })
     
     try:
-        # Get or create VIP registration entry for step tracking
-        registration = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
-        if not registration:
-            registration = VipRegistration(
-                telegram_id=telegram_id,
-                telegram_username=telegram_username or "",
-                step_completed=0,
-                status=RegistrationStatus.PENDING,
-                account_setup_action=AccountSetupAction(setup_action)
-            )
-            db.add(registration)
-        else:
-            # Update existing registration
-            registration.account_setup_action = AccountSetupAction(setup_action)
+        # Validate setup_action
+        if setup_action not in ['new_account', 'partner_change']:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Invalid setup action selected",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+            })
         
-        # Mark Step 1 as completed
-        registration.step_completed = 1
-        db.commit()
+        # Generate new token with setup action for Step 2
+        new_token = generate_registration_token(
+            telegram_id=telegram_id,
+            telegram_username=telegram_username or "",
+            token_type="campaign_with_setup",
+            campaign_id=campaign_id,
+            setup_action=setup_action
+        )
         
-        # Redirect to Step 2 (registration form) with campaign context
-        return RedirectResponse(url=f"/campaign/{campaign_id}/register?token={token}", status_code=302)
+        # Redirect to Step 2 (registration form) with new token containing setup action
+        return RedirectResponse(url=f"/campaign/{campaign_id}/register?token={new_token}", status_code=302)
         
     except Exception as e:
         logger.error(f"❌ Error in campaign continue: {e}")
@@ -6356,26 +6359,30 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
                 "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
-        # Check if user completed Step 1
-        registration = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
-        if not registration or registration.step_completed < 1:
+        # Check if user completed Step 1 by verifying token contains setup_action
+        setup_action = token_data.get('setup_action')
+        if not setup_action or token_data.get('token_type') != 'campaign_with_setup':
             # User hasn't completed Step 1, redirect back to account setup
-            return RedirectResponse(url=f"/campaign/{campaign_id}?token={token}", status_code=302)
+            original_token = generate_registration_token(
+                telegram_id=telegram_id,
+                telegram_username=telegram_username,
+                token_type="campaign",
+                campaign_id=campaign_id
+            )
+            return RedirectResponse(url=f"/campaign/{campaign_id}?token={original_token}", status_code=302)
         
-        # Get registration data if exists
+        # Get registration data if exists (for editing existing registrations)
         registration_id = token_data.get('registration_id')
         registration_data = None
         if registration_id:
             registration_data = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
-        else:
-            registration_data = registration
         
         context = {
             "request": request,
             "token": token,
             "campaign": campaign,
             "registration_data": registration_data,
-            "setup_action": registration_data.account_setup_action.value if registration_data and registration_data.account_setup_action else None,
+            "setup_action": setup_action,
             "lang": "ms",
             "translations": {
                 "title": f"{campaign.name} - Registration Form",
