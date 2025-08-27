@@ -1450,11 +1450,14 @@ class RentungBot_Ai:
             
             # SAFETY NET: Explicit command detection (should not reach here normally)
             if message_text.startswith('/'):
-                logger.warning(f"⚠️ ROUTING ISSUE: Command {message_text} reached handle_message instead of CommandHandler!")
+                logger.error(f"🚨 CRITICAL ROUTING ISSUE: Command {message_text} reached handle_message instead of CommandHandler!")
+                logger.error(f"🚨 This indicates the CommandHandler is not working properly!")
+                logger.error(f"🚨 Update object: {update}")
+                logger.error(f"🚨 Context args: {context.args if context else 'No context'}")
                 
                 # Route commands manually as a safety net
                 if message_text.startswith('/campaign ') or message_text == '/campaign':
-                    logger.info(f"🔧 Manually routing to campaign_command: {message_text}")
+                    logger.error(f"🔧 EMERGENCY ROUTING to campaign_command: {message_text}")
                     await self.campaign_command(update, context)
                     return
                 elif message_text.startswith('/kempen ') or message_text == '/kempen':
