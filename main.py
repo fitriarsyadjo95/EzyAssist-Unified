@@ -1028,22 +1028,39 @@ class RentungBot_Ai:
             
             if campaign_id:
                 # Specific campaign registration
+                logger.info(f"🔍 Looking for campaign: {campaign_id}")
                 # Verify campaign exists and is active
                 if SessionLocal:
                     db = SessionLocal()
                     try:
+                        # Debug: Check all campaigns first
+                        all_campaigns = db.query(Campaign).all()
+                        logger.info(f"📋 Available campaigns: {[(c.campaign_id, c.name, c.is_active) for c in all_campaigns]}")
+                        
                         campaign = db.query(Campaign).filter(
                             Campaign.campaign_id == campaign_id,
                             Campaign.is_active == True
                         ).first()
                         
+                        if not campaign:
+                            # Try finding inactive or any matching campaign
+                            any_campaign = db.query(Campaign).filter(
+                                Campaign.campaign_id == campaign_id
+                            ).first()
+                            if any_campaign:
+                                logger.warning(f"⚠️ Campaign {campaign_id} found but inactive: {any_campaign.is_active}")
+                            else:
+                                logger.error(f"❌ No campaign found with ID: {campaign_id}")
+                        else:
+                            logger.info(f"✅ Active campaign found: {campaign.name} (ID: {campaign.campaign_id})")
+                        
                         if campaign:
                             logger.info(f"✅ Campaign found: {campaign.name}")
                             
                             # Check if user already has completed registration
-                            existing_registration = db.query(Registration).filter(
-                                Registration.telegram_id == telegram_id,
-                                Registration.step_completed >= 2
+                            existing_registration = db.query(VipRegistration).filter(
+                                VipRegistration.telegram_id == telegram_id,
+                                VipRegistration.step_completed >= 2
                             ).first()
                             
                             if existing_registration:
