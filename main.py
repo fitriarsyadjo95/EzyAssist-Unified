@@ -1189,7 +1189,7 @@ class RentungBot_Ai:
                                 logger.info(f"🔑 Generated token: {token[:20]}...")
                                 logger.info(f"🌐 Base URL: {base_url}")
                                 
-                                campaign_url = f"{base_url}/campaign/{campaign_id}/register?token={token}"
+                                campaign_url = f"{base_url}/campaign/{campaign_id}?token={token}"
                                 logger.info(f"🔗 Final campaign URL: {campaign_url}")
                                 
                                 # Validate URL components
@@ -5558,7 +5558,7 @@ async def debug_test_campaign_token():
         )
         
         base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
-        campaign_url = f"{base_url}/campaign/rm50-bonus/register?token={token}"
+        campaign_url = f"{base_url}/campaign/rm50-bonus?token={token}"
         
         return {
             "success": True,
@@ -6140,10 +6140,10 @@ async def campaign_account_setup_continue(
     finally:
         db.close()
 
-@app.get("/campaign/{campaign_id}/register", response_class=HTMLResponse)
-async def campaign_registration_form(request: Request, campaign_id: str, token: str):
-    """Campaign registration form"""
-    logger.info(f"🔍 Campaign registration form accessed: campaign_id={campaign_id}, token={token[:20]}...")
+@app.get("/campaign/{campaign_id}", response_class=HTMLResponse)
+async def campaign_account_setup(request: Request, campaign_id: str, token: str):
+    """Campaign account setup page (Step 1)"""
+    logger.info(f"🔍 Campaign account setup accessed: campaign_id={campaign_id}, token={token[:20]}...")
     
     if not SessionLocal:
         return templates.TemplateResponse("error.html", {
@@ -6201,11 +6201,171 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
             "request": request,
             "token": token,
             "campaign": campaign,
+            "telegram_id": telegram_id,
+            "telegram_username": telegram_username,
+            "lang": "ms",
+            "translations": {
+                "title": f"{campaign.name} - Account Setup",
+                "error_title": "Ralat Pendaftaran", 
+                "back_to_telegram": "Kembali ke Telegram"
+            }
+        }
+        
+        return templates.TemplateResponse("campaign_account_setup.html", context)
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading campaign registration form: {e}")
+        logger.error(f"❌ Full error traceback: {traceback.format_exc()}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Registration form loading failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    finally:
+        db.close()
+
+@app.post("/campaign/{campaign_id}/continue")
+async def campaign_continue(request: Request, campaign_id: str, token: str = Form(...), setup_action: str = Form(...)):
+    """Continue from campaign account setup to registration form (Step 2)"""
+    logger.info(f"🔄 Campaign continue: campaign_id={campaign_id}, setup_action={setup_action}")
+    
+    # Verify token
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    try:
+        # Get or create VIP registration entry for step tracking
+        registration = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
+        if not registration:
+            registration = VipRegistration(
+                telegram_id=telegram_id,
+                telegram_username=telegram_username or "",
+                step_completed=0,
+                status=RegistrationStatus.IN_PROGRESS,
+                account_setup_action=AccountSetupAction(setup_action.upper())
+            )
+            db.add(registration)
+        else:
+            # Update existing registration
+            registration.account_setup_action = AccountSetupAction(setup_action.upper())
+        
+        # Mark Step 1 as completed
+        registration.step_completed = 1
+        db.commit()
+        
+        # Redirect to Step 2 (registration form) with campaign context
+        return RedirectResponse(url=f"/campaign/{campaign_id}/register?token={token}", status_code=302)
+        
+    except Exception as e:
+        logger.error(f"❌ Error in campaign continue: {e}")
+        db.rollback()
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Campaign continue failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    finally:
+        db.close()
+
+@app.get("/campaign/{campaign_id}/register", response_class=HTMLResponse)
+async def campaign_registration_form(request: Request, campaign_id: str, token: str):
+    """Campaign registration form (Step 2)"""
+    logger.info(f"🔍 Campaign registration form (Step 2): campaign_id={campaign_id}, token={token[:20]}...")
+    
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    # Decode and validate token
+    logger.info(f"🔍 Verifying registration token...")
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    logger.info(f"🔍 Token verification result: telegram_id={telegram_id}, username={telegram_username}, token_data={token_data is not None}")
+    
+    if not token_data:
+        logger.warning(f"❌ Invalid or expired token")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration link. Please request a new link.",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    try:
+        # Get campaign details
+        campaign = db.query(Campaign).filter(
+            Campaign.campaign_id == campaign_id,
+            Campaign.is_active == True
+        ).first()
+        
+        if not campaign:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Campaign not found or inactive",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+            })
+        
+        # Check if user completed Step 1
+        registration = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
+        if not registration or registration.step_completed < 1:
+            # User hasn't completed Step 1, redirect back to account setup
+            return RedirectResponse(url=f"/campaign/{campaign_id}?token={token}", status_code=302)
+        
+        # Get registration data if exists
+        registration_id = token_data.get('registration_id')
+        registration_data = None
+        if registration_id:
+            registration_data = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
+        else:
+            registration_data = registration
+        
+        context = {
+            "request": request,
+            "token": token,
+            "campaign": campaign,
             "registration_data": registration_data,
             "setup_action": registration_data.account_setup_action.value if registration_data and registration_data.account_setup_action else None,
             "lang": "ms",
             "translations": {
-                "title": "Campaign Registration - EzyAssist",
+                "title": f"{campaign.name} - Registration Form",
                 "error_title": "Ralat Pendaftaran", 
                 "back_to_telegram": "Kembali ke Telegram",
                 "registration_title": "Pendaftaran Campaign",
