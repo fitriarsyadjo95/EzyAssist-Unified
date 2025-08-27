@@ -923,7 +923,7 @@ class RentungBot_Ai:
         self.log_conversation(telegram_id, "/start", welcome_message, "command")
 
     async def register_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /register command"""
+        """Handle /register command - VIP Registration only"""
         user = update.effective_user
         telegram_id = str(user.id)
         telegram_username = user.username or ""
@@ -1224,6 +1224,98 @@ class RentungBot_Ai:
         # Log command to database
         self.log_conversation(telegram_id, "/clear", clear_message, "command")
 
+    async def show_registration_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Show registration choice menu between VIP and Campaign"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        
+        logger.info(f"🔀 Showing registration choice to {telegram_id}")
+        
+        choice_message = (
+            f"🎯 **Pilihan Pendaftaran**\n\n"
+            f"Selamat datang {user.first_name}! 👋\n\n"
+            f"Kami ada dua jenis pendaftaran untuk anda:\n\n"
+            f"🔹 **VIP Registration** - untuk akses premium ke Group Chat Fighter Rentung\n"
+            f"   • Setup akaun trading\n"
+            f"   • Akses analisis eksklusif\n"
+            f"   • Bantuan personal dari team\n\n"
+            f"🔸 **Campaign Registration** - untuk join campaign bonus terkini\n"
+            f"   • Bonus deposit\n"
+            f"   • Reward khas\n"
+            f"   • Promosi limited time\n\n"
+            f"**Pilih jenis pendaftaran:**\n"
+            f"• Taip `daftar vip` untuk VIP Registration\n"
+            f"• Taip `daftar kempen` untuk Campaign Registration\n\n"
+            f"Atau gunakan command:\n"
+            f"• `/register` untuk VIP\n"
+            f"• `/campaign` untuk Campaign"
+        )
+        
+        await update.message.reply_text(choice_message, parse_mode='Markdown')
+        
+        # Log the choice display
+        self.log_conversation(telegram_id, "daftar", choice_message, "choice_menu")
+
+    async def show_campaign_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Show available campaigns for registration"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        
+        logger.info(f"🎯 Showing campaign selection to {telegram_id}")
+        
+        # Get active campaigns
+        if SessionLocal:
+            db = SessionLocal()
+            try:
+                active_campaigns = db.query(Campaign).filter(
+                    Campaign.is_active == True
+                ).order_by(Campaign.created_at.desc()).all()
+                
+                if active_campaigns:
+                    campaign_list = [
+                        f"🎉 **Campaign Yang Tersedia:**\n"
+                    ]
+                    
+                    for i, campaign in enumerate(active_campaigns, 1):
+                        campaign_list.append(
+                            f"{i}. **{campaign.name}**\n"
+                            f"   🎁 {campaign.reward_description}\n"
+                            f"   💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
+                            f"   📝 `/campaign {campaign.campaign_id}`\n"
+                        )
+                    
+                    campaign_list.append(f"\n**Cara Daftar Campaign:**")
+                    campaign_list.append(f"Klik command `/campaign [campaign_id]` di atas")
+                    campaign_list.append(f"Atau taip: `/campaign {active_campaigns[0].campaign_id}`\n")
+                    campaign_list.append(f"💡 Untuk VIP registration biasa, gunakan `/register`")
+                    
+                    campaign_message = "\n".join(campaign_list)
+                else:
+                    campaign_message = (
+                        f"📢 Maaf, tiada campaign aktif buat masa ini.\n\n"
+                        f"🔔 Follow channel kami untuk updates campaign terkini!\n\n"
+                        f"📝 **Alternatif:**\n"
+                        f"• `/register` - untuk VIP registration biasa\n"
+                        f"• `/campaign` - untuk check campaign terkini"
+                    )
+            except Exception as e:
+                logger.error(f"Error fetching campaigns for selection: {e}")
+                campaign_message = (
+                    f"Maaf, ada masalah teknikal.\n\n"
+                    f"📝 **Sementara itu, anda boleh:**\n"
+                    f"• `/register` - untuk VIP registration\n"
+                    f"• `/campaign` - untuk check campaign"
+                )
+            finally:
+                db.close()
+        else:
+            campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
+        
+        await update.message.reply_text(campaign_message, parse_mode='Markdown')
+        
+        # Log the campaign selection display  
+        self.log_conversation(telegram_id, "daftar kempen", campaign_message, "campaign_selection")
+
     def log_conversation(self, telegram_id: str, user_message: str, bot_response: str, message_type: str = "chat"):
         """Log conversation to database"""
         if not SessionLocal:
@@ -1290,6 +1382,30 @@ class RentungBot_Ai:
                 await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
             except Exception as e:
                 logger.error(f"Error sending typing action: {e}")
+            
+            # Check for registration keywords first (before conversation engine)
+            message_lower = message_text.lower().strip()
+            registration_keywords = ['daftar', 'register', 'join', 'signup', 'sign up', 'masuk', 'sertai']
+            
+            if any(keyword in message_lower for keyword in registration_keywords):
+                logger.info(f"🎯 Registration keyword detected: {message_text}")
+                
+                # Check if it's specifically for VIP or Campaign
+                if 'vip' in message_lower:
+                    # Directly go to VIP registration
+                    logger.info("🔹 VIP registration detected, redirecting to VIP flow")
+                    await self.register_command(update, context)
+                    return
+                elif any(camp_word in message_lower for camp_word in ['campaign', 'kempen', 'bonus', 'reward']):
+                    # Directly go to campaign selection
+                    logger.info("🔸 Campaign registration detected, redirecting to campaign selection")
+                    await self.show_campaign_selection(update, context)
+                    return
+                else:
+                    # Show registration choice menu
+                    logger.info("🔀 Showing registration choice menu")
+                    await self.show_registration_choice(update, context)
+                    return
             
             # Process message through conversation engine
             try:
