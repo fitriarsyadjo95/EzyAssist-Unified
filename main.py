@@ -5954,8 +5954,8 @@ async def delete_inactive_campaigns(admin = Depends(get_current_admin)):
 
 # CAMPAIGN REGISTRATION ROUTES
 
-@app.get("/campaign/{campaign_id}", response_class=HTMLResponse)
-async def campaign_account_setup(request: Request, campaign_id: str, token: str = None):
+@app.get("/campaign/{campaign_id}/old", response_class=HTMLResponse)  # OLD - DISABLED
+async def campaign_account_setup_old(request: Request, campaign_id: str, token: str = None):
     """Campaign-specific account setup page"""
     if not SessionLocal:
         return templates.TemplateResponse("error.html", {
@@ -6012,8 +6012,8 @@ async def campaign_account_setup(request: Request, campaign_id: str, token: str 
     finally:
         db.close()
 
-@app.post("/campaign/{campaign_id}/continue")
-async def campaign_account_setup_continue(
+@app.post("/campaign/{campaign_id}/continue/old")  # OLD - DISABLED
+async def campaign_account_setup_continue_old(
     request: Request,
     campaign_id: str,
     setup_action: str = Form(...),
