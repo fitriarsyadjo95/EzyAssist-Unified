@@ -6205,6 +6205,7 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
             "setup_action": registration_data.account_setup_action.value if registration_data and registration_data.account_setup_action else None,
             "lang": "ms",
             "translations": {
+                "title": "Campaign Registration - EzyAssist",
                 "error_title": "Ralat Pendaftaran", 
                 "back_to_telegram": "Kembali ke Telegram",
                 "registration_title": "Pendaftaran Campaign",
