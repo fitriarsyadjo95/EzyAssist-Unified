@@ -228,7 +228,45 @@ BROKER_PROFILES = {
     'valetax': {
         'name': 'Valetax',
         'established': 'Recent (exact year unclear)',
-        'overview': 'Forex and CFD broker offering multiple account types with competitive leverage and low minimum deposits.',
+        'overview': '''Apa itu Valetax?
+Valetax ialah sebuah broker forex berasaskan STP (Straight Through Processing) yang mendakwa mempunyai lebih 300,000 pelanggan di lebih 15 negara.
+
+Perlesenan dan keselamatan dana
+Valetax berdaftar di Mauritius dan Saint Vincent & Grenadines serta mempunyai lesen dari badan pengawal kewangan di Mauritius. Walau bagaimanapun, lesen dari negara-negara ini dianggap sebagai offshore dan tidak memberikan perlindungan pelabur seperti badan pengawal selia Tier‑1 seperti FCA (UK) atau ASIC (Australia).
+
+Jenis akaun & syarat perdagangan
+Valetax menawarkan beberapa jenis akaun seperti Cent, Standard, ECN, Booster, Bonus dan PRO. Deposit minimum bermula dari USD 1 sehingga USD 500. Leverage yang ditawarkan boleh mencecah sehingga 1:2000, dan platform dagangan yang digunakan adalah MetaTrader 4 dan 5.
+
+Kaedah pembayaran dan proses kewangan
+Valetax menyokong pelbagai kaedah deposit termasuk perbankan dalam talian dari bank-bank tempatan dan stablecoin seperti USDT. Deposit biasanya diproses serta-merta, manakala pengeluaran memerlukan jumlah minimum dan mungkin mengambil sedikit masa.
+
+Kelebihan:
+• Deposit permulaan yang rendah
+• Leverage tinggi
+• Pilihan platform dagangan MT4 dan MT5
+• Pelbagai jenis akaun untuk pelbagai keperluan trader
+
+Kekurangan:
+• Lesen dari negara offshore, kurang perlindungan pengguna
+• Terdapat aduan berkaitan pengeluaran dan khidmat pelanggan
+• Kekurangan bahan pembelajaran dan analisis pasaran
+
+Kesimpulan
+Valetax menawarkan syarat perdagangan yang menarik untuk pengguna baru atau yang ingin mencuba. Namun, kekurangan pengawasan ketat dan risiko dalam aspek pengeluaran menjadikan ia sesuai hanya untuk mereka yang faham risiko dagangan dan tidak menggunakan modal besar.
+
+Untuk Golongan B40 (Gaya bahasa santai dan mudah faham)
+
+Apa benda Valetax ni?
+Valetax ni satu platform untuk trade mata wang dan kripto. Ramai orang dah guna, dan katanya mudah nak mula – boleh mula dengan USD 1 je.
+
+Selamat ke guna?
+Dia ada lesen, tapi bukan dari negara besar macam UK atau Australia. Jadi, kalau duit hilang atau ada masalah, susah sikit nak dapat bantuan atau jaminan keselamatan.
+
+Senang ke nak mula?
+Ya, senang. Ada banyak jenis akaun ikut bajet dan pengalaman. Kalau baru nak cuba, boleh pilih akaun murah dulu. Leverage pun tinggi – maksudnya boleh guna duit sikit tapi trade macam banyak.
+
+Macam mana nak tambah & keluarkan duit?
+Boleh guna bank online Malaysia atau USDT (mata wang digital). Masuk duit cepat, tapi nak keluarkan kadang-kadang ambil masa. Kena ada minimum USD 50 untuk keluarkan.''',
 
         'regulation': {
             'primary_regulators': ['FSC (Mauritius)', 'SVG Commission'],
