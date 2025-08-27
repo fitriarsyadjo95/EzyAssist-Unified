@@ -6563,7 +6563,7 @@ async def submit_campaign_registration(
             campaign_reward=campaign.reward_description,
             is_campaign_registration=True,
             # Setup action from token
-            account_setup_action=AccountSetupAction(setup_action.upper()) if setup_action else None,
+            account_setup_action=AccountSetupAction(setup_action) if setup_action else None,
             account_setup_completed_at=datetime.utcnow()
         )
         
