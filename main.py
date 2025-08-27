@@ -6292,6 +6292,9 @@ async def campaign_continue(request: Request, campaign_id: str, token: str = For
         
     except Exception as e:
         logger.error(f"❌ Error in campaign continue: {e}")
+        logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+        logger.error(f"❌ Setup action received: {setup_action}")
+        logger.error(f"❌ Campaign ID: {campaign_id}")
         db.rollback()
         return templates.TemplateResponse("error.html", {
             "request": request,
