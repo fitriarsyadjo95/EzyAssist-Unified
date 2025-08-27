@@ -1222,19 +1222,20 @@ class RentungBot_Ai:
             logger.info(f"📊 Message length: {len(campaign_message)} characters")
             logger.info(f"📨 Using send_long_message without parse_mode to avoid Markdown issues")
             
+            # Use simple reply_text directly to avoid send_long_message complexity
             try:
-                # Remove parse_mode to avoid Markdown parsing issues with URLs
-                await send_long_message(update, campaign_message)
+                await update.message.reply_text(campaign_message)
                 logger.info(f"✅ Campaign message sent successfully to {telegram_id}")
             except Exception as send_error:
-                logger.error(f"❌ send_long_message failed: {send_error}")
-                # Try without parse_mode as a fallback
+                logger.error(f"❌ Direct message send failed: {send_error}")
+                # Last resort: send a simple message
                 try:
-                    await update.message.reply_text(campaign_message)
-                    logger.info(f"✅ Campaign message sent successfully as fallback (no parse_mode)")
-                except Exception as fallback_error:
-                    logger.error(f"❌ Fallback send also failed: {fallback_error}")
-                    raise send_error  # Re-raise original error
+                    simple_message = f"Campaign: {campaign.name}\nLink: {campaign_url}"
+                    await update.message.reply_text(simple_message)
+                    logger.info(f"✅ Simple campaign message sent")
+                except Exception as simple_error:
+                    logger.error(f"❌ Even simple message failed: {simple_error}")
+                    raise send_error
             
             # Log command to database
             self.log_conversation(telegram_id, f"/campaign {campaign_id or ''}", campaign_message, "command")
@@ -1789,7 +1790,7 @@ class RentungBot_Ai:
         logger.info("✅ Bot setup completed - v2.0 with command routing fix")
         return self.application
 
-# Initialize bot instance - Force deployment 2024-08-27 22:30
+# Initialize bot instance - Emergency fix 2024-08-27 22:45
 bot_instance = RentungBot_Ai()
 
 # FastAPI Routes
