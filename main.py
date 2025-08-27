@@ -6432,7 +6432,9 @@ async def submit_campaign_registration(
     if not SessionLocal:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error": "Database not available"
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     # Validate token
@@ -6440,7 +6442,9 @@ async def submit_campaign_registration(
     if not token_data:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error": "Invalid or expired registration link"
+            "error_message": "Invalid or expired registration link",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     db = get_db()
@@ -6474,12 +6478,16 @@ async def submit_campaign_registration(
             if deposit_float < min_deposit_float:
                 return templates.TemplateResponse("error.html", {
                     "request": request,
-                    "error": f"Minimum deposit for this campaign is {campaign.min_deposit_amount} USD. You entered {deposit_amount} USD."
+                    "error_message": f"Minimum deposit for this campaign is {campaign.min_deposit_amount} USD. You entered {deposit_amount} USD.",
+                    "lang": "ms",
+                    "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
                 })
         except ValueError:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error": "Invalid deposit amount format"
+                "error_message": "Invalid deposit amount format",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Get registration data
@@ -6489,14 +6497,18 @@ async def submit_campaign_registration(
         if not registration_id:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error": "Registration data not found"
+                "error_message": "Registration data not found",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         registration = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
         if not registration:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error": "Registration not found"
+                "error_message": "Registration not found",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Check if this registration is already completed
@@ -6504,7 +6516,9 @@ async def submit_campaign_registration(
             logger.warning(f"🚫 Duplicate campaign registration attempt by {telegram_id} for campaign {campaign_id}")
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error": f"You have already completed registration for this campaign. Current status: {registration.status.value}. If you need to update information, please contact admin."
+                "error_message": f"You have already completed registration for this campaign. Current status: {registration.status.value}. If you need to update information, please contact admin.",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Handle file uploads
@@ -6574,7 +6588,9 @@ async def submit_campaign_registration(
         db.rollback()
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error": f"Registration submission failed: {str(e)}"
+            "error_message": f"Registration submission failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     finally:
         db.close()
