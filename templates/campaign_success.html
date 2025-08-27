@@ -33,7 +33,7 @@
                                 <i class="fas fa-chart-line me-2"></i>
                                 Maklumat Trading
                             </h6>
-                            <p class="mb-1"><strong>Trading ID:</strong> {{ registration.trading_id }}</p>
+                            <p class="mb-1"><strong>Trading ID:</strong> {{ registration.client_id }}</p>
                             <p class="mb-1"><strong>Deposit:</strong> ${{ registration.deposit_amount }} USD</p>
                             <p class="mb-0"><strong>Campaign:</strong> {{ campaign.name }}</p>
                         </div>
@@ -100,7 +100,7 @@
                         <li><strong>Verification Time:</strong> 1-3 hari bekerja (Isnin - Jumaat)</li>
                         <li><strong>Contact Support:</strong> Jika ada sebarang pertanyaan, hubungi live agent di <a href="https://t.me/Cix_Na" target="_blank">@Cix_Na</a></li>
                         <li><strong>Telegram Username:</strong> Pastikan username @{{ registration.telegram_username }} adalah betul dan aktif</li>
-                        <li><strong>Deposit Amount:</strong> Jumlah deposit ${{ registration.deposit_amount }} USD akan diverify dengan trading ID {{ registration.trading_id }}</li>
+                        <li><strong>Deposit Amount:</strong> Jumlah deposit ${{ registration.deposit_amount }} USD akan diverify dengan trading ID {{ registration.client_id }}</li>
                     </ul>
                 </div>
 

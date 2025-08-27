@@ -6590,7 +6590,9 @@ async def submit_campaign_registration(
         return templates.TemplateResponse("campaign_success.html", {
             "request": request,
             "campaign": campaign,
-            "registration": registration
+            "registration": registration,
+            "translations": TRANSLATIONS['ms'],
+            "lang": "ms"
         })
         
     except Exception as e:
