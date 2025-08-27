@@ -5940,7 +5940,9 @@ async def campaign_account_setup(request: Request, campaign_id: str, token: str 
     if not db:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Database connection failed"
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     try:
@@ -5953,7 +5955,9 @@ async def campaign_account_setup(request: Request, campaign_id: str, token: str 
         if not campaign:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error_message": "Campaign not found or inactive"
+                "error_message": "Campaign not found or inactive",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Check if campaign has expired
@@ -5999,7 +6003,9 @@ async def campaign_account_setup_continue(
     if not db:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Database connection failed"
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     try:
@@ -6012,7 +6018,9 @@ async def campaign_account_setup_continue(
         if not campaign:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error_message": "Campaign not found or inactive"
+                "error_message": "Campaign not found or inactive",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Get user info from token
@@ -6113,7 +6121,9 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
     if not SessionLocal:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error": "Database not available"
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     # Decode and validate token
@@ -6134,7 +6144,9 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
     if not db:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Database connection failed"
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     try:
@@ -6147,7 +6159,9 @@ async def campaign_registration_form(request: Request, campaign_id: str, token: 
         if not campaign:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error_message": "Campaign not found or inactive"
+                "error_message": "Campaign not found or inactive",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Get registration data if exists
@@ -6211,7 +6225,9 @@ async def submit_campaign_registration(
     if not db:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Database connection failed"
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     try:
@@ -6224,7 +6240,9 @@ async def submit_campaign_registration(
         if not campaign:
             return templates.TemplateResponse("error.html", {
                 "request": request,
-                "error_message": "Campaign not found or inactive"
+                "error_message": "Campaign not found or inactive",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
             })
         
         # Validate minimum deposit
