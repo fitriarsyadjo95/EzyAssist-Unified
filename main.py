@@ -1451,16 +1451,25 @@ class RentungBot_Ai:
                     ]
                     
                     for i, campaign in enumerate(active_campaigns, 1):
+                        # Show user-friendly command if available, otherwise show full command
+                        friendly_command = None
+                        for cmd, mapped_id in CAMPAIGN_COMMANDS.items():
+                            if mapped_id == campaign.campaign_id:
+                                friendly_command = f"/{cmd}"
+                                break
+                        
+                        display_command = friendly_command if friendly_command else f"/campaign {campaign.campaign_id}"
+                        
                         campaign_list.append(
                             f"{i}. **{campaign.name}**\n"
                             f"   🎁 {campaign.reward_description}\n"
                             f"   💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
-                            f"   📝 `/campaign {campaign.campaign_id}`\n"
+                            f"   📝 `{display_command}`\n"
                         )
                     
-                    campaign_list.append(f"\n**Cara Daftar Campaign (Pilih salah satu):**")
-                    campaign_list.append(f"🚀 **SENANG:** Tekan `/rm50` untuk RM50 campaign")
-                    campaign_list.append(f"📝 **MANUAL:** Klik command `/campaign [campaign_id]` di atas\n")
+                    campaign_list.append(f"\n**Cara Daftar Campaign:**")
+                    campaign_list.append(f"Klik command yang ditunjukkan di atas")
+                    campaign_list.append(f"Contoh: Tekan `/rm50` untuk RM50 campaign\n")
                     campaign_list.append(f"💡 Untuk VIP registration biasa, gunakan `/register`")
                     
                     campaign_message = "\n".join(campaign_list)
