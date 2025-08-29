@@ -960,7 +960,6 @@ def initialize_default_campaigns():
 # Campaign Command Mapping - Maps simple commands to campaign IDs
 CAMPAIGN_COMMANDS = {
     'rm50': 'rm50-bonus',
-    'bonus': 'rm50-bonus',  # Alternative alias for RM50 campaign
     # Future campaigns can be added here:
     # 'welcome': 'welcome-bonus',
     # 'contest': 'trading-contest'
@@ -1020,11 +1019,8 @@ class RentungBot_Ai:
             "📝 /register - Daftar VIP macam biasa\n\n"
             "🎉 NAK DAPAT DUIT FREE?\n"
             "💰 /rm50 - Terus join RM50 Bonus Campaign!\n"
-            "🎁 /bonus - Campaign bonus terkini\n"
             "💫 /campaign - Tengok semua campaign tersedia\n\n"
-            "👨‍💼 /agent - Nak cakap dengan orang live\n\n"
-            "🔥 Jangan bodoh-bodoh miss!\n"
-            "Tekan /rm50 sekarang - dapatkan bonus RM50 FREE!"
+            "👨‍💼 /agent - Nak cakap dengan orang live"
         )
         
         await update.message.reply_text(welcome_message)
@@ -1342,10 +1338,6 @@ class RentungBot_Ai:
         """Handle /rm50 command - shortcut to RM50 campaign"""
         await self.specific_campaign_command(update, context, 'rm50')
 
-    async def bonus_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /bonus command - shortcut to bonus campaigns"""
-        await self.specific_campaign_command(update, context, 'bonus')
-
     async def agent_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /agent command - redirect to live agent"""
         user = update.effective_user
@@ -1468,8 +1460,7 @@ class RentungBot_Ai:
                     
                     campaign_list.append(f"\n**Cara Daftar Campaign (Pilih salah satu):**")
                     campaign_list.append(f"🚀 **SENANG:** Tekan `/rm50` untuk RM50 campaign")
-                    campaign_list.append(f"📝 **MANUAL:** Klik command `/campaign [campaign_id]` di atas")
-                    campaign_list.append(f"🎁 **SEMUA BONUS:** Tekan `/bonus` untuk campaign bonus\n")
+                    campaign_list.append(f"📝 **MANUAL:** Klik command `/campaign [campaign_id]` di atas\n")
                     campaign_list.append(f"💡 Untuk VIP registration biasa, gunakan `/register`")
                     
                     campaign_message = "\n".join(campaign_list)
@@ -1625,10 +1616,6 @@ class RentungBot_Ai:
                 elif message_text.startswith('/rm50') or message_text == '/rm50':
                     logger.info(f"🔧 Manually routing to rm50_command: {message_text}")
                     await self.rm50_command(update, context)
-                    return
-                elif message_text.startswith('/bonus') or message_text == '/bonus':
-                    logger.info(f"🔧 Manually routing to bonus_command: {message_text}")
-                    await self.bonus_command(update, context)
                     return
                 elif message_text.startswith('/clear') or message_text == '/clear':
                     logger.info(f"🔧 Manually routing to clear_command: {message_text}")
@@ -1877,7 +1864,6 @@ class RentungBot_Ai:
         
         # Campaign-specific shortcuts for better UX
         self.application.add_handler(CommandHandler("rm50", self.rm50_command))
-        self.application.add_handler(CommandHandler("bonus", self.bonus_command))
         
         self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
