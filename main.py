@@ -1759,6 +1759,7 @@ class RentungBot_Ai:
             # SAFETY NET: Explicit command detection and routing
             if message_text.startswith('/'):
                 logger.info(f"🔧 SAFETY NET: Command {message_text} reached handle_message, routing manually")
+                logger.info(f"🔍 Debug: message_text='{message_text}', repr='{repr(message_text)}', len={len(message_text)}")
                 
                 # Route commands manually - this is now the primary routing mechanism
                 if message_text.startswith('/campaign ') or message_text == '/campaign':
@@ -1821,6 +1822,8 @@ class RentungBot_Ai:
                     return
                 elif message_text.startswith('/indicator') or message_text == '/indicator':
                     logger.info(f"🔧 Manually routing to indicator_command: {message_text}")
+                    logger.info(f"🔍 Debug indicator routing: message_text='{message_text}', repr='{repr(message_text)}'")
+                    logger.info(f"🔍 Debug conditions: startswith={message_text.startswith('/indicator')}, equals={message_text == '/indicator'}")
                     await self.indicator_command(update, context)
                     return
                 else:
