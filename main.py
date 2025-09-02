@@ -1820,10 +1820,9 @@ class RentungBot_Ai:
                     logger.info(f"🔧 Manually routing to clear_command: {message_text}")
                     await self.clear_command(update, context)
                     return
-                elif message_text.startswith('/indicator') or message_text == '/indicator':
+                elif message_text == '/indicator':
                     logger.info(f"🔧 Manually routing to indicator_command: {message_text}")
                     logger.info(f"🔍 Debug indicator routing: message_text='{message_text}', repr='{repr(message_text)}'")
-                    logger.info(f"🔍 Debug conditions: startswith={message_text.startswith('/indicator')}, equals={message_text == '/indicator'}")
                     await self.indicator_command(update, context)
                     return
                 else:
