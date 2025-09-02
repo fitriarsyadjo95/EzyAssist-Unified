@@ -5,273 +5,240 @@
     <div class="col-lg-8 col-xl-7">
         <!-- Header -->
         <div class="card shadow-lg border-0 registration-card">
-            <div class="card-header bg-gradient-primary text-white">
-                <h1 class="mb-0 text-center">🎯 High Level Engulfing Indicator Registration</h1>
+            <div class="card-header">
+                <h1 class="mb-0">🎯 High Level Engulfing Indicator Registration</h1>
                 <p class="mb-0 text-center opacity-90 mt-2">Get access to our powerful trading indicator</p>
             </div>
             
             <div class="card-body p-4 p-md-5">
-                <!-- Info Section -->
-                <div class="alert alert-info mb-4">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <div>
-                            <strong>What you'll get:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li>High Level Engulfing Indicator for MT4/MT5</li>
-                                <li>Complete setup guide and tutorials</li>
-                                <li>Technical support from our team</li>
-                                <li>Strategy guidance for maximum profit</li>
-                            </ul>
+                <!-- Step Progress Indicator -->
+                <div class="step-progress">
+                    <div class="progress-text active" id="progressText">Langkah 1 daripada 3: Maklumat Diri</div>
+                    
+                    <!-- Step Indicators -->
+                    <div class="step-indicators mb-3">
+                        <div class="step-indicator active" data-step="1">
+                            <div class="step-circle">1</div>
+                            <div class="step-label">Maklumat Diri</div>
                         </div>
+                        <div class="step-indicator" data-step="2">
+                            <div class="step-circle">2</div>
+                            <div class="step-label">Trading Info</div>
+                        </div>
+                        <div class="step-indicator" data-step="3">
+                            <div class="step-circle">3</div>
+                            <div class="step-label">Konfirmasi</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Animated Progress Bar -->
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
                     </div>
                 </div>
 
                 <!-- Registration Form -->
-                <form method="post" id="indicatorRegistrationForm" action="/indicator">
+                <form method="post" id="indicatorRegistrationForm" action="/indicator" novalidate>
                     <input type="hidden" name="token" value="{{ token }}">
+                    <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
+                    <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
+                    <input type="hidden" name="language" value="ms">
                     <input type="hidden" name="form_hash" value="{{ form_hash }}">
                     
-                    <!-- Personal Information -->
-                    <h5 class="mb-3"><i class="fas fa-user me-2"></i>Personal Information</h5>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" 
-                                   value="{{ existing_registration.full_name if existing_registration else '' }}" 
-                                   required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" 
-                                   value="{{ existing_registration.email if existing_registration else '' }}" 
-                                   required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="phone_number" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control" id="phone_number" name="phone_number" 
-                               value="{{ existing_registration.phone_number if existing_registration else '' }}" 
-                               placeholder="+60123456789" required>
+                    <!-- Required Fields Note -->
+                    <div class="required-note">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Ruang yang ada tanda <span class="text-danger">*</span> adalah wajib diisi
                     </div>
 
-                    <!-- Trading Information -->
-                    <h5 class="mb-3 mt-4"><i class="fas fa-chart-line me-2"></i>Trading Information</h5>
-                    
-                    <div class="mb-3">
-                        <label for="trading_experience" class="form-label">Trading Experience <span class="text-danger">*</span></label>
-                        <select class="form-select" id="trading_experience" name="trading_experience" required>
-                            <option value="">Select your experience level</option>
-                            <option value="beginner" {% if existing_registration and existing_registration.trading_experience == 'beginner' %}selected{% endif %}>
-                                Beginner (Less than 6 months)
-                            </option>
-                            <option value="intermediate" {% if existing_registration and existing_registration.trading_experience == 'intermediate' %}selected{% endif %}>
-                                Intermediate (6 months - 2 years)
-                            </option>
-                            <option value="advanced" {% if existing_registration and existing_registration.trading_experience == 'advanced' %}selected{% endif %}>
-                                Advanced (More than 2 years)
-                            </option>
-                        </select>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="broker_preference" class="form-label">Preferred Broker <span class="text-muted">(Optional)</span></label>
-                            <select class="form-select" id="broker_preference" name="broker_preference">
-                                <option value="">Select broker (optional)</option>
-                                <option value="OctaFX" {% if existing_registration and existing_registration.broker_preference == 'OctaFX' %}selected{% endif %}>OctaFX</option>
-                                <option value="HFM" {% if existing_registration and existing_registration.broker_preference == 'HFM' %}selected{% endif %}>HFM (HotForex)</option>
-                                <option value="Valetax" {% if existing_registration and existing_registration.broker_preference == 'Valetax' %}selected{% endif %}>Valetax</option>
-                                <option value="Dollars Markets" {% if existing_registration and existing_registration.broker_preference == 'Dollars Markets' %}selected{% endif %}>Dollars Markets</option>
-                                <option value="XM" {% if existing_registration and existing_registration.broker_preference == 'XM' %}selected{% endif %}>XM</option>
-                                <option value="Exness" {% if existing_registration and existing_registration.broker_preference == 'Exness' %}selected{% endif %}>Exness</option>
-                                <option value="IC Markets" {% if existing_registration and existing_registration.broker_preference == 'IC Markets' %}selected{% endif %}>IC Markets</option>
-                                <option value="Other" {% if existing_registration and existing_registration.broker_preference == 'Other' %}selected{% endif %}>Other</option>
-                            </select>
+                    <!-- Step 1: Personal Information -->
+                    <div class="form-step" id="step-1" data-step="1">
+                        <!-- Full Name -->
+                        <div class="mb-4">
+                            <label for="full_name" class="form-label">
+                                Nama Penuh <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user fa-sm"></i></span>
+                                <input type="text" class="form-control form-control-lg" id="full_name" name="full_name" 
+                                       value="{{ existing_registration.full_name if existing_registration else '' }}"
+                                       placeholder="Masukkan nama penuh anda" required>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="trading_capital_range" class="form-label">Trading Capital Range <span class="text-muted">(Optional)</span></label>
-                            <select class="form-select" id="trading_capital_range" name="trading_capital_range">
-                                <option value="">Select range (optional)</option>
-                                <option value="Under $500" {% if existing_registration and existing_registration.trading_capital_range == 'Under $500' %}selected{% endif %}>Under $500</option>
-                                <option value="$500 - $1,000" {% if existing_registration and existing_registration.trading_capital_range == '$500 - $1,000' %}selected{% endif %}>$500 - $1,000</option>
-                                <option value="$1,000 - $5,000" {% if existing_registration and existing_registration.trading_capital_range == '$1,000 - $5,000' %}selected{% endif %}>$1,000 - $5,000</option>
-                                <option value="$5,000 - $10,000" {% if existing_registration and existing_registration.trading_capital_range == '$5,000 - $10,000' %}selected{% endif %}>$5,000 - $10,000</option>
-                                <option value="Above $10,000" {% if existing_registration and existing_registration.trading_capital_range == 'Above $10,000' %}selected{% endif %}>Above $10,000</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <!-- Important Notice -->
-                    <div class="alert alert-warning mb-4">
-                        <div class="d-flex align-items-start">
-                            <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
-                            <div>
-                                <strong>Important Notice:</strong><br>
-                                This registration is for educational purposes. Trading involves risk. Please ensure you understand the risks before using any trading strategy or indicator.
+                        <!-- Email -->
+                        <div class="mb-4">
+                            <label for="email" class="form-label">
+                                Alamat Email <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope fa-sm"></i></span>
+                                <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                       value="{{ existing_registration.email if existing_registration else '' }}"
+                                       placeholder="nama@example.com" required>
+                            </div>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="mb-4">
+                            <label for="phone_number" class="form-label">
+                                Nombor Telefon <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone fa-sm"></i></span>
+                                <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
+                                       value="{{ existing_registration.phone_number if existing_registration else '' }}"
+                                       placeholder="+60123456789" required>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                            <i class="fas fa-paper-plane me-2"></i>Submit Registration
-                        </button>
+                    <!-- Step 2: Trading Information -->
+                    <div class="form-step" id="step-2" data-step="2" style="display: none;">
+                        <h5 class="mb-4 text-primary">Langkah 2: Maklumat Trading</h5>
+                        
+                        <!-- Trading Experience -->
+                        <div class="mb-4">
+                            <label for="trading_experience" class="form-label">
+                                Pengalaman Trading <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-chart-line fa-sm"></i></span>
+                                <select class="form-select form-control-lg" id="trading_experience" name="trading_experience" required>
+                                    <option value="">Pilih tahap pengalaman anda</option>
+                                    <option value="beginner" {% if existing_registration and existing_registration.trading_experience == 'beginner' %}selected{% endif %}>
+                                        Pemula (Kurang dari 6 bulan)
+                                    </option>
+                                    <option value="intermediate" {% if existing_registration and existing_registration.trading_experience == 'intermediate' %}selected{% endif %}>
+                                        Pertengahan (6 bulan - 2 tahun)
+                                    </option>
+                                    <option value="advanced" {% if existing_registration and existing_registration.trading_experience == 'advanced' %}selected{% endif %}>
+                                        Mahir (Lebih dari 2 tahun)
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Broker Preference -->
+                        <div class="mb-4">
+                            <label for="broker_preference" class="form-label">
+                                Broker Pilihan <small class="text-muted">(opsional)</small>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-building fa-sm"></i></span>
+                                <select class="form-select form-control-lg" id="broker_preference" name="broker_preference">
+                                    <option value="">Pilih broker (opsional)</option>
+                                    <option value="Valetax" {% if existing_registration and existing_registration.broker_preference == 'Valetax' %}selected{% endif %}>Valetax</option>
+                                    <option value="OctaFX" {% if existing_registration and existing_registration.broker_preference == 'OctaFX' %}selected{% endif %}>OctaFX</option>
+                                    <option value="HFM" {% if existing_registration and existing_registration.broker_preference == 'HFM' %}selected{% endif %}>HFM (HotForex)</option>
+                                    <option value="Dollars Markets" {% if existing_registration and existing_registration.broker_preference == 'Dollars Markets' %}selected{% endif %}>Dollars Markets</option>
+                                    <option value="XM" {% if existing_registration and existing_registration.broker_preference == 'XM' %}selected{% endif %}>XM</option>
+                                    <option value="Exness" {% if existing_registration and existing_registration.broker_preference == 'Exness' %}selected{% endif %}>Exness</option>
+                                    <option value="IC Markets" {% if existing_registration and existing_registration.broker_preference == 'IC Markets' %}selected{% endif %}>IC Markets</option>
+                                    <option value="Other" {% if existing_registration and existing_registration.broker_preference == 'Other' %}selected{% endif %}>Lain-lain</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Trading Capital Range -->
+                        <div class="mb-4">
+                            <label for="trading_capital_range" class="form-label">
+                                Modal Trading <small class="text-muted">(opsional)</small>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-money-bill-wave fa-sm"></i></span>
+                                <select class="form-select form-control-lg" id="trading_capital_range" name="trading_capital_range">
+                                    <option value="">Pilih julat modal (opsional)</option>
+                                    <option value="Under $500" {% if existing_registration and existing_registration.trading_capital_range == 'Under $500' %}selected{% endif %}>Bawah $500</option>
+                                    <option value="$500 - $1,000" {% if existing_registration and existing_registration.trading_capital_range == '$500 - $1,000' %}selected{% endif %}>$500 - $1,000</option>
+                                    <option value="$1,000 - $5,000" {% if existing_registration and existing_registration.trading_capital_range == '$1,000 - $5,000' %}selected{% endif %}>$1,000 - $5,000</option>
+                                    <option value="$5,000 - $10,000" {% if existing_registration and existing_registration.trading_capital_range == '$5,000 - $10,000' %}selected{% endif %}>$5,000 - $10,000</option>
+                                    <option value="Above $10,000" {% if existing_registration and existing_registration.trading_capital_range == 'Above $10,000' %}selected{% endif %}>Atas $10,000</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-clock me-1"></i>
-                            Registration will be reviewed within 24-48 hours
-                        </small>
+
+                    <!-- Step 3: Confirmation -->
+                    <div class="form-step" id="step-3" data-step="3" style="display: none;">
+                        <h5 class="mb-4 text-primary">Langkah 3: Konfirmasi Pendaftaran</h5>
+                        
+                        <!-- Indicator Features -->
+                        <div class="feature-list text-start mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-rocket text-primary me-2"></i>
+                                High Level Engulfing Indicator Features
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            Pengesanan price action canggih
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            Analisis multi-timeframe
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            Alert & signal yang disesuaikan
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            Tutorial setup lengkap
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Important Notice -->
+                        <div class="alert alert-warning mb-4">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                                <div>
+                                    <strong>Notis Penting:</strong><br>
+                                    Pendaftaran ini adalah untuk tujuan edukasi. Trading melibatkan risiko. Sila pastikan anda memahami risiko sebelum menggunakan sebarang strategi trading atau indicator.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Navigation -->
+                    <div class="step-navigation mt-4">
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" id="prevBtn" style="display: none;">
+                                <i class="fas fa-arrow-left me-2"></i>Kembali
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg px-4" id="nextBtn">
+                                Seterusnya<i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold submit-btn" id="submitBtn" style="display: none;">
+                                <i class="fas fa-paper-plane me-2"></i>Hantar Pendaftaran
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="text-center mt-3 d-none" id="loadingState">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Memuat...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Memproses pendaftaran...</p>
                     </div>
                 </form>
-            </div>
-            
-            <div class="card-footer bg-light text-center">
-                <small class="text-muted">
-                    Secure registration powered by RentungFX • Your data is protected
-                </small>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-.registration-card {
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-}
-
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.form-control, .form-select {
-    border-radius: 8px;
-    border: 1px solid #e1e5e9;
-    padding: 12px 16px;
-    font-size: 14px;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.alert {
-    border-radius: 8px;
-    border: none;
-}
-
-.alert-info {
-    background-color: #e3f2fd;
-    color: #0d47a1;
-}
-
-.alert-warning {
-    background-color: #fff3e0;
-    color: #e65100;
-}
-
-.card-header h1 {
-    font-size: 1.75rem;
-    font-weight: 600;
-}
-
-.form-label {
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 8px;
-}
-
-.text-danger {
-    color: #dc3545 !important;
-}
-
-.text-muted {
-    color: #6b7280 !important;
-}
-
-.card-footer {
-    border-top: 1px solid #e5e7eb;
-    padding: 1rem 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .card-body {
-        padding: 1.5rem 1rem !important;
-    }
-    
-    .card-header h1 {
-        font-size: 1.5rem;
-    }
-}
-</style>
-
-<script>
-// Form validation
-document.getElementById('indicatorRegistrationForm').addEventListener('submit', function(e) {
-    const submitBtn = document.getElementById('submitBtn');
-    const requiredFields = ['full_name', 'email', 'phone_number', 'trading_experience'];
-    let isValid = true;
-    
-    // Check required fields
-    requiredFields.forEach(fieldName => {
-        const field = document.getElementById(fieldName);
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            field.classList.remove('is-invalid');
-        }
-    });
-    
-    // Validate email format
-    const email = document.getElementById('email');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email.value && !emailRegex.test(email.value)) {
-        email.classList.add('is-invalid');
-        isValid = false;
-    }
-    
-    if (!isValid) {
-        e.preventDefault();
-        alert('Please fill in all required fields correctly.');
-        return;
-    }
-    
-    // Disable submit button to prevent double submission
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-});
-
-// Real-time validation
-document.querySelectorAll('input, select').forEach(field => {
-    field.addEventListener('blur', function() {
-        if (this.hasAttribute('required') && !this.value.trim()) {
-            this.classList.add('is-invalid');
-        } else {
-            this.classList.remove('is-invalid');
-        }
-    });
-});
-</script>
+{% block scripts %}
+<!-- Form JavaScript (same as main registration form) -->
+<script src="/static/js/form.js"></script>
 {% endblock %}
