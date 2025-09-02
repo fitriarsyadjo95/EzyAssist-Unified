@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #111827 !important;
+        font-family: 'Inter', sans-serif !important;
+        min-height: 100vh;
+    }
+    .success-card {
+        background: #FFFFFF !important;
+        border: none !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 16px !important;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        font-weight: 500;
+        padding: 12px 32px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        animation: successPulse 2s infinite;
+    }
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    .navbar {
+        display: none !important;
+    }
+    .feature-list {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid #667eea;
+    }
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f1f5f9;
+        border-radius: 8px;
+        border-left: 3px solid #667eea;
+    }
+    .step-number {
+        background: #667eea;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .registration-id {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        border: 2px dashed #667eea;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        margin: 1.5rem 0;
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: #fef3c7;
+        color: #92400e;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin: 1rem 0;
+    }
+    .contact-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-top: 2rem;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <div class="card success-card">
+                <div class="card-body p-4 p-md-5 text-center">
+                    <!-- Success Icon -->
+                    <div class="success-icon">
+                        <i class="fas fa-check text-white" style="font-size: 2rem;"></i>
+                    </div>
+                    
+                    <!-- Success Message -->
+                    <h1 class="h2 mb-3 text-success fw-bold">Registration Successful!</h1>
+                    <p class="lead text-muted mb-4">
+                        Your High Level Engulfing Indicator registration has been submitted successfully.
+                    </p>
+
+                    <!-- Registration ID -->
+                    {% if registration_id %}
+                    <div class="registration-id">
+                        <div class="mb-2">
+                            <i class="fas fa-id-card text-primary me-2"></i>
+                            <strong>Registration ID</strong>
+                        </div>
+                        <h3 class="text-primary fw-bold mb-1">{{ registration_id }}</h3>
+                        <small class="text-muted">Please save this ID for your records</small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Status Badge -->
+                    <div class="status-badge">
+                        <i class="fas fa-clock me-2"></i>
+                        Pending Admin Review
+                    </div>
+
+                    <!-- What's Next Section -->
+                    <div class="text-start mt-4">
+                        <h4 class="h5 mb-3">
+                            <i class="fas fa-list-check text-primary me-2"></i>What's Next?
+                        </h4>
+                        
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div>
+                                <strong>Admin Review</strong><br>
+                                <small class="text-muted">Our team will review your registration within 24-48 hours</small>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div>
+                                <strong>Notification</strong><br>
+                                <small class="text-muted">You'll receive a Telegram message with the approval status</small>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div>
+                                <strong>Indicator Access</strong><br>
+                                <small class="text-muted">Once approved, you'll get download link and setup instructions</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Indicator Features -->
+                    <div class="feature-list text-start mt-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-rocket text-primary me-2"></i>
+                            High Level Engulfing Indicator Features
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Advanced price action detection
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Multi-timeframe analysis
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Custom alerts & signals
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Complete setup tutorial
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="https://t.me/{{ telegram_id if telegram_id else 'your_telegram_bot' }}" 
+                           class="btn btn-primary btn-lg">
+                            <i class="fab fa-telegram-plane me-2"></i>Return to Telegram
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Your registration is secure and encrypted
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="contact-section">
+                    <h5 class="mb-2">Need Help?</h5>
+                    <p class="mb-0">
+                        <i class="fas fa-headset me-2"></i>
+                        Our support team is ready to assist you with any questions about the indicator or registration process.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Information Modal Trigger (Optional) -->
+<div class="text-center mt-4">
+    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#infoModal">
+        <i class="fas fa-info-circle me-1"></i>More About Our Indicator
+    </button>
+</div>
+
+<!-- Information Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">
+                    <i class="fas fa-chart-line me-2"></i>High Level Engulfing Indicator
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Key Benefits:</h6>
+                        <ul>
+                            <li>Identify high-probability trading setups</li>
+                            <li>Reduce false signals with advanced filtering</li>
+                            <li>Works on all major currency pairs</li>
+                            <li>Compatible with any trading strategy</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Technical Specifications:</h6>
+                        <ul>
+                            <li>Platform: MT4 & MT5</li>
+                            <li>Timeframes: M1 to Monthly</li>
+                            <li>Alert System: Popup, Email, Push</li>
+                            <li>Customizable Parameters</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <strong>Important:</strong> This indicator is for educational purposes. Past performance does not guarantee future results. Always use proper risk management.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-hide success message after animation
+setTimeout(() => {
+    const successIcon = document.querySelector('.success-icon');
+    if (successIcon) {
+        successIcon.style.animationDuration = '1s';
+    }
+}, 3000);
+
+// Copy registration ID functionality
+function copyRegistrationId() {
+    const regId = '{{ registration_id }}';
+    if (regId) {
+        navigator.clipboard.writeText(regId).then(() => {
+            // Show temporary success message
+            const originalText = event.target.innerHTML;
+            event.target.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+            event.target.classList.add('btn-success');
+            
+            setTimeout(() => {
+                event.target.innerHTML = originalText;
+                event.target.classList.remove('btn-success');
+            }, 2000);
+        });
+    }
+}
+
+// Add copy button to registration ID if it exists
+document.addEventListener('DOMContentLoaded', function() {
+    const regIdElement = document.querySelector('.registration-id h3');
+    if (regIdElement) {
+        regIdElement.style.cursor = 'pointer';
+        regIdElement.title = 'Click to copy';
+        regIdElement.addEventListener('click', copyRegistrationId);
+    }
+});
+</script>
+{% endblock %}

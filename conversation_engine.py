@@ -46,8 +46,58 @@ class ConversationEngine:
         # Malay FAQ responses also removed - handled by AI
 
     def detect_language(self, message: str) -> str:
-        """Always return Bahasa Melayu - bot responds only in Malay"""
-        return 'ms'
+        """Detect language from user message - supports English, Bahasa Malaysia, and Bahasa Indonesia"""
+        message_lower = message.lower()
+        
+        # Indonesian specific words and patterns
+        indonesian_keywords = [
+            'saya', 'aku', 'kamu', 'anda', 'dengan', 'untuk', 'dari', 'yang', 'ini', 'itu',
+            'bisa', 'tidak', 'nggak', 'sudah', 'belum', 'bagaimana', 'mengapa', 'kenapa',
+            'dimana', 'kapan', 'siapa', 'mau', 'ingin', 'butuh', 'perlu', 'belajar',
+            'trading', 'forex', 'rupiah', 'investasi', 'saham', 'broker', 'platform',
+            'gimana', 'dong', 'nih', 'deh', 'sih', 'banget', 'emang'
+        ]
+        
+        # Malaysian specific words and patterns  
+        malaysian_keywords = [
+            'saya', 'aku', 'awak', 'kamu', 'dengan', 'untuk', 'dari', 'yang', 'ini', 'itu',
+            'boleh', 'tak', 'tak boleh', 'sudah', 'belum', 'macam mana', 'mengapa', 'kenapa',
+            'kat mana', 'bila', 'siapa', 'nak', 'mau', 'hendak', 'perlukan', 'belajar',
+            'trading', 'forex', 'ringgit', 'pelaburan', 'saham', 'broker', 'platform',
+            'lah', 'leh', 'la', 'ke', 'jer', 'je', 'kan', 'gak', 'tak'
+        ]
+        
+        # English keywords
+        english_keywords = [
+            'i', 'you', 'me', 'my', 'your', 'with', 'for', 'from', 'that', 'this',
+            'can', 'cannot', 'could', 'would', 'should', 'will', 'have', 'has', 'had',
+            'how', 'what', 'why', 'when', 'where', 'who', 'want', 'need', 'learn',
+            'trading', 'forex', 'dollar', 'investment', 'stock', 'broker', 'platform',
+            'the', 'and', 'or', 'but', 'so', 'because', 'if', 'then', 'than'
+        ]
+        
+        # Count matches for each language
+        indonesian_score = sum(1 for word in indonesian_keywords if word in message_lower)
+        malaysian_score = sum(1 for word in malaysian_keywords if word in message_lower)
+        english_score = sum(1 for word in english_keywords if word in message_lower)
+        
+        # Check for specific language indicators
+        if any(indicator in message_lower for indicator in ['gimana', 'dong', 'nih', 'banget', 'emang', 'nggak', 'bisa', 'rupiah']):
+            return 'id'  # Indonesian
+        elif any(indicator in message_lower for indicator in ['lah', 'leh', 'jer', 'je', 'nak', 'kat mana', 'ringgit', 'boleh']):
+            return 'ms'  # Malaysian
+        elif any(indicator in message_lower for indicator in ['the ', ' and ', ' or ', ' but ', 'dollar', 'cannot']):
+            return 'en'  # English
+            
+        # Determine language based on highest score
+        if indonesian_score > malaysian_score and indonesian_score > english_score:
+            return 'id'
+        elif malaysian_score > english_score:
+            return 'ms'
+        elif english_score > 0:
+            return 'en'
+        else:
+            return 'ms'  # Default to Malaysian if no clear indicators
 
     def needs_live_agent(self, message: str) -> bool:
         """Detect if question requires live agent intervention"""
@@ -79,7 +129,9 @@ class ConversationEngine:
             'live agent', 'human agent', 'real person', 'customer service',
             'support team', 'help desk', 'representative', 'advisor',
             'agent sebenar', 'manusia sebenar', 'customer support',
-            'nak cakap dengan orang', 'minta tolong staff', 'agent bantuan'
+            'nak cakap dengan orang', 'minta tolong staff', 'agent bantuan',
+            'agen sungguhan', 'manusia asli', 'customer support',
+            'mau bicara dengan orang', 'minta tolong staff', 'agen bantuan'
         ]
         
         # Check for any technical keywords
@@ -104,18 +156,29 @@ class ConversationEngine:
             'broker', 'chart', 'analysis', 'technical', 'fundamental', 'support', 'resistance',
             'trend', 'bull', 'bear', 'long', 'short', 'buy', 'sell', 'profit', 'loss',
             'strategy', 'scalping', 'swing', 'position', 'market', 'exchange', 'rate',
+            # Malaysian terms
             'mata wang', 'perdagangan', 'pasaran', 'analisis', 'strategi', 'keuntungan',
             'kerugian', 'broker', 'carta', 'teknikal', 'asas', 'sokongan', 'rintangan',
-            'rugi', 'untung', 'trade', 'handle loss', 'manage risk', 'stop loss'
+            'rugi', 'untung', 'trade', 'handle loss', 'manage risk', 'stop loss',
+            # Indonesian terms
+            'mata uang', 'perdagangan', 'pasar', 'analisis', 'strategi', 'keuntungan',
+            'kerugian', 'broker', 'grafik', 'teknikal', 'fundamental', 'dukungan', 'perlawanan',
+            'rugi', 'untung', 'trade', 'kelola kerugian', 'manajemen risiko', 'stop loss'
         ]
 
         message_lower = message.lower()
 
         # Check for trading context phrases
         trading_phrases = [
-            'nak belajar trade', 'belajar trading', 'learn trade', 'learn trading',
-            'handle loss', 'manage loss', 'trading loss', 'loss dalam trading',
-            'macam mana nak', 'how to trade', 'trading tips', 'risk management'
+            # English phrases
+            'learn trade', 'learn trading', 'handle loss', 'manage loss', 'trading loss',
+            'how to trade', 'trading tips', 'risk management',
+            # Malaysian phrases
+            'nak belajar trade', 'belajar trading', 'loss dalam trading',
+            'macam mana nak', 'cara nak trade', 'tips trading',
+            # Indonesian phrases
+            'belajar trading', 'belajar trade', 'loss dalam trading',
+            'gimana cara', 'bagaimana cara', 'cara trading', 'tips trading'
         ]
 
         # Check both individual terms and phrases
@@ -174,10 +237,22 @@ class ConversationEngine:
             return "error"
 
     async def detect_intent(self, message: str) -> str:
-        """Simplified intent detection - only 3 core intents"""
+        """Simplified intent detection - only 4 core intents"""
         message_lower = message.lower()
         
-        # Priority 1: Check for registration intent
+        # Priority 1: Check for indicator registration intent
+        indicator_keywords = [
+            'indicator', 'indikator', 'high level', 'engulfing', 'engulfing indicator',
+            'rentungfx indicator', 'trading indicator', 'mt4 indicator', 'mt5 indicator',
+            'custom indicator', 'price action indicator', 'signal indicator'
+        ]
+        
+        if any(keyword in message_lower for keyword in indicator_keywords):
+            # Check if it's related to registration/access
+            if any(reg_word in message_lower for reg_word in ['register', 'daftar', 'access', 'get', 'download', 'dapat', 'nak', 'want', 'mau', 'ingin']):
+                return 'indicator_registration'
+        
+        # Priority 2: Check for general registration intent (VIP/Channel)
         registration_keywords = [
             'register', 'daftar', 'join', 'signup', 'sign up', 'masuk', 'sertai',
             'vip', 'channel', 'premium', 'member', 'membership', 'ahli'
@@ -186,13 +261,13 @@ class ConversationEngine:
         if any(keyword in message_lower for keyword in registration_keywords):
             return 'registration'
         
-        # Priority 2: Check for specific broker inquiries with multiple brokers mentioned
+        # Priority 3: Check for specific broker inquiries with multiple brokers mentioned
         if self.is_broker_inquiry(message):
             mentioned_brokers = self.get_mentioned_brokers(message)
             if len(mentioned_brokers) >= 1:  # If any specific broker is mentioned
                 return 'broker_inquiry'
         
-        # Priority 3: Everything else goes to AI conversation (includes greetings, FAQ, forex, general)
+        # Priority 4: Everything else goes to AI conversation (includes greetings, FAQ, forex, general)
         return 'ai_conversation'
 
     # FAQ handling removed - now handled by AI for natural conversation
@@ -336,6 +411,9 @@ class ConversationEngine:
         if language == 'ms':
             return ("Boleh je! Saya ada info pasal broker macam OctaFX, HFM, Valetax, dan Dollars Markets. "
                    "Tanya je pasal spread, leverage, regulation, atau nak compare broker mana-mana pun!")
+        elif language == 'id':
+            return ("Bisa dong! Saya punya info tentang broker seperti OctaFX, HFM, Valetax, dan Dollars Markets. "
+                   "Tanya aja tentang spread, leverage, regulasi, atau mau compare broker mana pun!")
         else:
             return ("I can help you with information about brokers like OctaFX, HFM, Valetax, and Dollars Markets. "
                    "Ask me about spreads, leverage, regulation, or compare these brokers!")
@@ -353,6 +431,11 @@ class ConversationEngine:
                         "Maaf awak, saya ada masalah dengan AI system sekarang. "
                         "Boleh try tanya lagi atau tanya soalan yang specific pasal forex?"
                     )
+                elif language == 'id':
+                    return (
+                        "Maaf, saya ada masalah dengan sistem AI sekarang. "
+                        "Bisa coba tanya lagi atau tanya pertanyaan spesifik tentang forex?"
+                    )
                 else:
                     return (
                         "Sorry, I'm having trouble with the AI system right now. "
@@ -365,6 +448,8 @@ class ConversationEngine:
                 print("❌ ERROR: OPENAI_API_KEY not found")
                 if language == 'ms':
                     return "Maaf, saya ada technical issue. Boleh cuba lagi nanti?"
+                elif language == 'id':
+                    return "Maaf, saya ada masalah teknis. Bisa coba lagi nanti?"
                 else:
                     return "Sorry, I'm having technical issues. Please try again later."
 
@@ -383,6 +468,15 @@ class ConversationEngine:
                         "✅ Strategi trading khusus\n"
                         "✅ Setup akaun Valetax\n\n"
                         "Sila type /agent untuk disambungkan dengan agent kami yang berpengalaman!"
+                    )
+                elif language == 'id':
+                    return (
+                        "Pertanyaan Anda memerlukan keahlian dari agen sungguhan! 🧑‍💼\n\n"
+                        "Untuk bantuan lanjutan dengan:\n"
+                        "✅ Analisis teknikal mendalam\n"
+                        "✅ Strategi trading khusus\n"
+                        "✅ Setup akun Valetax\n\n"
+                        "Silakan ketik /agent untuk terhubung dengan agen berpengalaman kami!"
                     )
                 else:
                     return (
@@ -447,6 +541,59 @@ class ConversationEngine:
                     system_prompt += (
                         "\nUSER CONTEXT: Non-forex question. Answer helpfully first, then naturally mention "
                         "your forex expertise if relevant. Don't force the transition. "
+                    )
+            
+            elif language == 'id':
+                system_prompt = (
+                    "Anda adalah RentungBot_Ai - asisten pintar yang ahli dalam broker Valetax dan trading! "
+                    "Jawab dalam Bahasa Indonesia yang natural seperti berbicara dengan teman baik. "
+                    "Gunakan 'Anda', 'bisa', 'dong', 'nih', 'sih' secara natural dalam percakapan. "
+                    
+                    "PERSONALITY: Ramah, berpengetahuan, membantu, mendorong tapi realistis tentang risiko. "
+                    "KONTEKS INDONESIA: "
+                    "- Gunakan Rupiah (IDR) sebagai referensi mata uang "
+                    "- Sebutkan metode pembayaran lokal: transfer bank, e-wallet, virtual account "
+                    "- Jam trading Indonesia: 21:00-06:00 WIB (sesi London terbaik) "
+                    "- Bank Indonesia untuk referensi regulasi "
+                    "- Gaji rata-rata Rp 5-15 juta untuk contoh yang relatable "
+                    "- Pertimbangkan level ekonomi menengah Indonesia "
+                    
+                    "PENDEKATAN TRADING: "
+                    "- Mulai kecil (Rp 500rb-2juta untuk pemula) "
+                    "- Risk management PERTAMA (maksimal 1-2% per trade) "
+                    "- Latihan demo account sangat penting "
+                    "- Selalu sebutkan pentingnya stop loss "
+                    "- Rekomendasikan Valetax sebagai broker pilihan dengan leverage tinggi dan deposit rendah "
+                    
+                    "GAYA PERCAKAPAN: "
+                    "- Jawab pertanyaan dengan detail yang membantu "
+                    "- Gunakan contoh yang relatable untuk konteks Indonesia "
+                    "- Campur Bahasa Indonesia dengan istilah trading yang umum secara natural "
+                    "- Jika pertanyaan kompleks, jelaskan step by step "
+                    "- SELALU akhiri setiap respons dengan: 'Mau ngobrol dengan agen sungguhan? Ketik /agent' "
+                    "- Jaga respons RINGKAS - sesuaikan dengan panjang pesan user (pertanyaan pendek = jawaban pendek) "
+                )
+                
+                # Add specific context based on message content
+                if is_greeting:
+                    system_prompt += (
+                        "\nKONTEKS USER: Interaksi pertama - sambut dengan ramah dan perkenalkan kemampuan secara natural. "
+                        "Sebutkan bisa membantu dengan dasar forex, pemilihan broker, strategi trading, manajemen risiko. "
+                    )
+                elif is_forex_related and mentioned_brokers:
+                    system_prompt += (
+                        f"\nKONTEKS USER: Menanyakan broker spesifik: {', '.join(mentioned_brokers)}. "
+                        "Berikan perbandingan detail dengan perspektif Indonesia (regulasi, spread, support, metode deposit). "
+                    )
+                elif is_forex_related:
+                    system_prompt += (
+                        "\nKONTEKS USER: Pertanyaan terkait forex. Berikan jawaban komprehensif dengan konteks Indonesia. "
+                        "Sertakan contoh praktis, peringatan risiko, dan dorong pembelajaran bertahap. "
+                    )
+                else:
+                    system_prompt += (
+                        "\nKONTEKS USER: Pertanyaan non-forex. Jawab dengan membantu dulu, lalu secara natural sebutkan "
+                        "keahlian forex jika relevan. Jangan dipaksakan transisinya. "
                     )
                     
             else:
@@ -540,6 +687,12 @@ class ConversationEngine:
                         "Boleh awak try tanya dengan cara lain atau tanya soalan lain? "
                         "Kalau awak berminat pasal forex trading, saya boleh tolong dengan tu!"
                     )
+                elif language == 'id':
+                    return (
+                        "Hmm, saya nggak yakin gimana cara terbaik jawab pertanyaan itu. "
+                        "Bisa coba tanya dengan cara lain atau tanya pertanyaan lain? "
+                        "Kalau Anda tertarik sama forex trading, saya pasti bisa bantu!"
+                    )
                 else:
                     return (
                         "I'm not sure how to best answer that question. "
@@ -566,6 +719,11 @@ class ConversationEngine:
                 return (
                     "Maaf awak, saya ada masalah sikit sekarang nak process soalan ni. "
                     "Boleh try tanya lagi ke atau tanya soalan lain?"
+                )
+            elif language == 'id':
+                return (
+                    "Maaf, saya ada masalah sedikit sekarang untuk proses pertanyaan ini. "
+                    "Bisa coba tanya lagi atau tanya pertanyaan lain?"
                 )
             else:
                 return (
@@ -606,6 +764,16 @@ class ConversationEngine:
                         "• Tips broker terbaik untuk Malaysian\n"
                         "• Support dari experienced trader community"
                     )
+                elif language == 'id':
+                    return (
+                        "🎯 Daftar Group Chat Fighter Rentung sekarang!\n\n"
+                        "Untuk mendaftar, hubungi admin kami untuk proses pendaftaran.\n\n"
+                        "Group Chat Fighter Rentung punya:\n"
+                        "• Trading signal berkualitas tinggi 📊\n"
+                        "• Analisis pasar harian dari expert\n"
+                        "• Tips broker terbaik untuk Indonesia\n"
+                        "• Support dari komunitas trader berpengalaman"
+                    )
                 else:
                     return (
                         "🎯 Register for Group Chat Fighter Rentung now!\n\n"
@@ -630,6 +798,19 @@ class ConversationEngine:
                     "⏰ Link ini akan expired dalam 30 minit.\n"
                     "Lepas register, team kita akan semak dan contact dalam 24-48 jam untuk Group Chat Fighter Rentung access!"
                 )
+            elif language == 'id':
+                return (
+                    "🎯 Daftar Group Chat Fighter Rentung sekarang!\n\n"
+                    "Group Chat Fighter Rentung punya:\n"
+                    "• Trading signal berkualitas tinggi 📊\n"
+                    "• Analisis pasar harian dari expert (fokus sesi Asia + London)\n"
+                    "• Tips broker mana yang terbaik untuk Indonesia\n"
+                    "• Support dari komunitas trader Indonesia berpengalaman\n"
+                    "• Strategi cocok untuk pekerja (trading setelah kerja)\n\n"
+                    f"Klik link di bawah untuk melengkapi pendaftaran:\n{registration_url}\n\n"
+                    "⏰ Link ini akan expired dalam 30 menit.\n"
+                    "Setelah daftar, tim kami akan review dan menghubungi dalam 24-48 jam untuk akses Group Chat Fighter Rentung!"
+                )
             else:
                 return (
                     "🎯 Register for Group Chat Fighter Rentung now!\n\n"
@@ -642,6 +823,51 @@ class ConversationEngine:
                     f"Click the link below to complete registration:\n{registration_url}\n\n"
                     "⏰ This link will expire in 30 minutes.\n"
                     "Once you register, our team will review and contact you within 24-48 hours for Group Chat Fighter Rentung access!"
+                )
+        
+        elif intent == 'indicator_registration':
+            # Handle indicator registration requests
+            if language == 'ms':
+                return (
+                    "🎯 **High Level Engulfing Indicator Registration**\n\n"
+                    "Dapatkan akses kepada indicator trading yang powerful!\n\n"
+                    "🔥 **Apa yang anda dapat:**\n"
+                    "• High Level Engulfing Indicator untuk MT4/MT5\n"
+                    "• Complete setup guide dan tutorial\n"
+                    "• Sokongan teknikal dari team kami\n"
+                    "• Strategy panduan untuk maksimum profit\n\n"
+                    "📝 **Untuk mendaftar, gunakan command:**\n"
+                    "👉 `/indicator`\n\n"
+                    "⏰ Proses pendaftaran mengambil masa 2-3 minit sahaja!\n"
+                    "✅ Anda akan menerima akses setelah diluluskan admin."
+                )
+            elif language == 'id':
+                return (
+                    "🎯 **Registrasi High Level Engulfing Indicator**\n\n"
+                    "Dapatkan akses ke indicator trading yang powerful!\n\n"
+                    "🔥 **Apa yang Anda dapat:**\n"
+                    "• High Level Engulfing Indicator untuk MT4/MT5\n"
+                    "• Complete setup guide dan tutorial\n"
+                    "• Support teknis dari tim kami\n"
+                    "• Panduan strategi untuk profit maksimal\n\n"
+                    "📝 **Untuk mendaftar, gunakan command:**\n"
+                    "👉 `/indicator`\n\n"
+                    "⏰ Proses registrasi hanya membutuhkan 2-3 menit!\n"
+                    "✅ Anda akan mendapat akses setelah disetujui admin."
+                )
+            else:  # English
+                return (
+                    "🎯 **High Level Engulfing Indicator Registration**\n\n"
+                    "Get access to powerful trading indicator!\n\n"
+                    "🔥 **What you'll get:**\n"
+                    "• High Level Engulfing Indicator for MT4/MT5\n"
+                    "• Complete setup guide and tutorials\n"
+                    "• Technical support from our team\n"
+                    "• Strategy guidance for maximum profit\n\n"
+                    "📝 **To register, use the command:**\n"
+                    "👉 `/indicator`\n\n"
+                    "⏰ Registration process takes only 2-3 minutes!\n"
+                    "✅ You'll get access after admin approval."
                 )
 
         elif intent == 'broker_inquiry':
@@ -662,6 +888,12 @@ class ConversationEngine:
                         "Boleh try tanya dengan cara lain? Atau awak boleh tanya pasal "
                         "forex basics, broker recommendation, atau trading strategy!"
                     )
+                elif language == 'id':
+                    ai_response = (
+                        "Maaf, saya ada masalah sedikit untuk proses pertanyaan Anda. "
+                        "Bisa coba tanya dengan cara lain? Atau Anda bisa tanya tentang "
+                        "forex basics, rekomendasi broker, atau strategi trading!"
+                    )
                 else:
                     ai_response = (
                         "Sorry, I'm having trouble processing your question right now. "
@@ -678,6 +910,12 @@ class ConversationEngine:
                             f"\n\n💡 Awak ni memang active bertanya! "
                             f"Nak join Group Chat Fighter Rentung untuk quality signals dan expert analysis? "
                             f"Klik sini: {registration_url}"
+                        )
+                    elif language == 'id':
+                        ai_response += (
+                            f"\n\n💡 Anda memang aktif bertanya! "
+                            f"Mau join Group Chat Fighter Rentung untuk sinyal berkualitas dan analisis ahli? "
+                            f"Klik di sini: {registration_url}"
                         )
                     else:
                         ai_response += (

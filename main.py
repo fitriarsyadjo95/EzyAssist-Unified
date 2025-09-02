@@ -350,6 +350,46 @@ if Base:
                 'registration_id': self.registration_id
             }
 
+    class IndicatorRegistration(Base):
+        __tablename__ = "indicator_registrations"
+        
+        id = Column(Integer, primary_key=True, index=True)
+        telegram_id = Column(String, nullable=False, index=True)
+        telegram_username = Column(String, nullable=True)
+        full_name = Column(String, nullable=False)
+        email = Column(String, nullable=False)
+        phone_number = Column(String, nullable=False)
+        trading_experience = Column(String, nullable=False)  # beginner/intermediate/advanced
+        broker_preference = Column(String, nullable=True)
+        trading_capital_range = Column(String, nullable=True)
+        status = Column(Enum(RegistrationStatus), default=RegistrationStatus.PENDING, nullable=False)
+        status_updated_at = Column(DateTime, nullable=True)
+        updated_by_admin = Column(String, nullable=True)
+        custom_message = Column(Text, nullable=True)
+        admin_notes = Column(Text, nullable=True)
+        step_completed = Column(Integer, default=0)
+        created_at = Column(DateTime, default=datetime.utcnow)
+        
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'telegram_id': self.telegram_id,
+                'telegram_username': self.telegram_username,
+                'full_name': self.full_name,
+                'email': self.email,
+                'phone_number': self.phone_number,
+                'trading_experience': self.trading_experience,
+                'broker_preference': self.broker_preference,
+                'trading_capital_range': self.trading_capital_range,
+                'status': self.status.value if self.status else None,
+                'status_updated_at': self.status_updated_at.isoformat() if self.status_updated_at else None,
+                'updated_by_admin': self.updated_by_admin,
+                'custom_message': self.custom_message,
+                'admin_notes': self.admin_notes,
+                'step_completed': self.step_completed,
+                'created_at': self.created_at.isoformat() if self.created_at else None
+            }
+
 # Admin Settings Model
 class AdminSettings(Base):
     __tablename__ = "admin_settings"
@@ -459,6 +499,10 @@ def generate_registration_token(telegram_id: str, telegram_username: str = "", t
         # Include setup_action for campaign setup tokens
         if token_type == "campaign_with_setup" and setup_action:
             payload['setup_action'] = setup_action
+            
+        # Include registration_id for indicator tokens  
+        if token_type == "indicator" and registration_id:
+            payload['registration_id'] = registration_id
         
         secret = os.getenv('JWT_SECRET_KEY')
         if not secret:
@@ -1409,6 +1453,140 @@ class RentungBot_Ai:
         # Log command to database
         self.log_conversation(telegram_id, "/clear", clear_message, "command")
 
+    async def indicator_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /indicator command - start High Level Engulfing Indicator registration flow"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        telegram_username = user.username or ""
+        
+        # Track activity
+        self.command_usage.setdefault('indicator', 0)
+        self.command_usage['indicator'] += 1
+        self.last_activity = datetime.utcnow()
+        self.user_sessions[telegram_id] = self.last_activity
+        
+        # Update daily stats in database
+        self.update_daily_stats(telegram_id, 'indicator')
+        self.reset_daily_tracking()
+        
+        # Detect user's language
+        try:
+            language = self.conversation_engine.detect_language("indicator high level engulfing")
+        except Exception as e:
+            logger.error(f"Error detecting language: {e}")
+            language = 'ms'  # Default to Malaysian
+        
+        try:
+            # Check if user already has a completed indicator registration
+            if SessionLocal:
+                db = SessionLocal()
+                try:
+                    existing_registration = db.query(IndicatorRegistration).filter_by(telegram_id=telegram_id).first()
+                    if existing_registration and existing_registration.step_completed >= 1:
+                        status_text = {
+                            'PENDING': 'Menunggu semakan admin' if language == 'ms' else 'Menunggu review admin' if language == 'id' else 'Pending admin review',
+                            'VERIFIED': 'Diluluskan ✅' if language == 'ms' else 'Disetujui ✅' if language == 'id' else 'Approved ✅',
+                            'REJECTED': 'Ditolak ❌' if language == 'ms' else 'Ditolak ❌' if language == 'id' else 'Rejected ❌',
+                            'ON_HOLD': 'Dalam tindakan 🔄' if language == 'ms' else 'Dalam proses 🔄' if language == 'id' else 'On Hold 🔄'
+                        }.get(existing_registration.status.value, existing_registration.status.value)
+                        
+                        if language == 'ms':
+                            duplicate_message = (
+                                f"⚠️ Anda sudah mempunyai pendaftaran High Level Engulfing Indicator\n\n"
+                                f"📋 Status: {status_text}\n"
+                                f"👤 Nama: {existing_registration.full_name}\n"
+                                f"📧 Email: {existing_registration.email}\n\n"
+                                f"🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran, sila hubungi admin.\n\n"
+                                f"💡 Untuk VIP access, gunakan /register"
+                            )
+                        elif language == 'id':
+                            duplicate_message = (
+                                f"⚠️ Anda sudah memiliki registrasi High Level Engulfing Indicator\n\n"
+                                f"📋 Status: {status_text}\n"
+                                f"👤 Nama: {existing_registration.full_name}\n"
+                                f"📧 Email: {existing_registration.email}\n\n"
+                                f"🔍 Jika Anda perlu update informasi atau ada masalah dengan registrasi, silakan hubungi admin.\n\n"
+                                f"💡 Untuk akses VIP, gunakan /register"
+                            )
+                        else:
+                            duplicate_message = (
+                                f"⚠️ You already have a High Level Engulfing Indicator registration\n\n"
+                                f"📋 Status: {status_text}\n"
+                                f"👤 Name: {existing_registration.full_name}\n"
+                                f"📧 Email: {existing_registration.email}\n\n"
+                                f"🔍 If you need to update information or have issues with your registration, please contact admin.\n\n"
+                                f"💡 For VIP access, use /register"
+                            )
+                        
+                        await update.message.reply_text(duplicate_message)
+                        self.log_conversation(telegram_id, "/indicator", duplicate_message, "command")
+                        return
+                except Exception as e:
+                    logger.error(f"Error checking existing indicator registration: {e}")
+                finally:
+                    db.close()
+            
+            # Generate registration token
+            token = generate_registration_token(telegram_id, telegram_username, token_type="indicator")
+            
+            # Get base URL from environment
+            base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
+            registration_url = f"{base_url}/indicator?token={token}"
+            
+            # Create multilingual response
+            if language == 'ms':
+                indicator_message = (
+                    f"🎯 Pendaftaran High Level Engulfing Indicator\n\n"
+                    f"Dapatkan akses kepada indicator trading yang powerful untuk:\n\n"
+                    f"🔥 **Apa yang anda dapat:**\n"
+                    f"• High Level Engulfing Indicator untuk MT4/MT5\n"
+                    f"• Setup guide lengkap dan tutorial\n"
+                    f"• Sokongan teknikal dari team kami\n"
+                    f"• Strategy panduan untuk maksimum profit\n\n"
+                    f"📝 Klik link di bawah untuk mengisi borang pendaftaran:\n\n"
+                    f"👉 {registration_url}\n\n"
+                    f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
+                    f"🔧 Sila lengkapkan semua maklumat yang diperlukan."
+                )
+            elif language == 'id':
+                indicator_message = (
+                    f"🎯 Registrasi High Level Engulfing Indicator\n\n"
+                    f"Dapatkan akses ke indicator trading yang powerful untuk:\n\n"
+                    f"🔥 **Apa yang Anda dapat:**\n"
+                    f"• High Level Engulfing Indicator untuk MT4/MT5\n"
+                    f"• Setup guide lengkap dan tutorial\n"
+                    f"• Support teknis dari tim kami\n"
+                    f"• Panduan strategi untuk profit maksimal\n\n"
+                    f"📝 Klik link di bawah untuk mengisi form registrasi:\n\n"
+                    f"👉 {registration_url}\n\n"
+                    f"⏰ Link ini akan expired dalam 30 menit.\n"
+                    f"🔧 Silakan lengkapi semua informasi yang diperlukan."
+                )
+            else:  # English
+                indicator_message = (
+                    f"🎯 High Level Engulfing Indicator Registration\n\n"
+                    f"Get access to powerful trading indicator for:\n\n"
+                    f"🔥 **What you'll get:**\n"
+                    f"• High Level Engulfing Indicator for MT4/MT5\n"
+                    f"• Complete setup guide and tutorials\n"
+                    f"• Technical support from our team\n"
+                    f"• Strategy guidance for maximum profit\n\n"
+                    f"📝 Click the link below to fill the registration form:\n\n"
+                    f"👉 {registration_url}\n\n"
+                    f"⏰ This link will expire in 30 minutes.\n"
+                    f"🔧 Please complete all required information."
+                )
+            
+            await update.message.reply_text(indicator_message)
+            
+            # Log command to database
+            self.log_conversation(telegram_id, "/indicator", indicator_message, "command")
+            
+        except Exception as e:
+            logger.error(f"Error in indicator command: {e}")
+            error_message = "Maaf, ada masalah teknikal. Sila cuba lagi." if language == 'ms' else "Maaf, ada masalah teknis. Silakan coba lagi." if language == 'id' else "Sorry, there's a technical issue. Please try again."
+            await update.message.reply_text(error_message)
+
     async def show_registration_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Show registration choice menu between VIP and Campaign"""
         user = update.effective_user
@@ -1640,6 +1818,10 @@ class RentungBot_Ai:
                 elif message_text.startswith('/clear') or message_text == '/clear':
                     logger.info(f"🔧 Manually routing to clear_command: {message_text}")
                     await self.clear_command(update, context)
+                    return
+                elif message_text.startswith('/indicator') or message_text == '/indicator':
+                    logger.info(f"🔧 Manually routing to indicator_command: {message_text}")
+                    await self.indicator_command(update, context)
                     return
                 else:
                     logger.warning(f"⚠️ Unknown command reached handle_message: {message_text}")
@@ -1887,6 +2069,7 @@ class RentungBot_Ai:
         
         self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
+        self.application.add_handler(CommandHandler("indicator", self.indicator_command))
         
         # MessageHandler comes LAST to catch non-command messages
         # All commands should be handled by CommandHandlers above
@@ -2389,6 +2572,218 @@ async def serve_uploaded_file(filename: str):
         filename=filename
     )
 
+# INDICATOR REGISTRATION ROUTES
+
+@app.get("/indicator", response_class=HTMLResponse)
+async def indicator_registration_form(request: Request, token: str = None):
+    """High Level Engulfing Indicator registration form page"""
+    if not token:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Check token type - must be indicator type
+    token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
+    if token_type != 'indicator':
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid token type for indicator registration",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    existing_registration = None
+    if SessionLocal:
+        db = get_db()
+        if db:
+            try:
+                # Check if user already has indicator registration
+                existing_registration = db.query(IndicatorRegistration).filter_by(
+                    telegram_id=telegram_id
+                ).first()
+                
+                if existing_registration and existing_registration.step_completed >= 1:
+                    return templates.TemplateResponse("error.html", {
+                        "request": request,
+                        "error_message": "You already have a High Level Engulfing Indicator registration",
+                        "translations": TRANSLATIONS['ms']
+                    })
+            finally:
+                db.close()
+    
+    form_hash = generate_form_hash()
+    
+    return templates.TemplateResponse("indicator_registration_form.html", {
+        "request": request,
+        "token": token,
+        "telegram_id": telegram_id,
+        "telegram_username": telegram_username,
+        "existing_registration": existing_registration,
+        "form_hash": form_hash,
+        "lang": "ms",
+        "translations": TRANSLATIONS['ms']
+    })
+
+@app.post("/indicator")
+async def submit_indicator_registration(
+    request: Request,
+    token: str = Form(...),
+    full_name: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    trading_experience: str = Form(...),
+    broker_preference: str = Form(""),
+    trading_capital_range: str = Form(""),
+    form_hash: str = Form(...)
+):
+    """Handle High Level Engulfing Indicator registration form submission"""
+    
+    # Verify form hash
+    if not verify_form_hash(form_hash):
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid form submission. Please try again.",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Verify token
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Validate required fields
+    if not all([full_name.strip(), email.strip(), phone_number.strip(), trading_experience.strip()]):
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Please fill in all required fields",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Validate email format
+    try:
+        validate_email(email)
+    except EmailNotValidError:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Please enter a valid email address",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Validate phone number format
+    try:
+        parsed_phone = phonenumbers.parse(phone_number, None)
+        if not phonenumbers.is_valid_number(parsed_phone):
+            raise phonenumbers.NumberParseException(phonenumbers.NumberParseException.NOT_A_NUMBER, "Invalid number")
+    except phonenumbers.NumberParseException:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Please enter a valid phone number",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    if SessionLocal:
+        db = get_db()
+        if db:
+            try:
+                # Check if user already registered
+                existing = db.query(IndicatorRegistration).filter_by(telegram_id=telegram_id).first()
+                if existing and existing.step_completed >= 1:
+                    return templates.TemplateResponse("error.html", {
+                        "request": request,
+                        "error_message": "You already have a High Level Engulfing Indicator registration",
+                        "translations": TRANSLATIONS['ms']
+                    })
+                
+                # Create new registration or update existing
+                if existing:
+                    # Update existing registration
+                    existing.full_name = full_name.strip()
+                    existing.email = email.strip()
+                    existing.phone_number = phone_number.strip()
+                    existing.trading_experience = trading_experience.strip()
+                    existing.broker_preference = broker_preference.strip() if broker_preference else None
+                    existing.trading_capital_range = trading_capital_range.strip() if trading_capital_range else None
+                    existing.step_completed = 1
+                    existing.status = RegistrationStatus.PENDING
+                    
+                    registration = existing
+                else:
+                    # Create new registration
+                    registration = IndicatorRegistration(
+                        telegram_id=telegram_id,
+                        telegram_username=telegram_username,
+                        full_name=full_name.strip(),
+                        email=email.strip(),
+                        phone_number=phone_number.strip(),
+                        trading_experience=trading_experience.strip(),
+                        broker_preference=broker_preference.strip() if broker_preference else None,
+                        trading_capital_range=trading_capital_range.strip() if trading_capital_range else None,
+                        step_completed=1,
+                        status=RegistrationStatus.PENDING
+                    )
+                    db.add(registration)
+                
+                db.commit()
+                
+                # Send confirmation to user via bot
+                await send_indicator_registration_confirmation(telegram_id, registration.to_dict())
+                
+            except Exception as e:
+                db.rollback()
+                logger.error(f"Error saving indicator registration: {e}")
+                return templates.TemplateResponse("error.html", {
+                    "request": request,
+                    "error_message": "Technical issue with database",
+                    "translations": TRANSLATIONS['ms']
+                })
+            finally:
+                db.close()
+    
+    # Redirect to success page
+    return RedirectResponse(url=f"/indicator-success?token={token}", status_code=303)
+
+@app.get("/indicator-success", response_class=HTMLResponse)
+async def indicator_success_page(request: Request, token: str = None):
+    """High Level Engulfing Indicator registration success page"""
+    telegram_id = None
+    registration_id = None
+    
+    if token:
+        telegram_id, telegram_username, token_data = verify_registration_token(token)
+        
+        if telegram_id and SessionLocal:
+            db = get_db()
+            if db:
+                try:
+                    registration = db.query(IndicatorRegistration).filter_by(
+                        telegram_id=telegram_id
+                    ).first()
+                    if registration:
+                        registration_id = f"IND{registration.id:04d}"
+                finally:
+                    db.close()
+    
+    return templates.TemplateResponse("indicator_success.html", {
+        "request": request,
+        "telegram_id": telegram_id,
+        "registration_id": registration_id,
+        "lang": "ms",
+        "translations": TRANSLATIONS['ms']
+    })
+
 @app.post("/telegram_webhook")
 async def handle_telegram_webhook(request: Request):
     """Handle incoming Telegram updates"""
@@ -2649,6 +3044,300 @@ async def send_admin_notification(registration_data: dict):
     except Exception as e:
         logger.error(f"Failed to send admin notification: {e}")
 
+async def send_indicator_registration_confirmation(telegram_id: str, registration_data: dict):
+    """Send High Level Engulfing Indicator registration confirmation to user"""
+    try:
+        if bot_instance and bot_instance.application:
+            # Detect user's language
+            try:
+                language = bot_instance.conversation_engine.detect_language("indicator registration confirmation")
+            except:
+                language = 'ms'  # Default to Malaysian
+            
+            if language == 'ms':
+                confirmation_message = (
+                    f"✅ **Pendaftaran High Level Engulfing Indicator Berjaya!**\n\n"
+                    f"👤 Nama: {registration_data.get('full_name', 'N/A')}\n"
+                    f"📧 Email: {registration_data.get('email', 'N/A')}\n"
+                    f"📱 Telefon: {registration_data.get('phone_number', 'N/A')}\n"
+                    f"📈 Pengalaman: {registration_data.get('trading_experience', 'N/A')}\n\n"
+                    f"🔄 **Status: Menunggu Semakan Admin**\n\n"
+                    f"📋 **Langkah Seterusnya:**\n"
+                    f"• Admin kami akan semak pendaftaran dalam 24-48 jam\n"
+                    f"• Anda akan menerima notifikasi status di sini\n"
+                    f"• Setelah diluluskan, anda akan dapat link download indicator\n\n"
+                    f"🚀 **High Level Engulfing Indicator Features:**\n"
+                    f"• Advanced price action detection\n"
+                    f"• Multi-timeframe analysis\n"
+                    f"• Custom alerts & signals\n"
+                    f"• Complete setup tutorial\n\n"
+                    f"📞 Ada soalan? Hubungi team support kami!"
+                )
+            elif language == 'id':
+                confirmation_message = (
+                    f"✅ **Registrasi High Level Engulfing Indicator Berhasil!**\n\n"
+                    f"👤 Nama: {registration_data.get('full_name', 'N/A')}\n"
+                    f"📧 Email: {registration_data.get('email', 'N/A')}\n"
+                    f"📱 Telepon: {registration_data.get('phone_number', 'N/A')}\n"
+                    f"📈 Pengalaman: {registration_data.get('trading_experience', 'N/A')}\n\n"
+                    f"🔄 **Status: Menunggu Review Admin**\n\n"
+                    f"📋 **Langkah Selanjutnya:**\n"
+                    f"• Admin kami akan review registrasi dalam 24-48 jam\n"
+                    f"• Anda akan menerima notifikasi status di sini\n"
+                    f"• Setelah disetujui, Anda akan dapat link download indicator\n\n"
+                    f"🚀 **Fitur High Level Engulfing Indicator:**\n"
+                    f"• Advanced price action detection\n"
+                    f"• Multi-timeframe analysis\n"
+                    f"• Custom alerts & signals\n"
+                    f"• Tutorial setup lengkap\n\n"
+                    f"📞 Ada pertanyaan? Hubungi team support kami!"
+                )
+            else:  # English
+                confirmation_message = (
+                    f"✅ **High Level Engulfing Indicator Registration Successful!**\n\n"
+                    f"👤 Name: {registration_data.get('full_name', 'N/A')}\n"
+                    f"📧 Email: {registration_data.get('email', 'N/A')}\n"
+                    f"📱 Phone: {registration_data.get('phone_number', 'N/A')}\n"
+                    f"📈 Experience: {registration_data.get('trading_experience', 'N/A')}\n\n"
+                    f"🔄 **Status: Pending Admin Review**\n\n"
+                    f"📋 **Next Steps:**\n"
+                    f"• Our admin will review registration within 24-48 hours\n"
+                    f"• You will receive status notification here\n"
+                    f"• Once approved, you'll get indicator download link\n\n"
+                    f"🚀 **High Level Engulfing Indicator Features:**\n"
+                    f"• Advanced price action detection\n"
+                    f"• Multi-timeframe analysis\n"
+                    f"• Custom alerts & signals\n"
+                    f"• Complete setup tutorial\n\n"
+                    f"📞 Questions? Contact our support team!"
+                )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=telegram_id,
+                text=confirmation_message,
+                parse_mode='Markdown'
+            )
+            logger.info(f"✅ Indicator registration confirmation sent to {telegram_id}")
+            
+            # Also send admin notification
+            await send_indicator_admin_notification(registration_data)
+            
+    except Exception as e:
+        logger.error(f"Failed to send indicator confirmation message: {e}")
+
+async def send_indicator_admin_notification(registration_data: dict):
+    """Send indicator registration notification to admin"""
+    try:
+        # Check if notifications are enabled
+        if get_admin_setting('admin_notification_enabled', 'false') != 'true':
+            logger.info("Admin notifications are disabled")
+            return
+            
+        # Get notification recipient from settings
+        notification_recipient = get_admin_setting('notification_recipient', None)
+        
+        # Fall back to default admin_id if no recipient configured
+        if not notification_recipient:
+            if bot_instance and bot_instance.admin_id:
+                notification_recipient = bot_instance.admin_id
+            else:
+                logger.warning("No notification recipient configured")
+                return
+
+        if bot_instance and bot_instance.application:
+            admin_message = (
+                f"🔔 **New High Level Engulfing Indicator Registration**\n\n"
+                f"👤 **Name:** {registration_data.get('full_name', 'N/A')}\n"
+                f"📧 **Email:** {registration_data.get('email', 'N/A')}\n"
+                f"📱 **Phone:** {registration_data.get('phone_number', 'N/A')}\n"
+                f"📈 **Experience:** {registration_data.get('trading_experience', 'N/A')}\n"
+                f"🏦 **Broker:** {registration_data.get('broker_preference', 'Not specified')}\n"
+                f"💰 **Capital:** {registration_data.get('trading_capital_range', 'Not specified')}\n"
+                f"🆔 **Telegram ID:** {registration_data.get('telegram_id', 'N/A')}\n"
+                f"📅 **Registered:** {registration_data.get('created_at', 'N/A')}\n\n"
+                f"Please review and approve/reject this registration in the admin panel."
+            )
+            
+            # Handle different chat_id formats
+            if notification_recipient.startswith('@'):
+                # For usernames, pass as string
+                chat_id = notification_recipient
+            else:
+                # For numeric chat IDs, ensure it's an integer
+                try:
+                    chat_id = int(notification_recipient)
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid chat_id format: {notification_recipient}")
+                    return
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=chat_id, 
+                text=admin_message,
+                parse_mode='Markdown'
+            )
+            logger.info(f"✅ Indicator admin notification sent to {notification_recipient}")
+    except Exception as e:
+        logger.error(f"Failed to send indicator admin notification: {e}")
+
+async def send_indicator_approval_message(telegram_id: str, registration_data: dict):
+    """Send indicator registration approval message to user with download link"""
+    try:
+        if bot_instance and bot_instance.application:
+            # Detect user's language
+            try:
+                language = bot_instance.conversation_engine.detect_language("indicator approval message")
+            except:
+                language = 'ms'  # Default to Malaysian
+            
+            if language == 'ms':
+                approval_message = (
+                    f"🎉 **Pendaftaran High Level Engulfing Indicator Diluluskan!**\n\n"
+                    f"✅ **Status: DILULUSKAN**\n\n"
+                    f"👤 Nama: {registration_data.get('full_name', 'N/A')}\n"
+                    f"📧 Email: {registration_data.get('email', 'N/A')}\n\n"
+                    f"🚀 **Langkah Seterusnya:**\n"
+                    f"1. Download indicator dari link di bawah\n"
+                    f"2. Install ke platform MT4/MT5 anda\n"
+                    f"3. Ikuti tutorial setup yang disediakan\n"
+                    f"4. Mula trading dengan indicator baru!\n\n"
+                    f"📥 **Download Link:**\n"
+                    f"👉 https://t.me/RentungFX_bot\n\n"
+                    f"📚 **Tutorial & Support:**\n"
+                    f"• Setup guide lengkap tersedia\n"
+                    f"• Support team sedia membantu\n"
+                    f"• Tips penggunaan indicator\n\n"
+                    f"💡 **Tips Trading:**\n"
+                    f"• Gunakan risk management yang baik\n"
+                    f"• Test dengan demo account dulu\n"
+                    f"• Combine dengan analisis sendiri\n\n"
+                    f"Selamat trading dan semoga profitable! 🎯"
+                )
+            elif language == 'id':
+                approval_message = (
+                    f"🎉 **Registrasi High Level Engulfing Indicator Disetujui!**\n\n"
+                    f"✅ **Status: DISETUJUI**\n\n"
+                    f"👤 Nama: {registration_data.get('full_name', 'N/A')}\n"
+                    f"📧 Email: {registration_data.get('email', 'N/A')}\n\n"
+                    f"🚀 **Langkah Selanjutnya:**\n"
+                    f"1. Download indicator dari link di bawah\n"
+                    f"2. Install ke platform MT4/MT5 Anda\n"
+                    f"3. Ikuti tutorial setup yang disediakan\n"
+                    f"4. Mulai trading dengan indicator baru!\n\n"
+                    f"📥 **Link Download:**\n"
+                    f"👉 https://t.me/RentungFX_bot\n\n"
+                    f"📚 **Tutorial & Support:**\n"
+                    f"• Setup guide lengkap tersedia\n"
+                    f"• Tim support siap membantu\n"
+                    f"• Tips penggunaan indicator\n\n"
+                    f"💡 **Tips Trading:**\n"
+                    f"• Gunakan manajemen risiko yang baik\n"
+                    f"• Test dengan akun demo dulu\n"
+                    f"• Combine dengan analisis sendiri\n\n"
+                    f"Selamat trading dan semoga profitable! 🎯"
+                )
+            else:  # English
+                approval_message = (
+                    f"🎉 **High Level Engulfing Indicator Registration Approved!**\n\n"
+                    f"✅ **Status: APPROVED**\n\n"
+                    f"👤 Name: {registration_data.get('full_name', 'N/A')}\n"
+                    f"📧 Email: {registration_data.get('email', 'N/A')}\n\n"
+                    f"🚀 **Next Steps:**\n"
+                    f"1. Download indicator from link below\n"
+                    f"2. Install to your MT4/MT5 platform\n"
+                    f"3. Follow the setup tutorial provided\n"
+                    f"4. Start trading with your new indicator!\n\n"
+                    f"📥 **Download Link:**\n"
+                    f"👉 https://t.me/RentungFX_bot\n\n"
+                    f"📚 **Tutorial & Support:**\n"
+                    f"• Complete setup guide available\n"
+                    f"• Support team ready to help\n"
+                    f"• Indicator usage tips\n\n"
+                    f"💡 **Trading Tips:**\n"
+                    f"• Use proper risk management\n"
+                    f"• Test with demo account first\n"
+                    f"• Combine with your own analysis\n\n"
+                    f"Happy trading and stay profitable! 🎯"
+                )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=telegram_id,
+                text=approval_message,
+                parse_mode='Markdown'
+            )
+            logger.info(f"✅ Indicator approval message sent to {telegram_id}")
+            
+    except Exception as e:
+        logger.error(f"Failed to send indicator approval message: {e}")
+
+async def send_indicator_rejection_message(telegram_id: str, registration_data: dict):
+    """Send indicator registration rejection message to user"""
+    try:
+        if bot_instance and bot_instance.application:
+            # Detect user's language
+            try:
+                language = bot_instance.conversation_engine.detect_language("indicator rejection message")
+            except:
+                language = 'ms'  # Default to Malaysian
+            
+            if language == 'ms':
+                rejection_message = (
+                    f"❌ **Pendaftaran High Level Engulfing Indicator Ditolak**\n\n"
+                    f"👤 Nama: {registration_data.get('full_name', 'N/A')}\n\n"
+                    f"Maaf, pendaftaran anda untuk High Level Engulfing Indicator tidak dapat diluluskan pada masa ini.\n\n"
+                    f"🔄 **Pilihan Seterusnya:**\n"
+                    f"• Sila semak maklumat pendaftaran anda\n"
+                    f"• Hubungi support team untuk bantuan\n"
+                    f"• Cuba daftar semula dengan maklumat yang tepat\n\n"
+                    f"💡 **Alternatif:**\n"
+                    f"• Gunakan /register untuk VIP access\n"
+                    f"• Join community trading kami\n"
+                    f"• Akses free resources dan tips\n\n"
+                    f"📞 **Perlukan Bantuan?**\n"
+                    f"Hubungi team support kami untuk penjelasan lanjut."
+                )
+            elif language == 'id':
+                rejection_message = (
+                    f"❌ **Registrasi High Level Engulfing Indicator Ditolak**\n\n"
+                    f"👤 Nama: {registration_data.get('full_name', 'N/A')}\n\n"
+                    f"Maaf, registrasi Anda untuk High Level Engulfing Indicator tidak dapat disetujui saat ini.\n\n"
+                    f"🔄 **Pilihan Selanjutnya:**\n"
+                    f"• Silakan periksa informasi registrasi Anda\n"
+                    f"• Hubungi tim support untuk bantuan\n"
+                    f"• Coba daftar ulang dengan informasi yang benar\n\n"
+                    f"💡 **Alternatif:**\n"
+                    f"• Gunakan /register untuk akses VIP\n"
+                    f"• Join komunitas trading kami\n"
+                    f"• Akses resource gratis dan tips\n\n"
+                    f"📞 **Butuh Bantuan?**\n"
+                    f"Hubungi tim support kami untuk penjelasan lebih lanjut."
+                )
+            else:  # English
+                rejection_message = (
+                    f"❌ **High Level Engulfing Indicator Registration Rejected**\n\n"
+                    f"👤 Name: {registration_data.get('full_name', 'N/A')}\n\n"
+                    f"Sorry, your registration for High Level Engulfing Indicator cannot be approved at this time.\n\n"
+                    f"🔄 **Next Options:**\n"
+                    f"• Please check your registration information\n"
+                    f"• Contact support team for assistance\n"
+                    f"• Try registering again with correct information\n\n"
+                    f"💡 **Alternatives:**\n"
+                    f"• Use /register for VIP access\n"
+                    f"• Join our trading community\n"
+                    f"• Access free resources and tips\n\n"
+                    f"📞 **Need Help?**\n"
+                    f"Contact our support team for further explanation."
+                )
+            
+            await bot_instance.application.bot.send_message(
+                chat_id=telegram_id,
+                text=rejection_message,
+                parse_mode='Markdown'
+            )
+            logger.info(f"✅ Indicator rejection message sent to {telegram_id}")
+            
+    except Exception as e:
+        logger.error(f"Failed to send indicator rejection message: {e}")
+
 # API Models for external integration
 class RegistrationPayload(BaseModel):
     telegram_id: str
@@ -2808,6 +3497,32 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     Campaign.is_active == True
                 ).count()
                 
+                # Indicator registration statistics
+                total_indicator_registrations = db.query(IndicatorRegistration).count()
+                recent_indicator_registrations = db.query(IndicatorRegistration).filter(
+                    IndicatorRegistration.created_at >= week_ago
+                ).count()
+                
+                # Indicator status statistics
+                indicator_pending_count = db.query(IndicatorRegistration).filter(
+                    IndicatorRegistration.status == RegistrationStatus.PENDING
+                ).count()
+                indicator_verified_count = db.query(IndicatorRegistration).filter(
+                    IndicatorRegistration.status == RegistrationStatus.VERIFIED
+                ).count()
+                indicator_rejected_count = db.query(IndicatorRegistration).filter(
+                    IndicatorRegistration.status == RegistrationStatus.REJECTED
+                ).count()
+                indicator_on_hold_count = db.query(IndicatorRegistration).filter(
+                    IndicatorRegistration.status == RegistrationStatus.ON_HOLD
+                ).count()
+                
+                # Indicator registrations by experience level
+                indicator_experience_stats = db.query(
+                    IndicatorRegistration.trading_experience,
+                    func.count(IndicatorRegistration.id).label('count')
+                ).group_by(IndicatorRegistration.trading_experience).all()
+                
                 # Campaign performance
                 campaign_performance = db.query(
                     Campaign.name,
@@ -2831,7 +3546,14 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     "campaign_registrations": campaign_registrations,
                     "regular_registrations": regular_registrations,
                     "active_campaigns_count": active_campaigns_count,
-                    "campaign_performance": campaign_performance
+                    "campaign_performance": campaign_performance,
+                    "total_indicator_registrations": total_indicator_registrations,
+                    "recent_indicator_registrations": recent_indicator_registrations,
+                    "indicator_pending_count": indicator_pending_count,
+                    "indicator_verified_count": indicator_verified_count,
+                    "indicator_rejected_count": indicator_rejected_count,
+                    "indicator_on_hold_count": indicator_on_hold_count,
+                    "indicator_experience_stats": indicator_experience_stats
                 }
             except Exception as e:
                 logger.error(f"Error getting admin stats: {e}")
@@ -2847,7 +3569,14 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     "campaign_registrations": 0,
                     "regular_registrations": 0,
                     "active_campaigns_count": 0,
-                    "campaign_performance": []
+                    "campaign_performance": [],
+                    "total_indicator_registrations": 0,
+                    "recent_indicator_registrations": 0,
+                    "indicator_pending_count": 0,
+                    "indicator_verified_count": 0,
+                    "indicator_rejected_count": 0,
+                    "indicator_on_hold_count": 0,
+                    "indicator_experience_stats": []
                 }
             finally:
                 db.close()
@@ -4722,6 +5451,224 @@ async def check_import_dependencies(admin = Depends(get_current_admin)):
     status["import_functional"] = status["pandas_available"] and status["openpyxl_available"]
     
     return JSONResponse(content=status)
+
+# =============================================================================
+# INDICATOR REGISTRATION ADMIN ROUTES
+# =============================================================================
+
+@app.get("/admin/indicator-registrations", response_class=HTMLResponse)
+async def admin_indicator_registrations_list(
+    request: Request, 
+    page: int = 1, 
+    search: str = "",
+    status: str = "",
+    admin = Depends(get_current_admin)
+):
+    """Admin indicator registrations list page"""
+    # Check for redirect
+    redirect_check = admin_login_required(request)
+    if redirect_check:
+        return redirect_check
+    
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database not available",
+        })
+
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database connection failed",
+        })
+    
+    try:
+        # Pagination settings
+        per_page = 20
+        offset = (page - 1) * per_page
+        
+        # Build query
+        query = db.query(IndicatorRegistration)
+        
+        # Apply search filter
+        if search.strip():
+            search_term = f"%{search.strip()}%"
+            query = query.filter(
+                or_(
+                    IndicatorRegistration.full_name.ilike(search_term),
+                    IndicatorRegistration.email.ilike(search_term),
+                    IndicatorRegistration.phone_number.ilike(search_term),
+                    IndicatorRegistration.telegram_id.ilike(search_term)
+                )
+            )
+        
+        # Apply status filter
+        if status and status != "all":
+            query = query.filter(IndicatorRegistration.status == RegistrationStatus(status))
+        
+        # Get total count for pagination
+        total_registrations = query.count()
+        
+        # Get paginated results
+        registrations = query.order_by(
+            IndicatorRegistration.created_at.desc()
+        ).offset(offset).limit(per_page).all()
+        
+        # Calculate pagination info
+        total_pages = (total_registrations + per_page - 1) // per_page
+        has_next = page < total_pages
+        has_prev = page > 1
+        
+    except Exception as e:
+        logger.error(f"Error getting indicator registrations: {e}")
+        registrations = []
+        total_registrations = 0
+        total_pages = 0
+        has_next = False
+        has_prev = False
+    finally:
+        db.close()
+    
+    return templates.TemplateResponse("admin/indicator_registrations.html", {
+        "request": request,
+        "registrations": registrations,
+        "total_registrations": total_registrations,
+        "page": page,
+        "total_pages": total_pages,
+        "has_next": has_next,
+        "has_prev": has_prev,
+        "search": search,
+        "status_filter": status,
+        "admin": admin,
+        "title": "Indicator Registrations"
+    })
+
+@app.get("/admin/indicator-registrations/{registration_id}", response_class=HTMLResponse)
+async def admin_indicator_registration_detail(
+    request: Request, 
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Admin indicator registration detail page"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    registration = None
+    try:
+        registration = db.query(IndicatorRegistration).filter(
+            IndicatorRegistration.id == registration_id
+        ).first()
+    except Exception as e:
+        logger.error(f"Error getting indicator registration {registration_id}: {e}")
+    finally:
+        db.close()
+    
+    if not registration:
+        raise HTTPException(status_code=404, detail="Indicator registration not found")
+    
+    return templates.TemplateResponse("admin/indicator_registration_detail.html", {
+        "request": request,
+        "registration": registration,
+        "admin": admin,
+        "title": f"Indicator Registration #{registration_id}"
+    })
+
+@app.post("/admin/indicator-registrations/{registration_id}/verify")
+async def verify_indicator_registration(
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Verify an indicator registration and send access details"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Get registration
+        registration = db.query(IndicatorRegistration).filter(
+            IndicatorRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Update status
+        registration.status = RegistrationStatus.VERIFIED
+        registration.status_updated_at = datetime.utcnow()
+        registration.updated_by_admin = admin.get('username', 'Unknown')
+        
+        db.commit()
+        
+        # Send approval message to user
+        await send_indicator_approval_message(registration.telegram_id, registration.to_dict())
+        
+        logger.info(f"✅ Indicator registration {registration_id} verified by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Registration verified and user notified"
+        })
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error verifying indicator registration {registration_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to verify registration")
+    finally:
+        db.close()
+
+@app.post("/admin/indicator-registrations/{registration_id}/reject")
+async def reject_indicator_registration(
+    registration_id: int,
+    admin = Depends(get_current_admin)
+):
+    """Reject an indicator registration"""
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        # Get registration
+        registration = db.query(IndicatorRegistration).filter(
+            IndicatorRegistration.id == registration_id
+        ).first()
+        
+        if not registration:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        # Update status
+        registration.status = RegistrationStatus.REJECTED
+        registration.status_updated_at = datetime.utcnow()
+        registration.updated_by_admin = admin.get('username', 'Unknown')
+        
+        db.commit()
+        
+        # Send rejection message to user
+        await send_indicator_rejection_message(registration.telegram_id, registration.to_dict())
+        
+        logger.info(f"✅ Indicator registration {registration_id} rejected by {admin.get('username')}")
+        
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Registration rejected and user notified"
+        })
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error rejecting indicator registration {registration_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to reject registration")
+    finally:
+        db.close()
 
 # MANUAL MIGRATION ENDPOINTS
 
