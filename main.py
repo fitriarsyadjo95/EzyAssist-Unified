@@ -2945,7 +2945,7 @@ async def submit_indicator_registration(
             VipRegistration.telegram_id == telegram_id
         ).first()
         
-        if existing_reg and existing_reg.is_completed:
+        if existing_reg and existing_reg.step_completed >= 2:
             return templates.TemplateResponse("error.html", {
                 "request": request,
                 "error_message": "You already have a completed registration",
