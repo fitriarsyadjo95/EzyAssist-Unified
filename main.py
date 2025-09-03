@@ -2819,6 +2819,7 @@ async def indicator_registration_form(request: Request, token: str):
             "setup_action": setup_action,
             "campaign": {"name": "High Level Engulfing Indicator"},  # Mimic campaign structure
             "is_indicator_registration": True,  # Flag for indicator-specific behavior
+            "is_campaign_registration": False,  # Disable campaign info card
             "form_action": f"/indicator/submit",
             "page_title": f"Complete High Level Engulfing Indicator Registration"
         }
