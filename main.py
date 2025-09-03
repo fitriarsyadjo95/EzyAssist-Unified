@@ -7900,6 +7900,7 @@ async def migrate_database():
                 )
             """))
             indicator_table_exists = indicator_table_result.scalar()
+            logger.info(f"🔍 Indicator table exists: {indicator_table_exists}")
             
             if indicator_table_exists:
                 # Check existing columns in indicator_registrations
@@ -7909,9 +7910,15 @@ async def migrate_database():
                     WHERE table_name = 'indicator_registrations'
                 """))
                 existing_indicator_columns = [row[0] for row in indicator_columns_result]
+                logger.info(f"🔍 Existing indicator columns: {existing_indicator_columns}")
                 
                 # Check if we need to migrate from old structure to new structure
-                if 'trading_experience' in existing_indicator_columns and 'brokerage_name' not in existing_indicator_columns:
+                has_old_columns = 'trading_experience' in existing_indicator_columns
+                has_new_columns = 'brokerage_name' in existing_indicator_columns
+                
+                logger.info(f"🔍 Has old columns: {has_old_columns}, Has new columns: {has_new_columns}")
+                
+                if has_old_columns and not has_new_columns:
                     logger.info("🔄 Migrating indicator_registrations table structure...")
                     
                     # Add new columns
@@ -7924,6 +7931,7 @@ async def migrate_database():
                         ADD COLUMN deposit_proof_2 VARCHAR,
                         ADD COLUMN deposit_proof_3 VARCHAR
                     """))
+                    logger.info("✅ Added new columns")
                     
                     # Copy data from old columns to new columns (best effort mapping)
                     conn.execute(text("""
@@ -7934,6 +7942,7 @@ async def migrate_database():
                             client_id = 'MIGRATED_' || id::text
                         WHERE brokerage_name IS NULL
                     """))
+                    logger.info("✅ Migrated existing data")
                     
                     # Drop old columns
                     conn.execute(text("""
@@ -7942,6 +7951,7 @@ async def migrate_database():
                         DROP COLUMN IF EXISTS broker_preference,
                         DROP COLUMN IF EXISTS trading_capital_range
                     """))
+                    logger.info("✅ Dropped old columns")
                     
                     # Update step_completed for existing records
                     conn.execute(text("""
@@ -7949,9 +7959,18 @@ async def migrate_database():
                         SET step_completed = 3 
                         WHERE step_completed >= 1
                     """))
+                    logger.info("✅ Updated step_completed")
                     
                     conn.commit()
                     logger.info("✅ Migrated indicator_registrations table structure")
+                elif not has_old_columns and has_new_columns:
+                    logger.info("✅ Indicator table already has new structure")
+                elif not has_old_columns and not has_new_columns:
+                    logger.info("⚠️ Indicator table exists but has neither old nor new columns - this is unexpected")
+                else:
+                    logger.info("⚠️ Indicator table has both old and new columns - manual intervention may be needed")
+            else:
+                logger.info("✅ Indicator table will be created with new structure")
             
             # Check if audit log table exists
             audit_table_result = conn.execute(text("""
