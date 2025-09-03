@@ -1485,8 +1485,11 @@ class RentungBot_Ai:
             if SessionLocal:
                 db = SessionLocal()
                 try:
-                    existing_registration = db.query(IndicatorRegistration).filter_by(telegram_id=telegram_id).first()
-                    if existing_registration and existing_registration.step_completed >= 3:
+                    existing_registration = db.query(VipRegistration).filter(
+                        VipRegistration.telegram_id == telegram_id,
+                        VipRegistration.campaign_name == "High Level Engulfing Indicator"
+                    ).first()
+                    if existing_registration and existing_registration.step_completed >= 2:
                         status_text = {
                             'PENDING': 'Menunggu semakan admin' if language == 'ms' else 'Menunggu review admin' if language == 'id' else 'Pending admin review',
                             'VERIFIED': 'Diluluskan ✅' if language == 'ms' else 'Disetujui ✅' if language == 'id' else 'Approved ✅',
@@ -1530,8 +1533,8 @@ class RentungBot_Ai:
                 finally:
                     db.close()
             
-            # Generate registration token
-            token = generate_registration_token(telegram_id, telegram_username, token_type="indicator")
+            # Generate registration token for initial step (account setup)
+            token = generate_registration_token(telegram_id, telegram_username, token_type="initial")
             
             # Get base URL from environment
             base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
@@ -2629,114 +2632,218 @@ async def serve_uploaded_file(filename: str):
 # INDICATOR REGISTRATION ROUTES
 
 @app.get("/indicator", response_class=HTMLResponse)
-async def indicator_info_page(request: Request, token: str = None, step: str = "info"):
-    """High Level Engulfing Indicator information and registration page"""
+async def indicator_account_setup(request: Request, token: str = None):
+    """Indicator account setup page (Step 1) - matches campaign flow exactly"""
+    logger.info(f"🔍 Indicator account setup accessed: token={token[:20] if token else 'None'}...")
+    
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    # Check if token is provided
     if not token:
+        logger.warning(f"❌ Missing registration token")
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Missing registration token. Please use the link from the Telegram bot.",
-            "translations": TRANSLATIONS['ms']
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
-    # Verify token first
+    # Decode and validate token
+    logger.info(f"🔍 Verifying registration token...")
     telegram_id, telegram_username, token_data = verify_registration_token(token)
-    if not telegram_id:
+    logger.info(f"🔍 Token verification result: telegram_id={telegram_id}, username={telegram_username}, token_data={token_data is not None}")
+    
+    if not token_data:
+        logger.warning(f"❌ Invalid or expired token")
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Invalid or expired registration token",
-            "translations": TRANSLATIONS['ms']
-        })
-
-    # Check token type - must be indicator type
-    token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
-    if token_type != 'indicator':
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error_message": "Invalid token type for indicator registration",
-            "translations": TRANSLATIONS['ms']
+            "error_message": "Invalid or expired registration link. Please request a new link.",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
-    # Route based on step parameter
-    if step == "register":
-        return await indicator_registration_form(request, token)
-    else:
-        # Show information page first
-        return templates.TemplateResponse("indicator_info.html", {
+    try:
+        # Create indicator object (mimic campaign structure)
+        indicator = {
+            "name": "High Level Engulfing Indicator",
+            "description": "Indicator trading canggih untuk mengesan corak engulfing berkualiti tinggi"
+        }
+        
+        context = {
             "request": request,
             "token": token,
+            "campaign": indicator,  # Use same variable name as campaign for template compatibility
             "telegram_id": telegram_id,
             "telegram_username": telegram_username,
             "lang": "ms",
-            "translations": TRANSLATIONS['ms']
+            "translations": {
+                "title": f"{indicator['name']} - Account Setup",
+                "error_title": "Ralat Pendaftaran", 
+                "back_to_telegram": "Kembali ke Telegram"
+            },
+            "is_indicator": True  # Flag to customize template behavior if needed
+        }
+        
+        return templates.TemplateResponse("campaign_account_setup.html", context)
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading indicator account setup: {e}")
+        logger.error(f"❌ Full error traceback: {traceback.format_exc()}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Account setup loading failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+
+@app.post("/indicator/continue")
+async def indicator_continue(request: Request, token: str = Form(...), setup_action: str = Form(...)):
+    """Handle indicator setup action selection (Step 1 -> Step 2) - matches campaign flow exactly"""
+    logger.info(f"🔍 Indicator continue: token={token[:20]}..., setup_action={setup_action}")
+    
+    # Decode and validate token
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    
+    if not token_data:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration link. Please request a new link.",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    try:
+        # Validate setup_action
+        if setup_action not in ['new_account', 'partner_change']:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "Invalid setup action selected",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+            })
+        
+        # Generate new token with setup action for Step 2
+        new_token = generate_registration_token(
+            telegram_id=telegram_id,
+            telegram_username=telegram_username or "",
+            token_type="indicator_with_setup", 
+            setup_action=setup_action
+        )
+        
+        # Redirect to registration form (Step 2)
+        return RedirectResponse(url=f"/indicator/register?token={new_token}", status_code=303)
+        
+    except Exception as e:
+        logger.error(f"❌ Error processing indicator setup action: {e}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Setup processing failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
 
 @app.get("/indicator/register", response_class=HTMLResponse)
-async def indicator_registration_form(request: Request, token: str = None):
-    """High Level Engulfing Indicator registration form page"""
-    if not token:
+async def indicator_registration_form(request: Request, token: str):
+    """Indicator registration form (Step 2) - matches campaign flow exactly"""
+    logger.info(f"🔍 Indicator registration form (Step 2): token={token[:20]}...")
+    
+    if not SessionLocal:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
-            "translations": TRANSLATIONS['ms']
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
+    # Decode and validate token
+    logger.info(f"🔍 Verifying registration token...")
     telegram_id, telegram_username, token_data = verify_registration_token(token)
-    if not telegram_id:
+    logger.info(f"🔍 Token verification result: telegram_id={telegram_id}, username={telegram_username}, token_data={token_data is not None}")
+    
+    if not token_data:
+        logger.warning(f"❌ Invalid or expired token")
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Invalid or expired registration token",
-            "translations": TRANSLATIONS['ms']
+            "error_message": "Invalid or expired registration link. Please request a new link.",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
-    # Check token type - must be indicator type
-    token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
-    if token_type != 'indicator':
+    db = get_db()
+    if not db:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Invalid token type for indicator registration",
-            "translations": TRANSLATIONS['ms']
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
-    existing_registration = None
-    if SessionLocal:
-        db = get_db()
-        if db:
-            try:
-                # Check if user already has indicator registration
-                existing_registration = db.query(IndicatorRegistration).filter_by(
-                    telegram_id=telegram_id
-                ).first()
-                
-                if existing_registration and existing_registration.step_completed >= 3:
-                    return templates.TemplateResponse("error.html", {
-                        "request": request,
-                        "error_message": "You already have a High Level Engulfing Indicator registration",
-                        "translations": TRANSLATIONS['ms']
-                    })
-            finally:
-                db.close()
-    
-    form_hash = generate_form_hash()
-    
-    return templates.TemplateResponse("indicator_registration_form.html", {
-        "request": request,
-        "token": token,
-        "telegram_id": telegram_id,
-        "telegram_username": telegram_username,
-        "existing_registration": existing_registration,
-        "form_hash": form_hash,
-        "lang": "ms",
-        "translations": TRANSLATIONS['ms']
-    })
+    try:
+        # Get setup action from token
+        setup_action = token_data.get('setup_action', 'new_account')
+        
+        # Get registration data if exists (for editing existing registrations)
+        registration_id = token_data.get('registration_id')
+        registration_data = None
+        if registration_id:
+            registration_data = db.query(VipRegistration).filter(VipRegistration.id == registration_id).first()
+        
+        # Generate form hash for security
+        form_hash = generate_form_hash()
+        
+        # Prepare template data using same structure as campaign registration
+        template_data = {
+            "request": request,
+            "telegram_id": telegram_id,
+            "telegram_username": telegram_username,
+            "token": token,
+            "form_hash": form_hash,
+            "translations": TRANSLATIONS['ms'],
+            "token_type": token_data.get('token_type', 'indicator_with_setup'),
+            "existing_registration": registration_data.to_dict() if registration_data else None,
+            "is_resubmission": registration_data is not None,
+            "setup_action": setup_action,
+            "campaign": {"name": "High Level Engulfing Indicator"},  # Mimic campaign structure
+            "is_indicator_registration": True,  # Flag for indicator-specific behavior
+            "form_action": f"/indicator/submit",
+            "page_title": f"Complete High Level Engulfing Indicator Registration"
+        }
+        
+        return templates.TemplateResponse("simple_form.html", template_data)
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading indicator registration form: {e}")
+        logger.error(f"❌ Full error traceback: {traceback.format_exc()}")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Registration form loading failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    finally:
+        db.close()
 
-@app.post("/indicator/register")
+@app.post("/indicator/submit")
 async def submit_indicator_registration(
     request: Request,
     token: str = Form(...),
     full_name: str = Form(...),
     email: str = Form(...),
     phone_number: str = Form(...),
-    brokerage_name: str = Form(...),
     deposit_amount: str = Form(...),
     client_id: str = Form(...),
     deposit_proof_1: UploadFile = File(None),
@@ -2744,31 +2851,38 @@ async def submit_indicator_registration(
     deposit_proof_3: UploadFile = File(None),
     form_hash: str = Form(...)
 ):
-    """Handle High Level Engulfing Indicator registration form submission"""
+    """Handle indicator registration form submission (matches campaign flow exactly)"""
+    logger.info(f"🔍 Indicator submission: token={token[:20]}...")
     
-    # Verify form hash
-    if not verify_form_hash(form_hash):
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error_message": "Invalid form submission. Please try again.",
-            "translations": TRANSLATIONS['ms']
-        })
-    
-    # Verify token
+    # Decode and validate token
     telegram_id, telegram_username, token_data = verify_registration_token(token)
-    if not telegram_id:
+    
+    if not token_data:
+        logger.warning(f"❌ Invalid token in form submission")
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Invalid or expired registration token",
-            "translations": TRANSLATIONS['ms']
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    # Verify form hash
+    if not verify_form_hash(form_hash):
+        logger.warning(f"❌ Invalid form hash")
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid form submission - security check failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     # Validate required fields
-    if not all([full_name.strip(), email.strip(), phone_number.strip(), trading_experience.strip()]):
+    if not all([full_name.strip(), email.strip(), phone_number.strip(), deposit_amount.strip(), client_id.strip()]):
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Please fill in all required fields",
-            "translations": TRANSLATIONS['ms']
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     # Validate email format
@@ -2778,7 +2892,8 @@ async def submit_indicator_registration(
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Please enter a valid email address",
-            "translations": TRANSLATIONS['ms']
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
     # Validate phone number format
@@ -2790,106 +2905,161 @@ async def submit_indicator_registration(
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error_message": "Please enter a valid phone number",
-            "translations": TRANSLATIONS['ms']
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
-    if SessionLocal:
-        db = get_db()
-        if db:
-            try:
-                # Check if user already registered
-                existing = db.query(IndicatorRegistration).filter_by(telegram_id=telegram_id).first()
-                if existing and existing.step_completed >= 3:
-                    return templates.TemplateResponse("error.html", {
-                        "request": request,
-                        "error_message": "You already have a High Level Engulfing Indicator registration",
-                        "translations": TRANSLATIONS['ms']
-                    })
-                
-                # Handle file uploads
-                uploaded_files = []
-                upload_dir = "uploads/indicator_registrations"
-                
-                for file_field in [deposit_proof_1, deposit_proof_2, deposit_proof_3]:
-                    if file_field and file_field.filename:
-                        try:
-                            # Generate unique filename
-                            import uuid
-                            file_extension = file_field.filename.split('.')[-1] if '.' in file_field.filename else ''
-                            unique_filename = f"{uuid.uuid4().hex}.{file_extension}" if file_extension else str(uuid.uuid4().hex)
-                            
-                            # Create upload directory if it doesn't exist
-                            os.makedirs(upload_dir, exist_ok=True)
-                            
-                            # Save file
-                            file_path = os.path.join(upload_dir, unique_filename)
-                            with open(file_path, "wb") as buffer:
-                                content = await file_field.read()
-                                buffer.write(content)
-                            
-                            uploaded_files.append(file_path)
-                        except Exception as e:
-                            logger.error(f"Error uploading file {file_field.filename}: {e}")
-                
-                # Create new registration or update existing
-                if existing:
-                    # Update existing registration
-                    existing.full_name = full_name.strip()
-                    existing.email = email.strip()
-                    existing.phone_number = phone_number.strip()
-                    existing.brokerage_name = brokerage_name.strip()
-                    existing.deposit_amount = deposit_amount.strip()
-                    existing.client_id = client_id.strip()
-                    
-                    # Update file paths
-                    if len(uploaded_files) > 0:
-                        existing.deposit_proof_1 = uploaded_files[0]
-                    if len(uploaded_files) > 1:
-                        existing.deposit_proof_2 = uploaded_files[1]
-                    if len(uploaded_files) > 2:
-                        existing.deposit_proof_3 = uploaded_files[2]
-                        
-                    existing.step_completed = 3
-                    existing.status = RegistrationStatus.PENDING
-                    
-                    registration = existing
-                else:
-                    # Create new registration
-                    registration = IndicatorRegistration(
-                        telegram_id=telegram_id,
-                        telegram_username=telegram_username,
-                        full_name=full_name.strip(),
-                        email=email.strip(),
-                        phone_number=phone_number.strip(),
-                        brokerage_name=brokerage_name.strip(),
-                        deposit_amount=deposit_amount.strip(),
-                        client_id=client_id.strip(),
-                        deposit_proof_1=uploaded_files[0] if len(uploaded_files) > 0 else None,
-                        deposit_proof_2=uploaded_files[1] if len(uploaded_files) > 1 else None,
-                        deposit_proof_3=uploaded_files[2] if len(uploaded_files) > 2 else None,
-                        step_completed=3,
-                        status=RegistrationStatus.PENDING
-                    )
-                    db.add(registration)
-                
-                db.commit()
-                
-                # Send confirmation to user via bot
-                await send_indicator_registration_confirmation(telegram_id, registration.to_dict())
-                
-            except Exception as e:
-                db.rollback()
-                logger.error(f"Error saving indicator registration: {e}")
-                return templates.TemplateResponse("error.html", {
-                    "request": request,
-                    "error_message": "Technical issue with database",
-                    "translations": TRANSLATIONS['ms']
-                })
-            finally:
-                db.close()
+    if not SessionLocal:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database not available",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
     
-    # Redirect to success page
-    return RedirectResponse(url=f"/indicator-success?token={token}", status_code=303)
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Database connection failed",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    
+    try:
+        # Get setup action from token
+        setup_action = token_data.get('setup_action', 'new_account')
+        
+        # Check for existing VIP registration (we reuse VIP registration table)
+        existing_reg = db.query(VipRegistration).filter(
+            VipRegistration.telegram_id == telegram_id
+        ).first()
+        
+        if existing_reg and existing_reg.is_completed:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error_message": "You already have a completed registration",
+                "lang": "ms",
+                "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+            })
+        
+        # Handle file uploads
+        uploaded_files = []
+        upload_dir = "uploads/indicator_registrations"
+        
+        for file_field in [deposit_proof_1, deposit_proof_2, deposit_proof_3]:
+            if file_field and file_field.filename:
+                try:
+                    # Generate unique filename
+                    import uuid
+                    file_extension = file_field.filename.split('.')[-1] if '.' in file_field.filename else ''
+                    unique_filename = f"{uuid.uuid4().hex}.{file_extension}" if file_extension else str(uuid.uuid4().hex)
+                    
+                    # Create upload directory if it doesn't exist
+                    os.makedirs(upload_dir, exist_ok=True)
+                    
+                    # Save file
+                    file_path = os.path.join(upload_dir, unique_filename)
+                    with open(file_path, "wb") as buffer:
+                        content = await file_field.read()
+                        buffer.write(content)
+                    
+                    uploaded_files.append(file_path)
+                except Exception as e:
+                    logger.error(f"Error uploading file {file_field.filename}: {e}")
+
+        # Create or update registration with indicator tag
+        if existing_reg:
+            # Update existing registration
+            existing_reg.full_name = full_name.strip()
+            existing_reg.email = email.strip()
+            existing_reg.phone_number = phone_number.strip()
+            existing_reg.brokerage_name = "Valetax"  # Fixed to Valetax for indicator
+            existing_reg.deposit_amount = deposit_amount.strip()
+            existing_reg.client_id = client_id.strip()
+            
+            # Update file paths
+            if len(uploaded_files) > 0:
+                existing_reg.deposit_proof_1_path = uploaded_files[0]
+            if len(uploaded_files) > 1:
+                existing_reg.deposit_proof_2_path = uploaded_files[1]
+            if len(uploaded_files) > 2:
+                existing_reg.deposit_proof_3_path = uploaded_files[2]
+            
+            existing_reg.step_completed = 2  # Both steps completed
+            existing_reg.account_setup_action = AccountSetupAction.NEW_ACCOUNT if setup_action == 'new_account' else AccountSetupAction.PARTNER_CHANGE
+            existing_reg.is_campaign_registration = True  # Mark as special registration
+            existing_reg.campaign_name = "High Level Engulfing Indicator"  # Tag as indicator
+            
+            registration = existing_reg
+            logger.info(f"✅ Updated existing indicator registration for telegram_id: {telegram_id}")
+        else:
+            # Create new registration
+            registration = VipRegistration(
+                telegram_id=telegram_id,
+                telegram_username=telegram_username or "",
+                full_name=full_name.strip(),
+                email=email.strip(),
+                phone_number=phone_number.strip(),
+                brokerage_name="Valetax",  # Fixed to Valetax for indicator
+                deposit_amount=deposit_amount.strip(),
+                client_id=client_id.strip(),
+                deposit_proof_1_path=uploaded_files[0] if len(uploaded_files) > 0 else None,
+                deposit_proof_2_path=uploaded_files[1] if len(uploaded_files) > 1 else None,
+                deposit_proof_3_path=uploaded_files[2] if len(uploaded_files) > 2 else None,
+                step_completed=2,  # Both steps completed
+                account_setup_action=AccountSetupAction.NEW_ACCOUNT if setup_action == 'new_account' else AccountSetupAction.PARTNER_CHANGE,
+                is_campaign_registration=True,  # Mark as special registration
+                campaign_name="High Level Engulfing Indicator"  # Tag as indicator
+            )
+            db.add(registration)
+            logger.info(f"✅ Created new indicator registration for telegram_id: {telegram_id}")
+        
+        db.commit()
+        
+        # Send confirmation message via bot (reuse VIP confirmation with indicator customization)
+        try:
+            if bot_instance:
+                # Create indicator-specific confirmation message
+                confirmation_message = (
+                    f"🎯 **High Level Engulfing Indicator Registration - Berjaya!**\n\n"
+                    f"Terima kasih {registration.full_name}! 🙌\n\n"
+                    f"📋 **Maklumat Pendaftaran:**\n"
+                    f"• Registration ID: IND{registration.id:04d}\n"
+                    f"• Email: {registration.email}\n"
+                    f"• Phone: {registration.phone_number}\n"
+                    f"• Setup: {'Akaun Baharu' if setup_action == 'new_account' else 'Tukar Broker'}\n\n"
+                    f"⏳ **Next Steps:**\n"
+                    f"• Team kami akan review maklumat anda dalam 24-48 jam\n"
+                    f"• Anda akan menerima indicator files dan setup guide selepas approval\n"
+                    f"• Ada soalan? Just type /help\n\n"
+                    f"📈 Get ready untuk upgrade your trading game! 🚀"
+                )
+                
+                await bot_instance.send_message(
+                    chat_id=telegram_id,
+                    text=confirmation_message,
+                    parse_mode='Markdown'
+                )
+                logger.info(f"✅ Sent indicator registration confirmation to {telegram_id}")
+        except Exception as e:
+            logger.error(f"❌ Error sending indicator registration confirmation: {e}")
+        
+        # Redirect to success page
+        return RedirectResponse(url=f"/indicator-success?token={token}", status_code=303)
+        
+    except Exception as e:
+        logger.error(f"❌ Error processing indicator registration: {e}")
+        logger.error(f"❌ Full error traceback: {traceback.format_exc()}")
+        db.rollback()
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": f"Registration processing failed: {str(e)}",
+            "lang": "ms",
+            "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
+        })
+    finally:
+        db.close()
 
 @app.get("/indicator-success", response_class=HTMLResponse)
 async def indicator_success_page(request: Request, token: str = None):
@@ -2904,8 +3074,10 @@ async def indicator_success_page(request: Request, token: str = None):
             db = get_db()
             if db:
                 try:
-                    registration = db.query(IndicatorRegistration).filter_by(
-                        telegram_id=telegram_id
+                    # Look for VIP registration with indicator tag
+                    registration = db.query(VipRegistration).filter(
+                        VipRegistration.telegram_id == telegram_id,
+                        VipRegistration.campaign_name == "High Level Engulfing Indicator"
                     ).first()
                     if registration:
                         registration_id = f"IND{registration.id:04d}"
