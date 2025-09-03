@@ -359,9 +359,12 @@ if Base:
         full_name = Column(String, nullable=False)
         email = Column(String, nullable=False)
         phone_number = Column(String, nullable=False)
-        trading_experience = Column(String, nullable=False)  # beginner/intermediate/advanced
-        broker_preference = Column(String, nullable=True)
-        trading_capital_range = Column(String, nullable=True)
+        brokerage_name = Column(String, nullable=False)
+        deposit_amount = Column(String, nullable=False)
+        client_id = Column(String, nullable=False)
+        deposit_proof_1 = Column(String, nullable=True)
+        deposit_proof_2 = Column(String, nullable=True)
+        deposit_proof_3 = Column(String, nullable=True)
         status = Column(Enum(RegistrationStatus), default=RegistrationStatus.PENDING, nullable=False)
         status_updated_at = Column(DateTime, nullable=True)
         updated_by_admin = Column(String, nullable=True)
@@ -1483,7 +1486,7 @@ class RentungBot_Ai:
                 db = SessionLocal()
                 try:
                     existing_registration = db.query(IndicatorRegistration).filter_by(telegram_id=telegram_id).first()
-                    if existing_registration and existing_registration.step_completed >= 1:
+                    if existing_registration and existing_registration.step_completed >= 3:
                         status_text = {
                             'PENDING': 'Menunggu semakan admin' if language == 'ms' else 'Menunggu review admin' if language == 'id' else 'Pending admin review',
                             'VERIFIED': 'Diluluskan ✅' if language == 'ms' else 'Disetujui ✅' if language == 'id' else 'Approved ✅',
@@ -2614,7 +2617,7 @@ async def indicator_registration_form(request: Request, token: str = None):
                     telegram_id=telegram_id
                 ).first()
                 
-                if existing_registration and existing_registration.step_completed >= 1:
+                if existing_registration and existing_registration.step_completed >= 3:
                     return templates.TemplateResponse("error.html", {
                         "request": request,
                         "error_message": "You already have a High Level Engulfing Indicator registration",
@@ -2643,9 +2646,12 @@ async def submit_indicator_registration(
     full_name: str = Form(...),
     email: str = Form(...),
     phone_number: str = Form(...),
-    trading_experience: str = Form(...),
-    broker_preference: str = Form(""),
-    trading_capital_range: str = Form(""),
+    brokerage_name: str = Form(...),
+    deposit_amount: str = Form(...),
+    client_id: str = Form(...),
+    deposit_proof_1: UploadFile = File(None),
+    deposit_proof_2: UploadFile = File(None),
+    deposit_proof_3: UploadFile = File(None),
     form_hash: str = Form(...)
 ):
     """Handle High Level Engulfing Indicator registration form submission"""
@@ -2703,12 +2709,37 @@ async def submit_indicator_registration(
             try:
                 # Check if user already registered
                 existing = db.query(IndicatorRegistration).filter_by(telegram_id=telegram_id).first()
-                if existing and existing.step_completed >= 1:
+                if existing and existing.step_completed >= 3:
                     return templates.TemplateResponse("error.html", {
                         "request": request,
                         "error_message": "You already have a High Level Engulfing Indicator registration",
                         "translations": TRANSLATIONS['ms']
                     })
+                
+                # Handle file uploads
+                uploaded_files = []
+                upload_dir = "uploads/indicator_registrations"
+                
+                for file_field in [deposit_proof_1, deposit_proof_2, deposit_proof_3]:
+                    if file_field and file_field.filename:
+                        try:
+                            # Generate unique filename
+                            import uuid
+                            file_extension = file_field.filename.split('.')[-1] if '.' in file_field.filename else ''
+                            unique_filename = f"{uuid.uuid4().hex}.{file_extension}" if file_extension else str(uuid.uuid4().hex)
+                            
+                            # Create upload directory if it doesn't exist
+                            os.makedirs(upload_dir, exist_ok=True)
+                            
+                            # Save file
+                            file_path = os.path.join(upload_dir, unique_filename)
+                            with open(file_path, "wb") as buffer:
+                                content = await file_field.read()
+                                buffer.write(content)
+                            
+                            uploaded_files.append(file_path)
+                        except Exception as e:
+                            logger.error(f"Error uploading file {file_field.filename}: {e}")
                 
                 # Create new registration or update existing
                 if existing:
@@ -2716,10 +2747,19 @@ async def submit_indicator_registration(
                     existing.full_name = full_name.strip()
                     existing.email = email.strip()
                     existing.phone_number = phone_number.strip()
-                    existing.trading_experience = trading_experience.strip()
-                    existing.broker_preference = broker_preference.strip() if broker_preference else None
-                    existing.trading_capital_range = trading_capital_range.strip() if trading_capital_range else None
-                    existing.step_completed = 1
+                    existing.brokerage_name = brokerage_name.strip()
+                    existing.deposit_amount = deposit_amount.strip()
+                    existing.client_id = client_id.strip()
+                    
+                    # Update file paths
+                    if len(uploaded_files) > 0:
+                        existing.deposit_proof_1 = uploaded_files[0]
+                    if len(uploaded_files) > 1:
+                        existing.deposit_proof_2 = uploaded_files[1]
+                    if len(uploaded_files) > 2:
+                        existing.deposit_proof_3 = uploaded_files[2]
+                        
+                    existing.step_completed = 3
                     existing.status = RegistrationStatus.PENDING
                     
                     registration = existing
@@ -2731,10 +2771,13 @@ async def submit_indicator_registration(
                         full_name=full_name.strip(),
                         email=email.strip(),
                         phone_number=phone_number.strip(),
-                        trading_experience=trading_experience.strip(),
-                        broker_preference=broker_preference.strip() if broker_preference else None,
-                        trading_capital_range=trading_capital_range.strip() if trading_capital_range else None,
-                        step_completed=1,
+                        brokerage_name=brokerage_name.strip(),
+                        deposit_amount=deposit_amount.strip(),
+                        client_id=client_id.strip(),
+                        deposit_proof_1=uploaded_files[0] if len(uploaded_files) > 0 else None,
+                        deposit_proof_2=uploaded_files[1] if len(uploaded_files) > 1 else None,
+                        deposit_proof_3=uploaded_files[2] if len(uploaded_files) > 2 else None,
+                        step_completed=3,
                         status=RegistrationStatus.PENDING
                     )
                     db.add(registration)

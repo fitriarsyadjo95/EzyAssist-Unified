@@ -23,11 +23,11 @@
                         </div>
                         <div class="step-indicator" data-step="2">
                             <div class="step-circle">2</div>
-                            <div class="step-label">Trading Info</div>
+                            <div class="step-label">Brokerage Info</div>
                         </div>
                         <div class="step-indicator" data-step="3">
                             <div class="step-circle">3</div>
-                            <div class="step-label">Konfirmasi</div>
+                            <div class="step-label">Bukti Deposit</div>
                         </div>
                     </div>
                     
@@ -38,7 +38,7 @@
                 </div>
 
                 <!-- Registration Form -->
-                <form method="post" id="indicatorRegistrationForm" action="/indicator" novalidate>
+                <form method="post" id="indicatorRegistrationForm" action="/indicator" enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="token" value="{{ token }}">
                     <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
                     <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
@@ -93,117 +93,90 @@
                         </div>
                     </div>
 
-                    <!-- Step 2: Trading Information -->
+                    <!-- Step 2: Brokerage Information -->
                     <div class="form-step" id="step-2" data-step="2" style="display: none;">
-                        <h5 class="mb-4 text-primary">Langkah 2: Maklumat Trading</h5>
+                        <h5 class="mb-4 text-primary">Langkah 2: Info Brokerage & Deposit</h5>
                         
-                        <!-- Trading Experience -->
+                        <!-- Brokerage Name -->
                         <div class="mb-4">
-                            <label for="trading_experience" class="form-label">
-                                Pengalaman Trading <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-chart-line fa-sm"></i></span>
-                                <select class="form-select form-control-lg" id="trading_experience" name="trading_experience" required>
-                                    <option value="">Pilih tahap pengalaman anda</option>
-                                    <option value="beginner" {% if existing_registration and existing_registration.trading_experience == 'beginner' %}selected{% endif %}>
-                                        Pemula (Kurang dari 6 bulan)
-                                    </option>
-                                    <option value="intermediate" {% if existing_registration and existing_registration.trading_experience == 'intermediate' %}selected{% endif %}>
-                                        Pertengahan (6 bulan - 2 tahun)
-                                    </option>
-                                    <option value="advanced" {% if existing_registration and existing_registration.trading_experience == 'advanced' %}selected{% endif %}>
-                                        Mahir (Lebih dari 2 tahun)
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <!-- Broker Preference -->
-                        <div class="mb-4">
-                            <label for="broker_preference" class="form-label">
-                                Broker Pilihan <small class="text-muted">(opsional)</small>
+                            <label for="brokerage_name" class="form-label">
+                                Nama Broker <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-building fa-sm"></i></span>
-                                <select class="form-select form-control-lg" id="broker_preference" name="broker_preference">
-                                    <option value="">Pilih broker (opsional)</option>
-                                    <option value="Valetax" {% if existing_registration and existing_registration.broker_preference == 'Valetax' %}selected{% endif %}>Valetax</option>
-                                    <option value="OctaFX" {% if existing_registration and existing_registration.broker_preference == 'OctaFX' %}selected{% endif %}>OctaFX</option>
-                                    <option value="HFM" {% if existing_registration and existing_registration.broker_preference == 'HFM' %}selected{% endif %}>HFM (HotForex)</option>
-                                    <option value="Dollars Markets" {% if existing_registration and existing_registration.broker_preference == 'Dollars Markets' %}selected{% endif %}>Dollars Markets</option>
-                                    <option value="XM" {% if existing_registration and existing_registration.broker_preference == 'XM' %}selected{% endif %}>XM</option>
-                                    <option value="Exness" {% if existing_registration and existing_registration.broker_preference == 'Exness' %}selected{% endif %}>Exness</option>
-                                    <option value="IC Markets" {% if existing_registration and existing_registration.broker_preference == 'IC Markets' %}selected{% endif %}>IC Markets</option>
-                                    <option value="Other" {% if existing_registration and existing_registration.broker_preference == 'Other' %}selected{% endif %}>Lain-lain</option>
+                                <select class="form-select form-control-lg" id="brokerage_name" name="brokerage_name" required>
+                                    <option value="">Pilih broker awak...</option>
+                                    <option value="Valetax™" selected>Valetax™</option>
+                                    <option value="OctaFX">OctaFX</option>
+                                    <option value="HFM">HFM</option>
+                                    <option value="DollarsMarkets">DollarsMarkets</option>
+                                    <option value="XM">XM</option>
+                                    <option value="Exness">Exness</option>
+                                    <option value="IC Markets">IC Markets</option>
                                 </select>
                             </div>
                         </div>
-                        
-                        <!-- Trading Capital Range -->
+
+                        <!-- Deposit Amount -->
                         <div class="mb-4">
-                            <label for="trading_capital_range" class="form-label">
-                                Modal Trading <small class="text-muted">(opsional)</small>
+                            <label for="deposit_amount" class="form-label">
+                                Amaun Deposit (Amaun dalam $) <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-money-bill-wave fa-sm"></i></span>
-                                <select class="form-select form-control-lg" id="trading_capital_range" name="trading_capital_range">
-                                    <option value="">Pilih julat modal (opsional)</option>
-                                    <option value="Under $500" {% if existing_registration and existing_registration.trading_capital_range == 'Under $500' %}selected{% endif %}>Bawah $500</option>
-                                    <option value="$500 - $1,000" {% if existing_registration and existing_registration.trading_capital_range == '$500 - $1,000' %}selected{% endif %}>$500 - $1,000</option>
-                                    <option value="$1,000 - $5,000" {% if existing_registration and existing_registration.trading_capital_range == '$1,000 - $5,000' %}selected{% endif %}>$1,000 - $5,000</option>
-                                    <option value="$5,000 - $10,000" {% if existing_registration and existing_registration.trading_capital_range == '$5,000 - $10,000' %}selected{% endif %}>$5,000 - $10,000</option>
-                                    <option value="Above $10,000" {% if existing_registration and existing_registration.trading_capital_range == 'Above $10,000' %}selected{% endif %}>Atas $10,000</option>
-                                </select>
+                                <input type="text" class="form-control form-control-lg" id="deposit_amount" name="deposit_amount" 
+                                       placeholder="Contoh: 100" required>
+                            </div>
+                        </div>
+
+                        <!-- Client ID -->
+                        <div class="mb-4">
+                            <label for="client_id" class="form-label">
+                                Client ID / Login <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-id-card fa-sm"></i></span>
+                                <input type="text" class="form-control form-control-lg" id="client_id" name="client_id" 
+                                       placeholder="Masukkan Client ID / Login anda" required>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Step 3: Confirmation -->
+                    <!-- Step 3: Deposit Proof -->
                     <div class="form-step" id="step-3" data-step="3" style="display: none;">
-                        <h5 class="mb-4 text-primary">Langkah 3: Konfirmasi Pendaftaran</h5>
+                        <h5 class="mb-4 text-primary">Langkah 3: Upload Bukti Deposit</h5>
                         
-                        <!-- Indicator Features -->
-                        <div class="feature-list text-start mb-4">
-                            <h6 class="mb-3">
-                                <i class="fas fa-rocket text-primary me-2"></i>
-                                High Level Engulfing Indicator Features
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2">
-                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                            Pengesanan price action canggih
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                            Analisis multi-timeframe
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2">
-                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                            Alert & signal yang disesuaikan
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                            Tutorial setup lengkap
-                                        </li>
-                                    </ul>
+                        <!-- Deposit Proof Files -->
+                        <div class="mb-4">
+                            <label for="deposit_proof" class="form-label">
+                                Bukti Deposit <small class="text-muted">(opsional)</small>
+                            </label>
+                            <small class="d-block text-muted mb-3">Upload screenshot bukti deposit atau transaksi anda. Format yang disokong: JPG, PNG, PDF</small>
+                            
+                            <div class="mb-3">
+                                <label for="deposit_proof_1" class="form-label text-muted">File 1</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    <input type="file" class="form-control" id="deposit_proof_1" name="deposit_proof_1" 
+                                           accept="image/*,.pdf" aria-label="File 1">
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Important Notice -->
-                        <div class="alert alert-warning mb-4">
-                            <div class="d-flex align-items-start">
-                                <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
-                                <div>
-                                    <strong>Notis Penting:</strong><br>
-                                    Pendaftaran ini adalah untuk tujuan edukasi. Trading melibatkan risiko. Sila pastikan anda memahami risiko sebelum menggunakan sebarang strategi trading atau indicator.
+                            
+                            <div class="mb-3">
+                                <label for="deposit_proof_2" class="form-label text-muted">File 2</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    <input type="file" class="form-control" id="deposit_proof_2" name="deposit_proof_2" 
+                                           accept="image/*,.pdf" aria-label="File 2">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="deposit_proof_3" class="form-label text-muted">File 3</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    <input type="file" class="form-control" id="deposit_proof_3" name="deposit_proof_3" 
+                                           accept="image/*,.pdf" aria-label="File 3">
                                 </div>
                             </div>
                         </div>
