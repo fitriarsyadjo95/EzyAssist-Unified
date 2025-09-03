@@ -23,7 +23,8 @@
             </div>
             
             <div class="card-body p-4 p-md-5">
-                <!-- Campaign Requirements Alert -->
+                <!-- Campaign Requirements Alert (only show for campaigns, not indicators) -->
+                {% if not is_indicator %}
                 <div class="alert alert-success border-0 mb-4">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-dollar-sign bg-success text-white rounded-circle p-2 me-3"></i>
@@ -37,6 +38,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <div class="text-center mb-4">
                     <i class="fas fa-chart-line text-primary mb-3" style="font-size: 3rem;"></i>
