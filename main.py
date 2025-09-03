@@ -36,7 +36,7 @@ from telegram import Update, constants
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Database and external services
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Text, or_, func, text, Enum, Float, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Text, or_, and_, func, text, Enum, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import jwt
@@ -500,7 +500,7 @@ def generate_registration_token(telegram_id: str, telegram_username: str = "", t
             payload['campaign_id'] = campaign_id
             
         # Include setup_action for campaign setup tokens
-        if token_type == "campaign_with_setup" and setup_action:
+        if token_type in ["campaign_with_setup", "indicator_with_setup"] and setup_action:
             payload['setup_action'] = setup_action
             
         # Include registration_id for indicator tokens  
@@ -3029,7 +3029,7 @@ async def submit_indicator_registration(
         
         # Send confirmation message via bot (reuse VIP confirmation with indicator customization)
         try:
-            if bot_instance:
+            if bot_instance and hasattr(bot_instance, 'send_message'):
                 # Create indicator-specific confirmation message
                 confirmation_message = (
                     f"🎯 **High Level Engulfing Indicator Registration - Berjaya!**\n\n"
@@ -3052,8 +3052,11 @@ async def submit_indicator_registration(
                     parse_mode='Markdown'
                 )
                 logger.info(f"✅ Sent indicator registration confirmation to {telegram_id}")
+            else:
+                logger.warning(f"⚠️ Bot instance not available, skipping confirmation message")
         except Exception as e:
             logger.error(f"❌ Error sending indicator registration confirmation: {e}")
+            # Don't let bot messaging errors break the registration process
         
         # Redirect to success page
         return RedirectResponse(url=f"/indicator-success?token={token}", status_code=303)
