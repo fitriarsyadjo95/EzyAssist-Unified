@@ -546,6 +546,14 @@ def generate_form_hash() -> str:
     """Generate form security hash"""
     return hashlib.sha256(f"{time.time()}{secrets.token_hex(16)}".encode()).hexdigest()[:16]
 
+def verify_form_hash(form_hash: str) -> bool:
+    """Verify form security hash - for now just check if it exists and has correct length"""
+    if not form_hash:
+        return False
+    # Basic validation - form hash should be 16 character hex string
+    import re
+    return bool(re.match(r'^[a-f0-9]{16}$', form_hash))
+
 # Database session dependency
 def get_db():
     if not SessionLocal:
