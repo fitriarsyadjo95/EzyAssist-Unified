@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #111827 !important;
+        font-family: 'Inter', sans-serif !important;
+        min-height: 100vh;
+    }
+    .info-card {
+        background: #FFFFFF !important;
+        border: none !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 16px !important;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        font-weight: 500;
+        padding: 12px 32px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+    .navbar {
+        display: none !important;
+    }
+    .feature-grid {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid #667eea;
+    }
+    .feature-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .feature-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .requirements-section {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    .hero-section {
+        text-align: center;
+        padding: 2rem 0;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    .indicator-logo {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <div class="card info-card">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Hero Section -->
+                    <div class="hero-section">
+                        <div class="indicator-logo">
+                            <i class="fas fa-chart-line text-white" style="font-size: 2rem;"></i>
+                        </div>
+                        <h1 class="h2 mb-3 text-primary fw-bold">High Level Engulfing Indicator</h1>
+                        <p class="lead text-muted mb-0">
+                            Indicator trading canggih untuk mengesan corak engulfing berkualiti tinggi
+                        </p>
+                    </div>
+
+                    <!-- Features Section -->
+                    <div class="feature-grid">
+                        <h5 class="mb-3 fw-bold">
+                            <i class="fas fa-rocket text-primary me-2"></i>
+                            Features Eksklusif
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-search text-white" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <div>
+                                        <strong>Advanced Price Action</strong><br>
+                                        <small class="text-muted">Pengesanan corak canggih</small>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-layer-group text-white" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <div>
+                                        <strong>Multi-Timeframe</strong><br>
+                                        <small class="text-muted">Analisis pelbagai timeframe</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-bell text-white" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <div>
+                                        <strong>Custom Alerts</strong><br>
+                                        <small class="text-muted">Signal trading real-time</small>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-cogs text-white" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <div>
+                                        <strong>MT4 & MT5</strong><br>
+                                        <small class="text-muted">Compatible kedua platform</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Package Contents -->
+                    <div class="mt-4">
+                        <h5 class="mb-3 fw-bold">
+                            <i class="fas fa-gift text-primary me-2"></i>
+                            Apa Yang Anda Dapat
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-file-code text-success me-2"></i>
+                                        File indicator (.ex4/.mq4)
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-book text-success me-2"></i>
+                                        Setup guide step-by-step
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-play-circle text-success me-2"></i>
+                                        Video tutorial lengkap
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-headset text-success me-2"></i>
+                                        Technical support
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Requirements -->
+                    <div class="requirements-section">
+                        <h5 class="mb-3 fw-bold text-warning">
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            Syarat Kelayakan
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Akaun trading aktif
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Minimum deposit
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Verification lengkap
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        3-step registration
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Important Notice -->
+                    <div class="alert alert-warning mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                            <div>
+                                <strong>Notis Penting:</strong><br>
+                                Indicator ini untuk tujuan edukasi. Trading melibatkan risiko - sila gunakan dengan bijak dan bertanggungjawab.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Registration Steps Preview -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-list-ol text-primary me-2"></i>
+                            Proses Registration (3 Langkah)
+                        </h6>
+                        <div class="d-flex justify-content-between text-center">
+                            <div class="flex-fill">
+                                <div class="badge bg-primary rounded-circle mb-2" style="width: 30px; height: 30px; line-height: 16px;">1</div>
+                                <div><small>Maklumat Diri</small></div>
+                            </div>
+                            <div class="flex-fill">
+                                <div class="badge bg-primary rounded-circle mb-2" style="width: 30px; height: 30px; line-height: 16px;">2</div>
+                                <div><small>Info Brokerage</small></div>
+                            </div>
+                            <div class="flex-fill">
+                                <div class="badge bg-primary rounded-circle mb-2" style="width: 30px; height: 30px; line-height: 16px;">3</div>
+                                <div><small>Bukti Deposit</small></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="/indicator?token={{ token }}&step=register" class="btn btn-primary btn-lg py-3 fw-bold">
+                            <i class="fas fa-arrow-right me-2"></i>Mula Pendaftaran Sekarang
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Registration akan diproses dalam 24-48 jam
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="bg-light p-4 text-center">
+                    <h6 class="mb-2">Perlu Bantuan?</h6>
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-headset me-2"></i>
+                        Tim support kami sedia membantu dengan sebarang pertanyaan tentang indicator atau proses registration.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

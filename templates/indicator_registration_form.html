@@ -38,7 +38,7 @@
                 </div>
 
                 <!-- Registration Form -->
-                <form method="post" id="indicatorRegistrationForm" action="/indicator" enctype="multipart/form-data" novalidate>
+                <form method="post" id="indicatorRegistrationForm" action="/indicator/register" enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="token" value="{{ token }}">
                     <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
                     <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">

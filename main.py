@@ -1537,48 +1537,96 @@ class RentungBot_Ai:
             base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
             registration_url = f"{base_url}/indicator?token={token}"
             
-            # Create multilingual response
+            # Create multilingual response with detailed explanation
             if language == 'ms':
                 indicator_message = (
-                    f"🎯 Pendaftaran High Level Engulfing Indicator\n\n"
-                    f"Dapatkan akses kepada indicator trading yang powerful untuk:\n\n"
-                    f"🔥 **Apa yang anda dapat:**\n"
-                    f"• High Level Engulfing Indicator untuk MT4/MT5\n"
-                    f"• Setup guide lengkap dan tutorial\n"
-                    f"• Sokongan teknikal dari team kami\n"
-                    f"• Strategy panduan untuk maksimum profit\n\n"
-                    f"📝 Klik link di bawah untuk mengisi borang pendaftaran:\n\n"
+                    f"🎯 **High Level Engulfing Indicator**\n\n"
+                    f"Selamat datang {user.first_name}! 👋\n\n"
+                    f"**Apa itu High Level Engulfing Indicator?**\n"
+                    f"Indicator trading canggih yang mengesan corak engulfing berkualiti tinggi untuk membantu anda:\n\n"
+                    f"🔥 **Features Eksklusif:**\n"
+                    f"• Advanced price action detection\n"
+                    f"• Multi-timeframe analysis capability\n"
+                    f"• Custom alerts & trading signals\n"
+                    f"• Compatible dengan MT4 & MT5\n"
+                    f"• Backtesting features included\n\n"
+                    f"🎁 **Package Lengkap:**\n"
+                    f"• Indicator file (.ex4/.mq4)\n"
+                    f"• Setup guide step-by-step\n"
+                    f"• Trading strategy manual\n"
+                    f"• Video tutorial\n"
+                    f"• Technical support dari team\n\n"
+                    f"📋 **Syarat Kelayakan:**\n"
+                    f"• Ada akaun trading aktif (any broker)\n"
+                    f"• Minimum deposit dalam akaun\n"
+                    f"• Lengkapkan verification process\n"
+                    f"• Ikut 3-step registration seperti VIP\n\n"
+                    f"⚠️ **Penting:** Indicator ini untuk educational purposes. Trading melibatkan risiko - gunakan dengan bijak.\n\n"
+                    f"**Ready untuk proceed? 🚀**\n"
+                    f"Klik link untuk mula registration:\n\n"
                     f"👉 {registration_url}\n\n"
-                    f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
-                    f"🔧 Sila lengkapkan semua maklumat yang diperlukan."
+                    f"⏰ Link aktif untuk 30 minit sahaja\n"
+                    f"📝 Akan melalui 3 steps: Personal Info → Brokerage Info → Deposit Proof"
                 )
             elif language == 'id':
                 indicator_message = (
-                    f"🎯 Registrasi High Level Engulfing Indicator\n\n"
-                    f"Dapatkan akses ke indicator trading yang powerful untuk:\n\n"
-                    f"🔥 **Apa yang Anda dapat:**\n"
-                    f"• High Level Engulfing Indicator untuk MT4/MT5\n"
-                    f"• Setup guide lengkap dan tutorial\n"
-                    f"• Support teknis dari tim kami\n"
-                    f"• Panduan strategi untuk profit maksimal\n\n"
-                    f"📝 Klik link di bawah untuk mengisi form registrasi:\n\n"
+                    f"🎯 **High Level Engulfing Indicator**\n\n"
+                    f"Selamat datang {user.first_name}! 👋\n\n"
+                    f"**Apa itu High Level Engulfing Indicator?**\n"
+                    f"Indicator trading canggih yang mendeteksi pola engulfing berkualitas tinggi untuk membantu Anda:\n\n"
+                    f"🔥 **Fitur Eksklusif:**\n"
+                    f"• Advanced price action detection\n"
+                    f"• Multi-timeframe analysis capability\n"
+                    f"• Custom alerts & trading signals\n"
+                    f"• Compatible dengan MT4 & MT5\n"
+                    f"• Fitur backtesting tersedia\n\n"
+                    f"🎁 **Paket Lengkap:**\n"
+                    f"• File indicator (.ex4/.mq4)\n"
+                    f"• Setup guide step-by-step\n"
+                    f"• Manual strategi trading\n"
+                    f"• Video tutorial\n"
+                    f"• Technical support dari tim\n\n"
+                    f"📋 **Syarat Kelayakan:**\n"
+                    f"• Memiliki akun trading aktif (broker apapun)\n"
+                    f"• Minimum deposit dalam akun\n"
+                    f"• Lengkapi proses verifikasi\n"
+                    f"• Ikuti 3-step registration seperti VIP\n\n"
+                    f"⚠️ **Penting:** Indicator ini untuk educational purposes. Trading melibatkan risiko - gunakan dengan bijak.\n\n"
+                    f"**Siap untuk melanjutkan? 🚀**\n"
+                    f"Klik link untuk memulai registrasi:\n\n"
                     f"👉 {registration_url}\n\n"
-                    f"⏰ Link ini akan expired dalam 30 menit.\n"
-                    f"🔧 Silakan lengkapi semua informasi yang diperlukan."
+                    f"⏰ Link aktif selama 30 menit\n"
+                    f"📝 Akan melalui 3 steps: Info Personal → Info Brokerage → Bukti Deposit"
                 )
             else:  # English
                 indicator_message = (
-                    f"🎯 High Level Engulfing Indicator Registration\n\n"
-                    f"Get access to powerful trading indicator for:\n\n"
-                    f"🔥 **What you'll get:**\n"
-                    f"• High Level Engulfing Indicator for MT4/MT5\n"
-                    f"• Complete setup guide and tutorials\n"
-                    f"• Technical support from our team\n"
-                    f"• Strategy guidance for maximum profit\n\n"
-                    f"📝 Click the link below to fill the registration form:\n\n"
+                    f"🎯 **High Level Engulfing Indicator**\n\n"
+                    f"Welcome {user.first_name}! 👋\n\n"
+                    f"**What is the High Level Engulfing Indicator?**\n"
+                    f"An advanced trading indicator that detects high-quality engulfing patterns to help you:\n\n"
+                    f"🔥 **Exclusive Features:**\n"
+                    f"• Advanced price action detection\n"
+                    f"• Multi-timeframe analysis capability\n"
+                    f"• Custom alerts & trading signals\n"
+                    f"• Compatible with MT4 & MT5\n"
+                    f"• Backtesting features included\n\n"
+                    f"🎁 **Complete Package:**\n"
+                    f"• Indicator files (.ex4/.mq4)\n"
+                    f"• Step-by-step setup guide\n"
+                    f"• Trading strategy manual\n"
+                    f"• Video tutorials\n"
+                    f"• Technical support from our team\n\n"
+                    f"📋 **Eligibility Requirements:**\n"
+                    f"• Active trading account (any broker)\n"
+                    f"• Minimum deposit in account\n"
+                    f"• Complete verification process\n"
+                    f"• Follow 3-step registration like VIP\n\n"
+                    f"⚠️ **Important:** This indicator is for educational purposes. Trading involves risk - use wisely.\n\n"
+                    f"**Ready to proceed? 🚀**\n"
+                    f"Click the link to start registration:\n\n"
                     f"👉 {registration_url}\n\n"
-                    f"⏰ This link will expire in 30 minutes.\n"
-                    f"🔧 Please complete all required information."
+                    f"⏰ Link active for 30 minutes only\n"
+                    f"📝 Will go through 3 steps: Personal Info → Brokerage Info → Deposit Proof"
                 )
             
             await update.message.reply_text(indicator_message)
@@ -2581,6 +2629,48 @@ async def serve_uploaded_file(filename: str):
 # INDICATOR REGISTRATION ROUTES
 
 @app.get("/indicator", response_class=HTMLResponse)
+async def indicator_info_page(request: Request, token: str = None, step: str = "info"):
+    """High Level Engulfing Indicator information and registration page"""
+    if not token:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Verify token first
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "translations": TRANSLATIONS['ms']
+        })
+
+    # Check token type - must be indicator type
+    token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
+    if token_type != 'indicator':
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid token type for indicator registration",
+            "translations": TRANSLATIONS['ms']
+        })
+    
+    # Route based on step parameter
+    if step == "register":
+        return await indicator_registration_form(request, token)
+    else:
+        # Show information page first
+        return templates.TemplateResponse("indicator_info.html", {
+            "request": request,
+            "token": token,
+            "telegram_id": telegram_id,
+            "telegram_username": telegram_username,
+            "lang": "ms",
+            "translations": TRANSLATIONS['ms']
+        })
+
+@app.get("/indicator/register", response_class=HTMLResponse)
 async def indicator_registration_form(request: Request, token: str = None):
     """High Level Engulfing Indicator registration form page"""
     if not token:
@@ -2639,7 +2729,7 @@ async def indicator_registration_form(request: Request, token: str = None):
         "translations": TRANSLATIONS['ms']
     })
 
-@app.post("/indicator")
+@app.post("/indicator/register")
 async def submit_indicator_registration(
     request: Request,
     token: str = Form(...),
