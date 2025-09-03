@@ -2848,16 +2848,28 @@ async def submit_indicator_registration(
             "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
-    # Validate phone number format
+    # Validate phone number format with Malaysian/Indonesian region support
     try:
-        parsed_phone = phonenumbers.parse(phone_number, None)
-        if not phonenumbers.is_valid_number(parsed_phone):
+        # Try parsing with different regions for common formats
+        parsed_phone = None
+        regions_to_try = ['MY', 'ID', None]  # Malaysia, Indonesia, then no region
+        
+        for region in regions_to_try:
+            try:
+                parsed_phone = phonenumbers.parse(phone_number, region)
+                if phonenumbers.is_valid_number(parsed_phone):
+                    break
+            except phonenumbers.NumberParseException:
+                continue
+        
+        if not parsed_phone or not phonenumbers.is_valid_number(parsed_phone):
             raise phonenumbers.NumberParseException(phonenumbers.NumberParseException.NOT_A_NUMBER, "Invalid number")
+            
     except phonenumbers.NumberParseException:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Please enter a valid phone number",
-            "lang": "ms",
+            "error_message": "Sila masukkan nombor telefon yang sah (contoh: +60123456789 atau 0123456789)",
+            "lang": "ms", 
             "translations": {"error_title": "Ralat Pendaftaran", "back_to_telegram": "Kembali ke Telegram"}
         })
     
