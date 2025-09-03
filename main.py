@@ -7921,48 +7921,97 @@ async def migrate_database():
                 if has_old_columns and not has_new_columns:
                     logger.info("🔄 Migrating indicator_registrations table structure...")
                     
-                    # Add new columns
-                    conn.execute(text("""
-                        ALTER TABLE indicator_registrations 
-                        ADD COLUMN brokerage_name VARCHAR,
-                        ADD COLUMN deposit_amount VARCHAR,
-                        ADD COLUMN client_id VARCHAR,
-                        ADD COLUMN deposit_proof_1 VARCHAR,
-                        ADD COLUMN deposit_proof_2 VARCHAR,
-                        ADD COLUMN deposit_proof_3 VARCHAR
-                    """))
-                    logger.info("✅ Added new columns")
-                    
-                    # Copy data from old columns to new columns (best effort mapping)
-                    conn.execute(text("""
-                        UPDATE indicator_registrations 
-                        SET 
-                            brokerage_name = COALESCE(broker_preference, 'Valetax™'),
-                            deposit_amount = '100',
-                            client_id = 'MIGRATED_' || id::text
-                        WHERE brokerage_name IS NULL
-                    """))
-                    logger.info("✅ Migrated existing data")
-                    
-                    # Drop old columns
-                    conn.execute(text("""
-                        ALTER TABLE indicator_registrations 
-                        DROP COLUMN IF EXISTS trading_experience,
-                        DROP COLUMN IF EXISTS broker_preference,
-                        DROP COLUMN IF EXISTS trading_capital_range
-                    """))
-                    logger.info("✅ Dropped old columns")
-                    
-                    # Update step_completed for existing records
-                    conn.execute(text("""
-                        UPDATE indicator_registrations 
-                        SET step_completed = 3 
-                        WHERE step_completed >= 1
-                    """))
-                    logger.info("✅ Updated step_completed")
-                    
-                    conn.commit()
-                    logger.info("✅ Migrated indicator_registrations table structure")
+                    try:
+                        # First, backup existing data
+                        backup_data = conn.execute(text("""
+                            SELECT id, telegram_id, telegram_username, full_name, email, phone_number,
+                                   trading_experience, broker_preference, trading_capital_range,
+                                   status, status_updated_at, updated_by_admin, custom_message,
+                                   admin_notes, step_completed, created_at
+                            FROM indicator_registrations
+                        """)).fetchall()
+                        logger.info(f"✅ Backed up {len(backup_data)} records")
+                        
+                        # Drop and recreate the table with new structure
+                        conn.execute(text("DROP TABLE IF EXISTS indicator_registrations_backup"))
+                        conn.execute(text("ALTER TABLE indicator_registrations RENAME TO indicator_registrations_backup"))
+                        logger.info("✅ Renamed old table to backup")
+                        
+                        # Create new table structure
+                        conn.execute(text("""
+                            CREATE TABLE indicator_registrations (
+                                id SERIAL PRIMARY KEY,
+                                telegram_id VARCHAR NOT NULL,
+                                telegram_username VARCHAR,
+                                full_name VARCHAR NOT NULL,
+                                email VARCHAR NOT NULL,
+                                phone_number VARCHAR NOT NULL,
+                                brokerage_name VARCHAR NOT NULL,
+                                deposit_amount VARCHAR NOT NULL,
+                                client_id VARCHAR NOT NULL,
+                                deposit_proof_1 VARCHAR,
+                                deposit_proof_2 VARCHAR,
+                                deposit_proof_3 VARCHAR,
+                                status VARCHAR DEFAULT 'PENDING',
+                                status_updated_at TIMESTAMP,
+                                updated_by_admin VARCHAR,
+                                custom_message TEXT,
+                                admin_notes TEXT,
+                                step_completed INTEGER DEFAULT 0,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            )
+                        """))
+                        conn.execute(text("CREATE INDEX idx_indicator_registrations_telegram_id ON indicator_registrations(telegram_id)"))
+                        logger.info("✅ Created new table structure")
+                        
+                        # Migrate data from backup to new structure
+                        for record in backup_data:
+                            conn.execute(text("""
+                                INSERT INTO indicator_registrations 
+                                (id, telegram_id, telegram_username, full_name, email, phone_number,
+                                 brokerage_name, deposit_amount, client_id, status, status_updated_at,
+                                 updated_by_admin, custom_message, admin_notes, step_completed, created_at)
+                                VALUES (%(id)s, %(telegram_id)s, %(telegram_username)s, %(full_name)s, %(email)s, %(phone_number)s,
+                                        %(brokerage_name)s, %(deposit_amount)s, %(client_id)s, %(status)s, %(status_updated_at)s,
+                                        %(updated_by_admin)s, %(custom_message)s, %(admin_notes)s, %(step_completed)s, %(created_at)s)
+                            """), {
+                                'id': record[0],
+                                'telegram_id': record[1],
+                                'telegram_username': record[2],
+                                'full_name': record[3],
+                                'email': record[4],
+                                'phone_number': record[5],
+                                'brokerage_name': record[7] if record[7] else 'Valetax™',  # broker_preference or default
+                                'deposit_amount': '100',  # Default deposit amount
+                                'client_id': f'MIGRATED_{record[0]}',  # Generate client_id from id
+                                'status': record[9] if record[9] else 'PENDING',
+                                'status_updated_at': record[10],
+                                'updated_by_admin': record[11],
+                                'custom_message': record[12],
+                                'admin_notes': record[13],
+                                'step_completed': 3 if record[14] and record[14] >= 1 else 0,  # Update step_completed
+                                'created_at': record[15]
+                            })
+                        logger.info(f"✅ Migrated {len(backup_data)} records to new structure")
+                        
+                        # Drop backup table
+                        conn.execute(text("DROP TABLE IF EXISTS indicator_registrations_backup"))
+                        logger.info("✅ Cleaned up backup table")
+                        
+                        conn.commit()
+                        logger.info("✅ Successfully migrated indicator_registrations table structure")
+                        
+                    except Exception as migration_error:
+                        logger.error(f"❌ Migration failed: {migration_error}")
+                        # Try to restore from backup if it exists
+                        try:
+                            conn.rollback()
+                            conn.execute(text("DROP TABLE IF EXISTS indicator_registrations"))
+                            conn.execute(text("ALTER TABLE indicator_registrations_backup RENAME TO indicator_registrations"))
+                            logger.info("✅ Restored from backup after migration failure")
+                        except:
+                            logger.error("❌ Could not restore from backup")
+                        raise migration_error
                 elif not has_old_columns and has_new_columns:
                     logger.info("✅ Indicator table already has new structure")
                 elif not has_old_columns and not has_new_columns:
