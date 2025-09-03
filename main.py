@@ -2675,6 +2675,15 @@ async def indicator_account_setup(request: Request, token: str = None):
             "description": "Indicator trading canggih untuk mengesan corak engulfing berkualiti tinggi"
         }
         
+        # Create indicator object with campaign-like structure
+        indicator = {
+            "name": "High Level Engulfing Indicator",
+            "description": "Indicator trading canggih untuk mengesan corak engulfing berkualiti tinggi",
+            "campaign_id": "indicator",  # Fake campaign_id for template compatibility
+            "reward_description": "Akses kepada High Level Engulfing Indicator",
+            "min_deposit_amount": "100"  # Default minimum for display
+        }
+        
         context = {
             "request": request,
             "token": token,

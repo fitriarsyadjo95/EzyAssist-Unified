@@ -115,7 +115,7 @@
                 </div>
 
                 <!-- Continue Button -->
-                <form method="POST" action="/campaign/{{ campaign.campaign_id }}/continue" id="continueForm">
+                <form method="POST" action="{% if is_indicator %}/indicator/continue{% else %}/campaign/{{ campaign.campaign_id }}/continue{% endif %}" id="continueForm">
                     <input type="hidden" name="token" value="{{ token }}">
                     <input type="hidden" name="setup_action" id="setupAction" value="">
                     
