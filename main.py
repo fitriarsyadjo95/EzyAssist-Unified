@@ -7892,6 +7892,67 @@ async def migrate_database():
                 conn.commit()
                 logger.info("✅ Created campaigns table")
             
+            # Migrate indicator_registrations table structure
+            indicator_table_result = conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'indicator_registrations'
+                )
+            """))
+            indicator_table_exists = indicator_table_result.scalar()
+            
+            if indicator_table_exists:
+                # Check existing columns in indicator_registrations
+                indicator_columns_result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'indicator_registrations'
+                """))
+                existing_indicator_columns = [row[0] for row in indicator_columns_result]
+                
+                # Check if we need to migrate from old structure to new structure
+                if 'trading_experience' in existing_indicator_columns and 'brokerage_name' not in existing_indicator_columns:
+                    logger.info("🔄 Migrating indicator_registrations table structure...")
+                    
+                    # Add new columns
+                    conn.execute(text("""
+                        ALTER TABLE indicator_registrations 
+                        ADD COLUMN brokerage_name VARCHAR,
+                        ADD COLUMN deposit_amount VARCHAR,
+                        ADD COLUMN client_id VARCHAR,
+                        ADD COLUMN deposit_proof_1 VARCHAR,
+                        ADD COLUMN deposit_proof_2 VARCHAR,
+                        ADD COLUMN deposit_proof_3 VARCHAR
+                    """))
+                    
+                    # Copy data from old columns to new columns (best effort mapping)
+                    conn.execute(text("""
+                        UPDATE indicator_registrations 
+                        SET 
+                            brokerage_name = COALESCE(broker_preference, 'Valetax™'),
+                            deposit_amount = '100',
+                            client_id = 'MIGRATED_' || id::text
+                        WHERE brokerage_name IS NULL
+                    """))
+                    
+                    # Drop old columns
+                    conn.execute(text("""
+                        ALTER TABLE indicator_registrations 
+                        DROP COLUMN IF EXISTS trading_experience,
+                        DROP COLUMN IF EXISTS broker_preference,
+                        DROP COLUMN IF EXISTS trading_capital_range
+                    """))
+                    
+                    # Update step_completed for existing records
+                    conn.execute(text("""
+                        UPDATE indicator_registrations 
+                        SET step_completed = 3 
+                        WHERE step_completed >= 1
+                    """))
+                    
+                    conn.commit()
+                    logger.info("✅ Migrated indicator_registrations table structure")
+            
             # Check if audit log table exists
             audit_table_result = conn.execute(text("""
                 SELECT EXISTS (
