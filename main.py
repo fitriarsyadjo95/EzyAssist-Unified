@@ -4311,6 +4311,7 @@ async def admin_registrations_list(
     page: int = 1, 
     search: str = "",
     status: str = "",
+    type: str = "",
     admin = Depends(get_current_admin)
 ):
     """Admin registrations list with pagination and search"""
@@ -4341,6 +4342,25 @@ async def admin_registrations_list(
                             VipRegistration.telegram_username.ilike(search_filter)
                         )
                     )
+                
+                # Add type filter
+                if type:
+                    if type == "indicator":
+                        query = query.filter(VipRegistration.campaign_name == "High Level Engulfing Indicator")
+                    elif type == "campaign":
+                        query = query.filter(
+                            and_(
+                                VipRegistration.is_campaign_registration == True,
+                                VipRegistration.campaign_name != "High Level Engulfing Indicator"
+                            )
+                        )
+                    elif type == "vip":
+                        query = query.filter(
+                            or_(
+                                VipRegistration.is_campaign_registration == False,
+                                VipRegistration.is_campaign_registration == None
+                            )
+                        )
                 
                 # Add status filter
                 if status:
@@ -4379,7 +4399,8 @@ async def admin_registrations_list(
         "total_pages": total_pages,
         "total_count": total_count,
         "search": search,
-        "status": status
+        "status": status,
+        "type": type
     })
 
 @app.get("/admin/registrations/export")

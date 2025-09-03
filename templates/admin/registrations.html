@@ -383,6 +383,14 @@
                                 </div>
                             </div>
                             <div class="col-md-2">
+                                <select class="form-select" name="type">
+                                    <option value="">All Types</option>
+                                    <option value="indicator" {{ 'selected' if type == 'indicator' else '' }}>Indicator</option>
+                                    <option value="campaign" {{ 'selected' if type == 'campaign' else '' }}>Campaign</option>
+                                    <option value="vip" {{ 'selected' if type == 'vip' else '' }}>VIP</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <select class="form-select" name="status">
                                     <option value="">All Status</option>
                                     <option value="pending" {{ 'selected' if status == 'pending' else '' }}>Pending</option>
@@ -572,6 +580,7 @@
                                 <thead class="table-dark">
                                     <tr>
                                         <th>ID</th>
+                                        <th>Type</th>
                                         <th>Full Name</th>
                                         <th>Email</th>
                                         <th>Phone</th>
@@ -588,6 +597,21 @@
                                     {% for reg in registrations %}
                                     <tr>
                                         <td><strong>#{{ reg.id }}</strong></td>
+                                        <td>
+                                            {% if reg.campaign_name == "High Level Engulfing Indicator" %}
+                                                <span class="badge bg-success" title="Indicator Registration">
+                                                    <i class="fas fa-chart-line me-1"></i>Indicator
+                                                </span>
+                                            {% elif reg.is_campaign_registration and reg.campaign_name %}
+                                                <span class="badge bg-primary" title="Campaign Registration">
+                                                    <i class="fas fa-gift me-1"></i>Campaign
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary" title="VIP Registration">
+                                                    <i class="fas fa-crown me-1"></i>VIP
+                                                </span>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             {{ reg.full_name }}
                                             {% if reg.admin_notes %}
