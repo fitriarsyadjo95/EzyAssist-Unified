@@ -1900,7 +1900,7 @@ class RentungBot_Ai:
             await update.message.reply_text(error_message)
 
     async def show_registration_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Show registration choice menu between VIP and Campaign"""
+        """Show registration choice menu between VIP, Campaign and Indicator"""
         user = update.effective_user
         telegram_id = str(user.id)
         
@@ -1909,7 +1909,7 @@ class RentungBot_Ai:
         choice_message = (
             f"🎯 **Pilihan Pendaftaran**\n\n"
             f"Selamat datang {user.first_name}! 👋\n\n"
-            f"Kami ada dua jenis pendaftaran untuk anda:\n\n"
+            f"Kami ada tiga jenis pendaftaran untuk anda:\n\n"
             f"🔹 **VIP Registration** - untuk akses premium ke Group Chat Fighter Rentung\n"
             f"   • Setup akaun trading\n"
             f"   • Akses analisis eksklusif\n"
@@ -1918,12 +1918,18 @@ class RentungBot_Ai:
             f"   • Bonus deposit\n"
             f"   • Reward khas\n"
             f"   • Promosi limited time\n\n"
+            f"🎯 **High Level Engulfing Indicator** - untuk trading tools eksklusif\n"
+            f"   • Indicator premium\n"
+            f"   • Signals accurate\n"
+            f"   • Trading automation\n\n"
             f"**Pilih jenis pendaftaran:**\n"
             f"• Taip `daftar vip` untuk VIP Registration\n"
-            f"• Taip `daftar kempen` untuk Campaign Registration\n\n"
+            f"• Taip `daftar kempen` untuk Campaign Registration\n"
+            f"• Taip `daftar indicator` untuk Indicator\n\n"
             f"Atau gunakan command:\n"
             f"• `/register` untuk VIP\n"
-            f"• `/campaign` untuk Campaign"
+            f"• `/campaign` untuk Campaign\n"
+            f"• `/indicator` untuk High Level Engulfing Indicator"
         )
         
         await send_long_message(update, choice_message, parse_mode='Markdown')
@@ -2147,7 +2153,7 @@ class RentungBot_Ai:
             if any(keyword in message_lower for keyword in registration_keywords):
                 logger.info(f"🎯 Registration keyword detected: {message_text}")
                 
-                # Check if it's specifically for VIP or Campaign
+                # Check if it's specifically for VIP, Campaign, or Indicator
                 if 'vip' in message_lower:
                     # Directly go to VIP registration
                     logger.info("🔹 VIP registration detected, redirecting to VIP flow")
@@ -2157,6 +2163,11 @@ class RentungBot_Ai:
                     # Directly go to campaign selection
                     logger.info("🔸 Campaign registration detected, redirecting to campaign selection")
                     await self.show_campaign_selection(update, context)
+                    return
+                elif 'indicator' in message_lower or 'engulfing' in message_lower:
+                    # Directly go to indicator registration
+                    logger.info("🎯 Indicator registration detected, redirecting to indicator flow")
+                    await self.indicator_command(update, context)
                     return
                 else:
                     # Show registration choice menu
