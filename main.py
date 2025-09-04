@@ -4214,9 +4214,8 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
     # Get statistics
     stats = {}
     if SessionLocal:
-        db = get_db()
-        if db:
-            try:
+        try:
+            with SessionLocal() as db:
                 # Total registrations
                 total_registrations = db.query(VipRegistration).count()
                 
@@ -4316,31 +4315,29 @@ async def admin_dashboard(request: Request, admin = Depends(get_current_admin)):
                     "indicator_on_hold_count": indicator_on_hold_count,
                     "indicator_experience_stats": indicator_experience_stats
                 }
-            except Exception as e:
-                logger.error(f"Error getting admin stats: {e}")
-                stats = {
-                    "error": "Could not load statistics",
-                    "total_registrations": 0,
-                    "recent_registrations": 0,
-                    "pending_count": 0,
-                    "verified_count": 0,
-                    "rejected_count": 0,
-                    "on_hold_count": 0,
-                    "broker_stats": [],
-                    "campaign_registrations": 0,
-                    "regular_registrations": 0,
-                    "active_campaigns_count": 0,
-                    "campaign_performance": [],
-                    "total_indicator_registrations": 0,
-                    "recent_indicator_registrations": 0,
-                    "indicator_pending_count": 0,
-                    "indicator_verified_count": 0,
-                    "indicator_rejected_count": 0,
-                    "indicator_on_hold_count": 0,
-                    "indicator_experience_stats": []
-                }
-            finally:
-                db.close()
+        except Exception as e:
+            logger.error(f"Error getting admin stats: {e}")
+            stats = {
+                "error": "Could not load statistics",
+                "total_registrations": 0,
+                "recent_registrations": 0,
+                "pending_count": 0,
+                "verified_count": 0,
+                "rejected_count": 0,
+                "on_hold_count": 0,
+                "broker_stats": [],
+                "campaign_registrations": 0,
+                "regular_registrations": 0,
+                "active_campaigns_count": 0,
+                "campaign_performance": [],
+                "total_indicator_registrations": 0,
+                "recent_indicator_registrations": 0,
+                "indicator_pending_count": 0,
+                "indicator_verified_count": 0,
+                "indicator_rejected_count": 0,
+                "indicator_on_hold_count": 0,
+                "indicator_experience_stats": []
+            }
     
     # Get bot statistics
     bot_stats = {}
@@ -8466,8 +8463,16 @@ async def migrate_database():
         return
     
     try:
+        # Check if we're using SQLite (local development) or PostgreSQL (production)
+        is_sqlite = "sqlite" in str(engine.url)
+        
+        if is_sqlite:
+            # For SQLite, skip complex migration as tables are recreated fresh
+            logger.info("🔄 Using SQLite - skipping migration as tables are recreated fresh")
+            return
+            
         with engine.connect() as conn:
-            # Check if new columns exist
+            # Check if new columns exist (PostgreSQL only)
             result = conn.execute(text("""
                 SELECT column_name 
                 FROM information_schema.columns 
