@@ -1186,6 +1186,9 @@ def authenticate_admin_user(username: str, password: str):
             db.close()
         return None
 
+# Create alias for authenticate_admin function
+authenticate_admin = authenticate_admin_user
+
 def initialize_default_admin():
     """Initialize default super admin if no admin users exist"""
     if not SessionLocal:
