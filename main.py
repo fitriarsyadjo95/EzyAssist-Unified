@@ -32,8 +32,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # Telegram bot components
-from telegram import Update, constants
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
 # Database and external services
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Date, Text, or_, and_, func, text, Enum, Float, Boolean
@@ -397,6 +397,18 @@ if Base:
                 'created_at': self.created_at.isoformat() if self.created_at else None
             }
 
+    class UserLanguagePreference(Base):
+        __tablename__ = "user_language_preferences"
+        
+        id = Column(Integer, primary_key=True, index=True)
+        telegram_id = Column(String, nullable=False, unique=True, index=True)
+        telegram_username = Column(String, nullable=True)
+        first_name = Column(String, nullable=True)
+        preferred_language = Column(String, nullable=False)  # 'ms', 'en', 'id'
+        has_seen_welcome = Column(Boolean, default=False, nullable=False)
+        created_at = Column(DateTime, default=datetime.utcnow)
+        updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 # Admin Settings Model
 class AdminSettings(Base):
     __tablename__ = "admin_settings"
@@ -642,6 +654,8 @@ def get_bot_message(message_key: str, lang: str = 'ms', **kwargs) -> str:
             'campaign_service_unavailable': 'Perkhidmatan campaign tidak tersedia buat masa ini.',
             'indicator_registration': '🎯 **High Level Engulfing Indicator**\n\nHi {name}! Ready untuk dapatkan indicator?\n\nKlik link di bawah untuk mula registration:\n\n👉 {url}\n\n⏰ Link aktif untuk 30 minit sahaja',
             'indicator_already_registered': '⚠️ Anda sudah mempunyai pendaftaran High Level Engulfing Indicator\n\n📋 Status: {status}\n👤 Nama: {name}\n📧 Email: {email}\n\n🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran, sila hubungi admin.\n\n💡 Untuk VIP access, gunakan /register',
+            'welcome_message': 'Eh {name}! Welcome to RentungBot_Ai! 🤖✨\n\nAku ni bot yang boleh tolong kau dengan:\n🎯 Daftar VIP & join campaign best-best\n📊 Info pasal broker Valetax\n💡 Tanya-tanya pasal forex trading\n\n📋 Apa yang boleh kau buat:\n📝 /register - Daftar VIP macam biasa\n🎯 /indicator - Daftar untuk High Level Engulfing Indicator\n\n🎉 NAK DAPAT DUIT FREE?\n💰 /rm50 - Terus join RM50 Bonus Campaign!\n💫 /campaign - Tengok semua campaign tersedia\n\n👨‍💼 /agent - Nak cakap dengan orang live',
+            'language_selection_prompt': 'Selamat datang! Sila pilih bahasa pilihan anda:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English  \n🇮🇩 Bahasa Indonesia\n\nWelcome! Please choose your preferred language:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English\n🇮🇩 Bahasa Indonesia\n\nSelamat datang! Silakan pilih bahasa yang Anda inginkan:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English\n🇮🇩 Bahasa Indonesia',
             'technical_error': 'Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit.',
             'status_pending': 'Menunggu semakan admin',
             'status_verified': 'Diluluskan ✅',
@@ -661,6 +675,8 @@ def get_bot_message(message_key: str, lang: str = 'ms', **kwargs) -> str:
             'campaign_service_unavailable': 'Campaign service is currently unavailable.',
             'indicator_registration': '🎯 **High Level Engulfing Indicator**\n\nHi {name}! Ready to get the indicator?\n\nClick the link below to start registration:\n\n👉 {url}\n\n⏰ Link active for 30 minutes only',
             'indicator_already_registered': '⚠️ You already have a High Level Engulfing Indicator registration\n\n📋 Status: {status}\n👤 Name: {name}\n📧 Email: {email}\n\n🔍 If you need to update information or have issues with your registration, please contact admin.\n\n💡 For VIP access, use /register',
+            'welcome_message': 'Hey {name}! Welcome to RentungBot_Ai! 🤖✨\n\nI\'m a bot that can help you with:\n🎯 VIP registration & join awesome campaigns\n📊 Info about Valetax broker\n💡 Questions about forex trading\n\n📋 What you can do:\n📝 /register - Regular VIP registration\n🎯 /indicator - Register for High Level Engulfing Indicator\n\n🎉 WANT FREE MONEY?\n💰 /rm50 - Join RM50 Bonus Campaign directly!\n💫 /campaign - See all available campaigns\n\n👨‍💼 /agent - Talk to a live person',
+            'language_selection_prompt': 'Welcome! Please choose your preferred language:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English  \n🇮🇩 Bahasa Indonesia\n\nSelamat datang! Sila pilih bahasa pilihan anda:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English\n🇮🇩 Bahasa Indonesia\n\nSelamat datang! Silakan pilih bahasa yang Anda inginkan:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English\n🇮🇩 Bahasa Indonesia',
             'technical_error': 'Sorry, there was a technical issue. Please try again in a few minutes.',
             'status_pending': 'Waiting for admin review',
             'status_verified': 'Approved ✅',
@@ -680,6 +696,8 @@ def get_bot_message(message_key: str, lang: str = 'ms', **kwargs) -> str:
             'campaign_service_unavailable': 'Layanan campaign saat ini tidak tersedia.',
             'indicator_registration': '🎯 **High Level Engulfing Indicator**\n\nHi {name}! Siap untuk dapatkan indicator?\n\nKlik link di bawah untuk mulai registrasi:\n\n👉 {url}\n\n⏰ Link aktif selama 30 menit',
             'indicator_already_registered': '⚠️ Anda sudah memiliki registrasi High Level Engulfing Indicator\n\n📋 Status: {status}\n👤 Nama: {name}\n📧 Email: {email}\n\n🔍 Jika Anda perlu update informasi atau ada masalah dengan registrasi, silakan hubungi admin.\n\n💡 Untuk akses VIP, gunakan /register',
+            'welcome_message': 'Hei {name}! Selamat datang di RentungBot_Ai! 🤖✨\n\nSaya adalah bot yang bisa membantu Anda dengan:\n🎯 Registrasi VIP & bergabung dengan campaign terbaik\n📊 Info tentang broker Valetax\n💡 Pertanyaan tentang forex trading\n\n📋 Apa yang bisa Anda lakukan:\n📝 /register - Registrasi VIP biasa\n🎯 /indicator - Daftar untuk High Level Engulfing Indicator\n\n🎉 MAU DAPAT UANG GRATIS?\n💰 /rm50 - Langsung join RM50 Bonus Campaign!\n💫 /campaign - Lihat semua campaign yang tersedia\n\n👨‍💼 /agent - Bicara dengan orang langsung',
+            'language_selection_prompt': 'Selamat datang! Silakan pilih bahasa yang Anda inginkan:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English  \n🇮🇩 Bahasa Indonesia\n\nWelcome! Please choose your preferred language:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English\n🇮🇩 Bahasa Indonesia\n\nSelamat datang! Sila pilih bahasa pilihan anda:\n\n🇲🇾 Bahasa Malaysia\n🇬🇧 English\n🇮🇩 Bahasa Indonesia',
             'technical_error': 'Maaf, ada masalah teknis. Silakan coba lagi dalam beberapa menit.',
             'status_pending': 'Menunggu tinjauan admin',
             'status_verified': 'Disetujui ✅',
@@ -1275,7 +1293,7 @@ class RentungBot_Ai:
         self.response_times = []  # Track response times for averaging
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle /start command"""
+        """Handle /start command with forced language selection for new users"""
         user = update.effective_user
         telegram_id = str(user.id)
         
@@ -1294,25 +1312,158 @@ class RentungBot_Ai:
         self.update_daily_stats(telegram_id, 'start', is_new_user)
         self.reset_daily_tracking()
         
-        welcome_message = (
-            f"Eh {user.first_name}! Welcome to RentungBot_Ai! 🤖✨\n\n"
-            "Aku ni bot yang boleh tolong kau dengan:\n"
-            "🎯 Daftar VIP & join campaign best-best\n"
-            "📊 Info pasal broker Valetax\n"
-            "💡 Tanya-tanya pasal forex trading\n\n"
-            "📋 Apa yang boleh kau buat:\n"
-            "📝 /register - Daftar VIP macam biasa\n"
-            "🎯 /indicator - Daftar untuk High Level Engulfing Indicator\n\n"
-            "🎉 NAK DAPAT DUIT FREE?\n"
-            "💰 /rm50 - Terus join RM50 Bonus Campaign!\n"
-            "💫 /campaign - Tengok semua campaign tersedia\n\n"
-            "👨‍💼 /agent - Nak cakap dengan orang live"
-        )
+        # Check if user has language preference set
+        user_language_pref = await self.get_user_language_preference(telegram_id)
+        
+        if not user_language_pref or not user_language_pref.has_seen_welcome:
+            # Show language selection for new users or users who haven't seen welcome
+            await self.show_language_selection(update, context)
+            return
+        
+        # Show welcome message in user's preferred language
+        language = user_language_pref.preferred_language
+        welcome_message = get_bot_message('welcome_message', language, name=user.first_name)
         
         await update.message.reply_text(welcome_message)
         
         # Log command to database
         self.log_conversation(telegram_id, "/start", welcome_message, "command")
+
+    async def get_user_language_preference(self, telegram_id: str):
+        """Get user's language preference from database"""
+        if not SessionLocal:
+            return None
+            
+        db = SessionLocal()
+        try:
+            return db.query(UserLanguagePreference).filter(
+                UserLanguagePreference.telegram_id == telegram_id
+            ).first()
+        except Exception as e:
+            logger.error(f"Error getting user language preference: {e}")
+            return None
+        finally:
+            db.close()
+
+    async def set_user_language_preference(self, telegram_id: str, telegram_username: str, first_name: str, language: str, has_seen_welcome: bool = False):
+        """Set or update user's language preference"""
+        if not SessionLocal:
+            return False
+            
+        db = SessionLocal()
+        try:
+            # Check if preference exists
+            existing = db.query(UserLanguagePreference).filter(
+                UserLanguagePreference.telegram_id == telegram_id
+            ).first()
+            
+            if existing:
+                # Update existing preference
+                existing.telegram_username = telegram_username
+                existing.first_name = first_name
+                existing.preferred_language = language
+                existing.has_seen_welcome = has_seen_welcome
+                existing.updated_at = datetime.utcnow()
+            else:
+                # Create new preference
+                new_pref = UserLanguagePreference(
+                    telegram_id=telegram_id,
+                    telegram_username=telegram_username,
+                    first_name=first_name,
+                    preferred_language=language,
+                    has_seen_welcome=has_seen_welcome
+                )
+                db.add(new_pref)
+            
+            db.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error setting user language preference: {e}")
+            db.rollback()
+            return False
+        finally:
+            db.close()
+
+    async def show_language_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Show language selection with inline keyboard"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        
+        # Show multilingual language selection message
+        language_prompt = get_bot_message('language_selection_prompt', 'ms')  # Use multilingual prompt
+        
+        # Create inline keyboard with language options
+        keyboard = [
+            [InlineKeyboardButton("🇲🇾 Bahasa Malaysia", callback_data="lang_ms")],
+            [InlineKeyboardButton("🇬🇧 English", callback_data="lang_en")],
+            [InlineKeyboardButton("🇮🇩 Bahasa Indonesia", callback_data="lang_id")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(
+            language_prompt,
+            reply_markup=reply_markup
+        )
+        
+        # Log language selection prompt
+        self.log_conversation(telegram_id, "language_selection", language_prompt, "system")
+
+    async def handle_language_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle language selection callback"""
+        query = update.callback_query
+        await query.answer()
+        
+        user = query.from_user
+        telegram_id = str(user.id)
+        telegram_username = user.username or ""
+        first_name = user.first_name or ""
+        
+        # Extract language from callback data
+        if query.data.startswith('lang_'):
+            language = query.data.replace('lang_', '')
+            
+            # Save language preference
+            success = await self.set_user_language_preference(
+                telegram_id, telegram_username, first_name, language, has_seen_welcome=True
+            )
+            
+            if success:
+                # Show welcome message in selected language
+                welcome_message = get_bot_message('welcome_message', language, name=first_name)
+                
+                # Edit the original message to show the welcome
+                await query.edit_message_text(
+                    text=welcome_message
+                )
+                
+                # Log language selection and welcome
+                self.log_conversation(telegram_id, f"language_selected_{language}", f"Language set to {language}", "system")
+                self.log_conversation(telegram_id, "/start", welcome_message, "command")
+            else:
+                # Handle error
+                error_msg = get_bot_message('technical_error', language)
+                await query.edit_message_text(text=error_msg)
+
+    async def detect_user_language(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
+        """Detect user language from their stored preference or conversation engine"""
+        user = update.effective_user
+        telegram_id = str(user.id)
+        
+        # First, check if user has a stored language preference
+        user_pref = await self.get_user_language_preference(telegram_id)
+        if user_pref:
+            return user_pref.preferred_language
+        
+        # Fallback to conversation engine language detection
+        if hasattr(update, 'message') and update.message and update.message.text:
+            try:
+                detected_lang = self.conversation_engine.detect_language(update.message.text)
+                return detected_lang if detected_lang in ['ms', 'en', 'id'] else 'ms'
+            except Exception as e:
+                logger.error(f"Error detecting language: {e}")
+        
+        # Default fallback
+        return 'ms'
 
     async def register_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /register command - VIP Registration only"""
@@ -2233,6 +2384,9 @@ class RentungBot_Ai:
         self.application.add_handler(CommandHandler("agent", self.agent_command))
         self.application.add_handler(CommandHandler("clear", self.clear_command))
         self.application.add_handler(CommandHandler("indicator", self.indicator_command))
+        
+        # Add CallbackQueryHandler for language selection
+        self.application.add_handler(CallbackQueryHandler(self.handle_language_selection, pattern="^lang_"))
         
         # MessageHandler comes LAST to catch non-command messages
         # All commands should be handled by CommandHandlers above
