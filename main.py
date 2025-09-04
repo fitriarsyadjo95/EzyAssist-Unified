@@ -203,6 +203,8 @@ if Base:
         campaign_min_deposit = Column(String, nullable=True)
         campaign_reward = Column(String, nullable=True)
         is_campaign_registration = Column(Boolean, default=False, nullable=False)
+        # Language preference
+        preferred_language = Column(String, default='ms', nullable=False)  # 'ms', 'en', 'id'
         created_at = Column(DateTime, default=datetime.utcnow)
         
         def to_dict(self):
@@ -371,6 +373,8 @@ if Base:
         custom_message = Column(Text, nullable=True)
         admin_notes = Column(Text, nullable=True)
         step_completed = Column(Integer, default=0)
+        # Language preference
+        preferred_language = Column(String, default='ms', nullable=False)  # 'ms', 'en', 'id'
         created_at = Column(DateTime, default=datetime.utcnow)
         
         def to_dict(self):
@@ -447,6 +451,15 @@ class AdminUser(Base):
 # Language translations
 TRANSLATIONS = {
     'ms': {
+        # Language selection
+        'select_language': 'Pilih Bahasa Anda',
+        'select_language_desc': 'Pilih bahasa untuk meneruskan pendaftaran',
+        'language_malay': 'Bahasa Melayu',
+        'language_english': 'English',
+        'language_indonesian': 'Bahasa Indonesia',
+        'continue': 'Teruskan',
+        
+        # Registration forms
         'title': 'Pendaftaran VIP RentungFX',
         'welcome': 'Selamat datang ke RentungFX VIP',
         'full_name': 'Nama Penuh',
@@ -454,7 +467,19 @@ TRANSLATIONS = {
         'phone': 'Nombor Telefon',
         'brokerage': 'Nama Broker',
         'deposit': 'Jumlah Deposit',
+        'client_id': 'ID Klien',
+        'deposit_proof': 'Bukti Deposit',
         'submit': 'Hantar Pendaftaran',
+        
+        # Account setup
+        'account_setup': 'Persediaan Akaun',
+        'select_option': 'Pilih salah satu pilihan di bawah',
+        'new_account': 'Saya Mahu Buka Akaun Baru',
+        'partner_change': 'Saya Mahu Tukar Partner',
+        'new_account_desc': 'Saya belum ada akaun trading dengan Valetax',
+        'partner_change_desc': 'Saya sudah ada akaun Valetax tetapi mahu tukar partner',
+        
+        # Success pages
         'success_title': 'Pendaftaran Berjaya!',
         'success_message': 'Terima kasih! Pendaftaran VIP anda telah berjaya.',
         'success_next_steps': 'Langkah Seterusnya',
@@ -464,15 +489,216 @@ TRANSLATIONS = {
         'back_to_telegram': 'Kembali ke Telegram',
         'registration_ref': 'Rujukan Pendaftaran',
         'keep_reference': 'Simpan rujukan ini untuk rekod anda',
+        
+        # Error messages
         'error_title': 'Ralat Pendaftaran',
         'required_fields': 'Sila lengkapkan semua medan yang diperlukan',
         'invalid_token': 'Token tidak sah atau telah tamat tempoh',
-        'already_registered': 'Eh, awak dah register untuk VIP access dah! 😊 Jangan risau, kami dah ada rekod pendaftaran awak. Kalau ada masalah atau nak tahu status pendaftaran, boleh terus tanya kat bot Telegram atau hubungi team kami ye!'
+        'invalid_email': 'Sila masukkan alamat email yang sah',
+        'invalid_phone': 'Sila masukkan nombor telefon yang sah (contoh: +60123456789 atau 0123456789)',
+        'already_registered': 'Eh, awak dah register untuk VIP access dah! 😊 Jangan risau, kami dah ada rekod pendaftaran awak. Kalau ada masalah atau nak tahu status pendaftaran, boleh terus tanya kat bot Telegram atau hubungi team kami ye!',
+        
+        # Form labels and placeholders
+        'full_name_placeholder': 'Masukkan nama penuh anda',
+        'email_placeholder': 'Masukkan alamat email anda',
+        'phone_placeholder': '+60123456789 atau 0123456789',
+        'deposit_placeholder': 'Masukkan jumlah deposit dalam USD',
+        'client_id_placeholder': 'Masukkan ID klien anda'
+    },
+    'en': {
+        # Language selection
+        'select_language': 'Select Your Language',
+        'select_language_desc': 'Choose your preferred language to continue',
+        'language_malay': 'Bahasa Melayu',
+        'language_english': 'English',
+        'language_indonesian': 'Bahasa Indonesia',
+        'continue': 'Continue',
+        
+        # Registration forms
+        'title': 'RentungFX VIP Registration',
+        'welcome': 'Welcome to RentungFX VIP',
+        'full_name': 'Full Name',
+        'email': 'Email Address',
+        'phone': 'Phone Number',
+        'brokerage': 'Brokerage Name',
+        'deposit': 'Deposit Amount',
+        'client_id': 'Client ID',
+        'deposit_proof': 'Deposit Proof',
+        'submit': 'Submit Registration',
+        
+        # Account setup
+        'account_setup': 'Account Setup',
+        'select_option': 'Please select one of the options below',
+        'new_account': 'I Want to Open New Account',
+        'partner_change': 'I Want to Change Partner',
+        'new_account_desc': 'I don\'t have a trading account with Valetax yet',
+        'partner_change_desc': 'I already have a Valetax account but want to change partner',
+        
+        # Success pages
+        'success_title': 'Registration Successful!',
+        'success_message': 'Thank you! Your VIP registration has been successful.',
+        'success_next_steps': 'Next Steps',
+        'success_step1': 'Your registration is under review by our admin team',
+        'success_step2': 'You will receive a notification in Telegram within 24 hours',
+        'success_step3': 'VIP access will be granted after registration approval',
+        'back_to_telegram': 'Back to Telegram',
+        'registration_ref': 'Registration Reference',
+        'keep_reference': 'Keep this reference for your records',
+        
+        # Error messages
+        'error_title': 'Registration Error',
+        'required_fields': 'Please complete all required fields',
+        'invalid_token': 'Invalid or expired token',
+        'invalid_email': 'Please enter a valid email address',
+        'invalid_phone': 'Please enter a valid phone number (e.g., +60123456789 or 0123456789)',
+        'already_registered': 'You have already registered for VIP access! 😊 Don\'t worry, we have your registration on record. If you have any issues or want to check your registration status, you can ask our Telegram bot or contact our team!',
+        
+        # Form labels and placeholders
+        'full_name_placeholder': 'Enter your full name',
+        'email_placeholder': 'Enter your email address',
+        'phone_placeholder': '+60123456789 or 0123456789',
+        'deposit_placeholder': 'Enter deposit amount in USD',
+        'client_id_placeholder': 'Enter your client ID'
+    },
+    'id': {
+        # Language selection
+        'select_language': 'Pilih Bahasa Anda',
+        'select_language_desc': 'Pilih bahasa untuk melanjutkan pendaftaran',
+        'language_malay': 'Bahasa Melayu',
+        'language_english': 'English',
+        'language_indonesian': 'Bahasa Indonesia',
+        'continue': 'Lanjutkan',
+        
+        # Registration forms
+        'title': 'Pendaftaran VIP RentungFX',
+        'welcome': 'Selamat datang di RentungFX VIP',
+        'full_name': 'Nama Lengkap',
+        'email': 'Alamat Email',
+        'phone': 'Nomor Telepon',
+        'brokerage': 'Nama Broker',
+        'deposit': 'Jumlah Deposit',
+        'client_id': 'ID Klien',
+        'deposit_proof': 'Bukti Deposit',
+        'submit': 'Kirim Pendaftaran',
+        
+        # Account setup
+        'account_setup': 'Pengaturan Akun',
+        'select_option': 'Pilih salah satu opsi di bawah ini',
+        'new_account': 'Saya Ingin Buka Akun Baru',
+        'partner_change': 'Saya Ingin Ganti Partner',
+        'new_account_desc': 'Saya belum punya akun trading dengan Valetax',
+        'partner_change_desc': 'Saya sudah punya akun Valetax tapi mau ganti partner',
+        
+        # Success pages
+        'success_title': 'Pendaftaran Berhasil!',
+        'success_message': 'Terima kasih! Pendaftaran VIP Anda telah berhasil.',
+        'success_next_steps': 'Langkah Selanjutnya',
+        'success_step1': 'Pendaftaran Anda sedang ditinjau oleh tim admin kami',
+        'success_step2': 'Anda akan menerima notifikasi di Telegram dalam 24 jam',
+        'success_step3': 'Akses VIP akan diberikan setelah pendaftaran disetujui',
+        'back_to_telegram': 'Kembali ke Telegram',
+        'registration_ref': 'Referensi Pendaftaran',
+        'keep_reference': 'Simpan referensi ini untuk catatan Anda',
+        
+        # Error messages
+        'error_title': 'Error Pendaftaran',
+        'required_fields': 'Harap lengkapi semua field yang diperlukan',
+        'invalid_token': 'Token tidak valid atau sudah kedaluwarsa',
+        'invalid_email': 'Harap masukkan alamat email yang valid',
+        'invalid_phone': 'Harap masukkan nomor telepon yang valid (contoh: +62812345678 atau 0812345678)',
+        'already_registered': 'Anda sudah mendaftar untuk akses VIP! 😊 Jangan khawatir, kami sudah punya catatan pendaftaran Anda. Jika ada masalah atau mau cek status pendaftaran, bisa tanya langsung ke bot Telegram atau hubungi tim kami!',
+        
+        # Form labels and placeholders
+        'full_name_placeholder': 'Masukkan nama lengkap Anda',
+        'email_placeholder': 'Masukkan alamat email Anda',
+        'phone_placeholder': '+62812345678 atau 0812345678',
+        'deposit_placeholder': 'Masukkan jumlah deposit dalam USD',
+        'client_id_placeholder': 'Masukkan ID klien Anda'
     }
 }
 
 # Utility functions
-def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None, campaign_id: str = None, setup_action: str = None) -> str:
+def get_language_from_request(request) -> str:
+    """Get language preference from request parameters or default to 'ms'"""
+    return request.query_params.get('lang', 'ms')
+
+def get_translations(lang: str) -> dict:
+    """Get translations for the specified language, fallback to Malaysian if not found"""
+    return TRANSLATIONS.get(lang, TRANSLATIONS['ms'])
+
+def get_bot_message(message_key: str, lang: str = 'ms', **kwargs) -> str:
+    """Get bot message in the specified language with formatting"""
+    bot_messages = {
+        'ms': {
+            'register_vip_title': '🎯 Pendaftaran VIP RentungFX',
+            'register_vip_message': 'Klik link di bawah untuk mengisi borang pendaftaran VIP:\n\n👉 {url}\n\n⏰ Link ini akan tamat tempoh dalam 30 minit.\n📝 Sila lengkapkan semua maklumat yang diperlukan.',
+            'duplicate_registration': '⚠️ Anda sudah mempunyai pendaftaran VIP\n\n📋 Status: {status}\n👤 Nama: {name}\n📧 Email: {email}\n\n🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran anda, sila hubungi admin.\n\n💡 Untuk campaign terkini, gunakan /campaign',
+            'campaign_already_registered': '✅ Anda sudah mempunyai pendaftaran yang lengkap!\n\n📋 Status: {status}\n📧 Email: {email}\n📱 No. Tel: {phone}\n\nJika anda perlu mengemaskini maklumat atau mempunyai sebarang pertanyaan, sila hubungi admin.\n\n📞 Untuk bantuan: /help',
+            'campaign_not_found': "❌ Campaign '{campaign_id}' tidak dijumpai atau tidak aktif.\n\nGunakan /campaign untuk lihat senarai campaign yang aktif.",
+            'campaign_info': '🎉 {name}\n\n🎁 Reward: {reward}\n💰 Min Deposit: ${min_deposit} USD\n🎯 Join Group Chat Fighter Rentung\n\nKlik link di bawah untuk menyertai campaign:\n\n👉 {url}\n\n⏰ Link ini akan tamat tempoh dalam 30 minit.\n📝 Pastikan anda deposit minimum yang diperlukan untuk layak mendapat reward!',
+            'campaigns_list_header': '🎉 Campaign Aktif:\n',
+            'campaigns_list_footer': '\n**Cara Daftar Campaign:**\nKlik command yang ditunjukkan di atas\nContoh: Tekan `/rm50` untuk RM50 campaign',
+            'no_active_campaigns': '📢 Tiada campaign aktif buat masa ini.\n\n🔔 Follow channel kami untuk dapatkan updates campaign terkini!\n📝 Untuk pendaftaran VIP biasa, gunakan /register',
+            'campaign_service_unavailable': 'Perkhidmatan campaign tidak tersedia buat masa ini.',
+            'indicator_registration': '🎯 **High Level Engulfing Indicator**\n\nHi {name}! Ready untuk dapatkan indicator?\n\nKlik link di bawah untuk mula registration:\n\n👉 {url}\n\n⏰ Link aktif untuk 30 minit sahaja',
+            'indicator_already_registered': '⚠️ Anda sudah mempunyai pendaftaran High Level Engulfing Indicator\n\n📋 Status: {status}\n👤 Nama: {name}\n📧 Email: {email}\n\n🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran, sila hubungi admin.\n\n💡 Untuk VIP access, gunakan /register',
+            'technical_error': 'Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit.',
+            'status_pending': 'Menunggu semakan admin',
+            'status_verified': 'Diluluskan ✅',
+            'status_rejected': 'Ditolak ❌',
+            'status_on_hold': 'Dalam tindakan 🔄'
+        },
+        'en': {
+            'register_vip_title': '🎯 RentungFX VIP Registration',
+            'register_vip_message': 'Click the link below to fill out the VIP registration form:\n\n👉 {url}\n\n⏰ This link will expire in 30 minutes.\n📝 Please complete all required information.',
+            'duplicate_registration': '⚠️ You already have a VIP registration\n\n📋 Status: {status}\n👤 Name: {name}\n📧 Email: {email}\n\n🔍 If you need to update your information or have issues with your registration, please contact admin.\n\n💡 For current campaigns, use /campaign',
+            'campaign_already_registered': '✅ You already have a complete registration!\n\n📋 Status: {status}\n📧 Email: {email}\n📱 Phone: {phone}\n\nIf you need to update information or have any questions, please contact admin.\n\n📞 For help: /help',
+            'campaign_not_found': "❌ Campaign '{campaign_id}' not found or inactive.\n\nUse /campaign to see the list of active campaigns.",
+            'campaign_info': '🎉 {name}\n\n🎁 Reward: {reward}\n💰 Min Deposit: ${min_deposit} USD\n🎯 Join Group Chat Fighter Rentung\n\nClick the link below to join the campaign:\n\n👉 {url}\n\n⏰ This link will expire in 30 minutes.\n📝 Make sure you deposit the minimum required amount to qualify for the reward!',
+            'campaigns_list_header': '🎉 Active Campaigns:\n',
+            'campaigns_list_footer': '\n**How to Register for Campaign:**\nClick the command shown above\nExample: Press `/rm50` for RM50 campaign',
+            'no_active_campaigns': '📢 No active campaigns at the moment.\n\n🔔 Follow our channel to get the latest campaign updates!\n📝 For regular VIP registration, use /register',
+            'campaign_service_unavailable': 'Campaign service is currently unavailable.',
+            'indicator_registration': '🎯 **High Level Engulfing Indicator**\n\nHi {name}! Ready to get the indicator?\n\nClick the link below to start registration:\n\n👉 {url}\n\n⏰ Link active for 30 minutes only',
+            'indicator_already_registered': '⚠️ You already have a High Level Engulfing Indicator registration\n\n📋 Status: {status}\n👤 Name: {name}\n📧 Email: {email}\n\n🔍 If you need to update information or have issues with your registration, please contact admin.\n\n💡 For VIP access, use /register',
+            'technical_error': 'Sorry, there was a technical issue. Please try again in a few minutes.',
+            'status_pending': 'Waiting for admin review',
+            'status_verified': 'Approved ✅',
+            'status_rejected': 'Rejected ❌',
+            'status_on_hold': 'On Hold 🔄'
+        },
+        'id': {
+            'register_vip_title': '🎯 Pendaftaran VIP RentungFX',
+            'register_vip_message': 'Klik link di bawah untuk mengisi formulir pendaftaran VIP:\n\n👉 {url}\n\n⏰ Link ini akan kedaluwarsa dalam 30 menit.\n📝 Harap lengkapi semua informasi yang diperlukan.',
+            'duplicate_registration': '⚠️ Anda sudah memiliki pendaftaran VIP\n\n📋 Status: {status}\n👤 Nama: {name}\n📧 Email: {email}\n\n🔍 Jika Anda perlu memperbarui informasi atau ada masalah dengan pendaftaran Anda, silakan hubungi admin.\n\n💡 Untuk campaign terbaru, gunakan /campaign',
+            'campaign_already_registered': '✅ Anda sudah memiliki pendaftaran lengkap!\n\n📋 Status: {status}\n📧 Email: {email}\n📱 No. Tel: {phone}\n\nJika Anda perlu memperbarui informasi atau ada pertanyaan, silakan hubungi admin.\n\n📞 Untuk bantuan: /help',
+            'campaign_not_found': "❌ Campaign '{campaign_id}' tidak ditemukan atau tidak aktif.\n\nGunakan /campaign untuk melihat daftar campaign yang aktif.",
+            'campaign_info': '🎉 {name}\n\n🎁 Reward: {reward}\n💰 Min Deposit: ${min_deposit} USD\n🎯 Join Group Chat Fighter Rentung\n\nKlik link di bawah untuk ikut campaign:\n\n👉 {url}\n\n⏰ Link ini akan kedaluwarsa dalam 30 menit.\n📝 Pastikan Anda deposit minimum yang diperlukan untuk memenuhi syarat reward!',
+            'campaigns_list_header': '🎉 Campaign Aktif:\n',
+            'campaigns_list_footer': '\n**Cara Daftar Campaign:**\nKlik perintah yang ditunjukkan di atas\nContoh: Tekan `/rm50` untuk campaign RM50',
+            'no_active_campaigns': '📢 Tidak ada campaign aktif saat ini.\n\n🔔 Follow channel kami untuk mendapatkan update campaign terbaru!\n📝 Untuk pendaftaran VIP biasa, gunakan /register',
+            'campaign_service_unavailable': 'Layanan campaign saat ini tidak tersedia.',
+            'indicator_registration': '🎯 **High Level Engulfing Indicator**\n\nHi {name}! Siap untuk dapatkan indicator?\n\nKlik link di bawah untuk mulai registrasi:\n\n👉 {url}\n\n⏰ Link aktif selama 30 menit',
+            'indicator_already_registered': '⚠️ Anda sudah memiliki registrasi High Level Engulfing Indicator\n\n📋 Status: {status}\n👤 Nama: {name}\n📧 Email: {email}\n\n🔍 Jika Anda perlu update informasi atau ada masalah dengan registrasi, silakan hubungi admin.\n\n💡 Untuk akses VIP, gunakan /register',
+            'technical_error': 'Maaf, ada masalah teknis. Silakan coba lagi dalam beberapa menit.',
+            'status_pending': 'Menunggu tinjauan admin',
+            'status_verified': 'Disetujui ✅',
+            'status_rejected': 'Ditolak ❌',
+            'status_on_hold': 'Ditahan 🔄'
+        }
+    }
+    
+    messages = bot_messages.get(lang, bot_messages['ms'])
+    message = messages.get(message_key, f"Message key '{message_key}' not found")
+    
+    # Format message with provided kwargs
+    try:
+        return message.format(**kwargs)
+    except KeyError as e:
+        logger.warning(f"Missing format parameter for bot message: {e}")
+        return message
+
+def generate_registration_token(telegram_id: str, telegram_username: str = "", token_type: str = "initial", registration_id: int = None, campaign_id: str = None, setup_action: str = None, language: str = None) -> str:
     """Generate secure registration token with support for different types"""
     try:
         # Set expiry based on token type
@@ -502,6 +728,10 @@ def generate_registration_token(telegram_id: str, telegram_username: str = "", t
         # Include setup_action for campaign setup tokens
         if token_type in ["campaign_with_setup", "indicator_with_setup"] and setup_action:
             payload['setup_action'] = setup_action
+            
+        # Include language preference
+        if language:
+            payload['language'] = language
             
         # Include registration_id for indicator tokens  
         if token_type == "indicator" and registration_id:
@@ -1090,6 +1320,11 @@ class RentungBot_Ai:
         telegram_id = str(user.id)
         telegram_username = user.username or ""
         
+        # Detect user language from their message or use their stored preference
+        user_lang = 'ms'  # Default
+        if hasattr(update.message, 'text') and update.message.text:
+            user_lang = self.conversation_engine.detect_language(update.message.text)
+        
         # Track activity
         self.command_usage['register'] += 1
         self.last_activity = datetime.utcnow()
@@ -1107,20 +1342,17 @@ class RentungBot_Ai:
                     try:
                         existing_registration = db.query(VipRegistration).filter_by(telegram_id=telegram_id).first()
                         if existing_registration and existing_registration.step_completed >= 2:
-                            status_text = {
-                                'PENDING': 'Menunggu semakan admin',
-                                'VERIFIED': 'Diluluskan ✅',
-                                'REJECTED': 'Ditolak ❌',
-                                'ON_HOLD': 'Dalam tindakan 🔄'
-                            }.get(existing_registration.status.value, existing_registration.status.value)
+                            # Use user's stored language preference if available
+                            if existing_registration.preferred_language:
+                                user_lang = existing_registration.preferred_language
                             
-                            duplicate_message = (
-                                f"⚠️ Anda sudah mempunyai pendaftaran VIP\n\n"
-                                f"📋 Status: {status_text}\n"
-                                f"👤 Nama: {existing_registration.full_name}\n"
-                                f"📧 Email: {existing_registration.email}\n\n"
-                                f"🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran anda, sila hubungi admin.\n\n"
-                                f"💡 Untuk campaign terkini, gunakan /campaign"
+                            status_key = f"status_{existing_registration.status.value.lower()}"
+                            status_text = get_bot_message(status_key, user_lang)
+                            
+                            duplicate_message = get_bot_message('duplicate_registration', user_lang,
+                                status=status_text,
+                                name=existing_registration.full_name,
+                                email=existing_registration.email
                             )
                             
                             await update.message.reply_text(duplicate_message)
@@ -1138,23 +1370,19 @@ class RentungBot_Ai:
             base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
             registration_url = f"{base_url}/?token={token}"
             
-            register_message = (
-                f"🎯 Pendaftaran VIP RentungFX\n\n"
-                f"Klik link di bawah untuk mengisi borang pendaftaran VIP:\n\n"
-                f"👉 {registration_url}\n\n"
-                f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
-                f"📝 Sila lengkapkan semua maklumat yang diperlukan."
-            )
+            # Generate multilingual message
+            register_message = get_bot_message('register_vip_title', user_lang) + "\n\n"
+            register_message += get_bot_message('register_vip_message', user_lang, url=registration_url)
             
             await update.message.reply_text(register_message)
-            logger.info(f"Registration token sent to {telegram_id}")
+            logger.info(f"Registration token sent to {telegram_id} in language: {user_lang}")
             
             # Log command to database
             self.log_conversation(telegram_id, "/register", register_message, "command")
             
         except Exception as e:
             logger.error(f"Registration command error: {e}")
-            error_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+            error_message = get_bot_message('technical_error', user_lang)
             await update.message.reply_text(error_message)
             
             # Log error command to database
@@ -1182,6 +1410,9 @@ class RentungBot_Ai:
         # Update daily stats in database
         self.update_daily_stats(telegram_id, 'campaign')
         self.reset_daily_tracking()
+        
+        # Detect user language
+        language = await self.detect_user_language(update, context)
         
         try:
             # Check if campaign ID was provided as argument
@@ -1232,14 +1463,10 @@ class RentungBot_Ai:
                             
                             if existing_registration:
                                 logger.warning(f"🚫 User {telegram_id} already has completed registration, campaign access denied")
-                                campaign_message = (
-                                    f"✅ Anda sudah mempunyai pendaftaran yang lengkap!\n\n"
-                                    f"📋 Status: {existing_registration.status.value}\n"
-                                    f"📧 Email: {existing_registration.email}\n"
-                                    f"📱 No. Tel: {existing_registration.phone_number}\n\n"
-                                    f"Jika anda perlu mengemaskini maklumat atau mempunyai sebarang pertanyaan, "
-                                    f"sila hubungi admin.\n\n"
-                                    f"📞 Untuk bantuan: /help"
+                                campaign_message = get_bot_message('campaign_already_registered', language).format(
+                                    status=existing_registration.status.value,
+                                    email=existing_registration.email,
+                                    phone=existing_registration.phone_number
                                 )
                             else:
                                 # Generate campaign registration token
@@ -1250,7 +1477,8 @@ class RentungBot_Ai:
                                     telegram_id=telegram_id, 
                                     telegram_username=telegram_username,
                                     token_type="campaign",
-                                    campaign_id=campaign_id
+                                    campaign_id=campaign_id,
+                                    language=language
                                 )
                                 logger.info(f"🔑 Generated token: {token[:20]}...")
                                 logger.info(f"🌐 Base URL: {base_url}")
@@ -1266,28 +1494,21 @@ class RentungBot_Ai:
                                 if not base_url:
                                     logger.error(f"❌ Base URL is empty!")
                                 
-                                campaign_message = (
-                                    f"🎉 {campaign.name}\n\n"
-                                    f"🎁 Reward: {campaign.reward_description}\n"
-                                    f"💰 Min Deposit: ${campaign.min_deposit_amount} USD\n"
-                                    f"🎯 Join Group Chat Fighter Rentung\n\n"
-                                    f"Klik link di bawah untuk menyertai campaign:\n\n"
-                                    f"👉 {campaign_url}\n\n"
-                                    f"⏰ Link ini akan tamat tempoh dalam 30 minit.\n"
-                                    f"📝 Pastikan anda deposit minimum yang diperlukan untuk layak mendapat reward!"
+                                campaign_message = get_bot_message('campaign_info', language,
+                                    name=campaign.name,
+                                    reward=campaign.reward_description,
+                                    min_deposit=campaign.min_deposit_amount,
+                                    url=campaign_url
                                 )
                         else:
-                            campaign_message = (
-                                f"❌ Campaign '{campaign_id}' tidak dijumpai atau tidak aktif.\n\n"
-                                f"Gunakan /campaign untuk lihat senarai campaign yang aktif."
-                            )
+                            campaign_message = get_bot_message('campaign_not_found', language, campaign_id=campaign_id)
                     except Exception as e:
                         logger.error(f"Error fetching campaign {campaign_id}: {e}")
-                        campaign_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+                        campaign_message = get_bot_message('technical_error', language)
                     finally:
                         db.close()
                 else:
-                    campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
+                    campaign_message = get_bot_message('campaign_service_unavailable', language)
             else:
                 # Show list of active campaigns
                 if SessionLocal:
@@ -1298,7 +1519,7 @@ class RentungBot_Ai:
                         ).order_by(Campaign.id.desc()).all()
                         
                         if active_campaigns:
-                            campaign_list = ["🎉 Campaign Aktif:\n"]
+                            campaign_list = [get_bot_message('campaigns_list_header', language)]
                             for i, campaign in enumerate(active_campaigns, 1):
                                 # Show user-friendly command if available, otherwise show full command
                                 friendly_command = None
@@ -1316,23 +1537,17 @@ class RentungBot_Ai:
                                     f"   📝 `{display_command}`\n"
                                 )
                             
-                            campaign_list.append("\n**Cara Daftar Campaign:**")
-                            campaign_list.append("Klik command yang ditunjukkan di atas")
-                            campaign_list.append("Contoh: Tekan `/rm50` untuk RM50 campaign")
+                            campaign_list.append(get_bot_message('campaigns_list_footer', language))
                             campaign_message = "\n".join(campaign_list)
                         else:
-                            campaign_message = (
-                                "📢 Tiada campaign aktif buat masa ini.\n\n"
-                                "🔔 Follow channel kami untuk dapatkan updates campaign terkini!\n"
-                                "📝 Untuk pendaftaran VIP biasa, gunakan /register"
-                            )
+                            campaign_message = get_bot_message('no_active_campaigns', language)
                     except Exception as e:
                         logger.error(f"Error fetching campaigns: {e}")
-                        campaign_message = "Maaf, ada masalah teknikal. Sila cuba lagi dalam beberapa minit."
+                        campaign_message = get_bot_message('technical_error', language)
                     finally:
                         db.close()
                 else:
-                    campaign_message = "Perkhidmatan campaign tidak tersedia buat masa ini."
+                    campaign_message = get_bot_message('campaign_service_unavailable', language)
             
             logger.info(f"📤 About to send campaign response to {telegram_id}: {campaign_message[:100]}...")
             logger.info(f"📊 Message length: {len(campaign_message)} characters")
@@ -1481,8 +1696,8 @@ class RentungBot_Ai:
         self.update_daily_stats(telegram_id, 'indicator')
         self.reset_daily_tracking()
         
-        # Default to Bahasa Melayu for indicator command
-        language = 'ms'
+        # Detect user language
+        language = await self.detect_user_language(update, context)
         
         try:
             # Check if user already has a completed indicator registration
@@ -1494,40 +1709,13 @@ class RentungBot_Ai:
                         VipRegistration.campaign_name == "High Level Engulfing Indicator"
                     ).first()
                     if existing_registration and existing_registration.step_completed >= 2:
-                        status_text = {
-                            'PENDING': 'Menunggu semakan admin' if language == 'ms' else 'Menunggu review admin' if language == 'id' else 'Pending admin review',
-                            'VERIFIED': 'Diluluskan ✅' if language == 'ms' else 'Disetujui ✅' if language == 'id' else 'Approved ✅',
-                            'REJECTED': 'Ditolak ❌' if language == 'ms' else 'Ditolak ❌' if language == 'id' else 'Rejected ❌',
-                            'ON_HOLD': 'Dalam tindakan 🔄' if language == 'ms' else 'Dalam proses 🔄' if language == 'id' else 'On Hold 🔄'
-                        }.get(existing_registration.status.value, existing_registration.status.value)
+                        status_text = get_bot_message(f"status_{existing_registration.status.value.lower()}", language)
                         
-                        if language == 'ms':
-                            duplicate_message = (
-                                f"⚠️ Anda sudah mempunyai pendaftaran High Level Engulfing Indicator\n\n"
-                                f"📋 Status: {status_text}\n"
-                                f"👤 Nama: {existing_registration.full_name}\n"
-                                f"📧 Email: {existing_registration.email}\n\n"
-                                f"🔍 Jika anda perlu mengemaskini maklumat atau ada masalah dengan pendaftaran, sila hubungi admin.\n\n"
-                                f"💡 Untuk VIP access, gunakan /register"
-                            )
-                        elif language == 'id':
-                            duplicate_message = (
-                                f"⚠️ Anda sudah memiliki registrasi High Level Engulfing Indicator\n\n"
-                                f"📋 Status: {status_text}\n"
-                                f"👤 Nama: {existing_registration.full_name}\n"
-                                f"📧 Email: {existing_registration.email}\n\n"
-                                f"🔍 Jika Anda perlu update informasi atau ada masalah dengan registrasi, silakan hubungi admin.\n\n"
-                                f"💡 Untuk akses VIP, gunakan /register"
-                            )
-                        else:
-                            duplicate_message = (
-                                f"⚠️ You already have a High Level Engulfing Indicator registration\n\n"
-                                f"📋 Status: {status_text}\n"
-                                f"👤 Name: {existing_registration.full_name}\n"
-                                f"📧 Email: {existing_registration.email}\n\n"
-                                f"🔍 If you need to update information or have issues with your registration, please contact admin.\n\n"
-                                f"💡 For VIP access, use /register"
-                            )
+                        duplicate_message = get_bot_message('indicator_already_registered', language,
+                            status=status_text,
+                            name=existing_registration.full_name,
+                            email=existing_registration.email
+                        )
                         
                         await update.message.reply_text(duplicate_message)
                         self.log_conversation(telegram_id, "/indicator", duplicate_message, "command")
@@ -1538,37 +1726,17 @@ class RentungBot_Ai:
                     db.close()
             
             # Generate registration token for initial step (account setup)
-            token = generate_registration_token(telegram_id, telegram_username, token_type="initial")
+            token = generate_registration_token(telegram_id, telegram_username, token_type="initial", language=language)
             
             # Get base URL from environment
             base_url = os.getenv('BASE_URL', 'https://ezyassist-unified-production.up.railway.app')
             registration_url = f"{base_url}/indicator?token={token}"
             
-            # Create simple multilingual response  
-            if language == 'ms':
-                indicator_message = (
-                    f"🎯 **High Level Engulfing Indicator**\n\n"
-                    f"Hi {user.first_name}! Ready untuk dapatkan indicator?\n\n"
-                    f"Klik link di bawah untuk mula registration:\n\n"
-                    f"👉 {registration_url}\n\n"
-                    f"⏰ Link aktif untuk 30 minit sahaja"
-                )
-            elif language == 'id':
-                indicator_message = (
-                    f"🎯 **High Level Engulfing Indicator**\n\n"
-                    f"Hi {user.first_name}! Siap untuk dapatkan indicator?\n\n"
-                    f"Klik link di bawah untuk mulai registrasi:\n\n"
-                    f"👉 {registration_url}\n\n"
-                    f"⏰ Link aktif selama 30 menit"
-                )
-            else:  # English
-                indicator_message = (
-                    f"🎯 **High Level Engulfing Indicator**\n\n"
-                    f"Hi {user.first_name}! Ready to get the indicator?\n\n"
-                    f"Click the link below to start registration:\n\n"
-                    f"👉 {registration_url}\n\n"
-                    f"⏰ Link active for 30 minutes only"
-                )
+            # Create multilingual response using bot message function
+            indicator_message = get_bot_message('indicator_registration', language,
+                name=user.first_name,
+                url=registration_url
+            )
             
             await update.message.reply_text(indicator_message)
             
@@ -1577,7 +1745,7 @@ class RentungBot_Ai:
             
         except Exception as e:
             logger.error(f"Error in indicator command: {e}")
-            error_message = "Maaf, ada masalah teknikal. Sila cuba lagi." if language == 'ms' else "Maaf, ada masalah teknis. Silakan coba lagi." if language == 'id' else "Sorry, there's a technical issue. Please try again."
+            error_message = get_bot_message('technical_error', language)
             await update.message.reply_text(error_message)
 
     async def show_registration_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2080,7 +2248,7 @@ bot_instance = RentungBot_Ai()
 # FastAPI Routes
 @app.get("/", response_class=HTMLResponse)
 async def registration_entry(request: Request, token: str = None):
-    """Registration entry point - redirects to account setup (Step 1)"""
+    """Registration entry point - redirects to language selection (Step 0)"""
     if not token:
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -2088,12 +2256,18 @@ async def registration_entry(request: Request, token: str = None):
             "translations": TRANSLATIONS['ms']
         })
     
-    # Redirect to account setup step
-    return RedirectResponse(url=f"/account-setup?token={token}", status_code=302)
+    # Check if token already contains language preference
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if token_data and token_data.get('language'):
+        # Language already selected, redirect to account setup
+        return RedirectResponse(url=f"/account-setup?token={token}", status_code=302)
+    
+    # Redirect to language selection step
+    return RedirectResponse(url=f"/select-language?token={token}", status_code=302)
 
-@app.get("/account-setup", response_class=HTMLResponse)
-async def account_setup_page(request: Request, token: str = None):
-    """Account setup page (Step 1)"""
+@app.get("/select-language", response_class=HTMLResponse)  
+async def language_selection_page(request: Request, token: str = None, campaign_id: str = None, is_indicator: bool = False):
+    """Language selection page (Step 0)"""
     if not token:
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -2101,6 +2275,7 @@ async def account_setup_page(request: Request, token: str = None):
             "translations": TRANSLATIONS['ms']
         })
     
+    # Verify token
     telegram_id, telegram_username, token_data = verify_registration_token(token)
     if not telegram_id:
         return templates.TemplateResponse("error.html", {
@@ -2109,12 +2284,96 @@ async def account_setup_page(request: Request, token: str = None):
             "translations": TRANSLATIONS['ms']
         })
     
+    # Default to Malaysian for the language selection page
+    translations = TRANSLATIONS['ms']
+    
+    return templates.TemplateResponse("language_selection.html", {
+        "request": request,
+        "telegram_id": telegram_id,
+        "telegram_username": telegram_username,
+        "token": token,
+        "campaign_id": campaign_id,
+        "is_indicator": is_indicator,
+        "translations": translations
+    })
+
+@app.post("/select-language")
+async def process_language_selection(request: Request, token: str = Form(...), language: str = Form(...), campaign_id: str = Form(None), is_indicator: bool = Form(False)):
+    """Process language selection and redirect to account setup"""
+    # Verify token
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": "Invalid or expired registration token",
+            "translations": TRANSLATIONS.get(language, TRANSLATIONS['ms'])
+        })
+    
+    # Validate language
+    if language not in ['ms', 'en', 'id']:
+        language = 'ms'  # Default fallback
+    
+    # Create new token with language preference
+    new_token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
+    
+    if campaign_id:
+        new_token_type = "campaign_with_setup"
+    elif is_indicator:
+        new_token_type = "indicator_with_setup"
+    else:
+        new_token_type = "initial_with_setup"
+    
+    new_token = generate_registration_token(
+        telegram_id=telegram_id,
+        telegram_username=telegram_username or "",
+        token_type=new_token_type,
+        registration_id=token_data.get('registration_id') if token_data else None,
+        campaign_id=campaign_id,
+        language=language
+    )
+    
+    # Redirect to account setup with language parameter
+    if campaign_id:
+        return RedirectResponse(url=f"/campaign/{campaign_id}/account-setup?token={new_token}&lang={language}", status_code=302)
+    elif is_indicator:
+        return RedirectResponse(url=f"/indicator/account-setup?token={new_token}&lang={language}", status_code=302)
+    else:
+        return RedirectResponse(url=f"/account-setup?token={new_token}&lang={language}", status_code=302)
+
+@app.get("/account-setup", response_class=HTMLResponse)
+async def account_setup_page(request: Request, token: str = None):
+    """Account setup page (Step 1)"""
+    # Get language preference
+    lang = get_language_from_request(request)
+    translations = get_translations(lang)
+    
+    if not token:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": translations.get("missing_token", "Missing registration token. Please use the link from the Telegram bot."),
+            "translations": translations
+        })
+    
+    telegram_id, telegram_username, token_data = verify_registration_token(token)
+    if not telegram_id:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error_message": translations.get("invalid_token", "Invalid or expired registration token"),
+            "translations": translations
+        })
+    
+    # Get language from token if available
+    if token_data and token_data.get('language'):
+        lang = token_data.get('language')
+        translations = get_translations(lang)
+    
     return templates.TemplateResponse("account_setup.html", {
         "request": request,
         "telegram_id": telegram_id,
         "telegram_username": telegram_username,
         "token": token,
-        "translations": TRANSLATIONS['ms']
+        "translations": translations,
+        "lang": lang
     })
 
 @app.post("/account-setup/continue")
@@ -2122,19 +2381,24 @@ async def account_setup_continue(request: Request, token: str = Form(...), setup
     """Continue from account setup to registration form (Step 2)"""
     # Verify the token first
     telegram_id, telegram_username, token_data = verify_registration_token(token)
+    
+    # Get language from token
+    lang = token_data.get('language', 'ms') if token_data else 'ms'
+    translations = get_translations(lang)
+    
     if not telegram_id:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Invalid or expired registration token",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("invalid_token", "Invalid or expired registration token"),
+            "translations": translations
         })
     
     # Validate setup_action
     if setup_action not in ['new_account', 'partner_change']:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Invalid setup action selected",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("invalid_setup_action", "Invalid setup action selected"),
+            "translations": translations
         })
     
     try:
@@ -2143,7 +2407,8 @@ async def account_setup_continue(request: Request, token: str = Form(...), setup
             telegram_id=telegram_id,
             telegram_username=telegram_username or "",
             token_type="initial_with_setup",
-            registration_id=token_data.get('registration_id') if token_data else None
+            registration_id=token_data.get('registration_id') if token_data else None,
+            language=lang
         )
         
         # Store the setup action in token data
@@ -2199,34 +2464,43 @@ async def account_setup_continue(request: Request, token: str = Form(...), setup
             finally:
                 db.close()
         
-        # Include setup action in the URL parameters for the registration form
-        return RedirectResponse(url=f"/registration-form?token={new_token}&setup_action={setup_action}", status_code=302)
+        # Include setup action and language in the URL parameters for the registration form
+        return RedirectResponse(url=f"/registration-form?token={new_token}&setup_action={setup_action}&lang={lang}", status_code=302)
         
     except Exception as e:
         logger.error(f"Error in account setup continue: {e}")
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "An error occurred while processing your request",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("error_processing", "An error occurred while processing your request"),
+            "translations": translations
         })
 
 @app.get("/registration-form", response_class=HTMLResponse)
 async def registration_form(request: Request, token: str = None):
     """Registration form page (Step 2)"""
+    # Get language preference
+    lang = get_language_from_request(request)
+    translations = get_translations(lang)
+    
     if not token:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Missing registration token. Please use the link from the Telegram bot.",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("missing_token", "Missing registration token. Please use the link from the Telegram bot."),
+            "translations": translations
         })
     
     telegram_id, telegram_username, token_data = verify_registration_token(token)
     if not telegram_id:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Invalid or expired registration token",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("invalid_token", "Invalid or expired registration token"),
+            "translations": translations
         })
+    
+    # Get language from token if available
+    if token_data and token_data.get('language'):
+        lang = token_data.get('language')
+        translations = get_translations(lang)
     
     # Get token type and registration data for resubmissions
     token_type = token_data.get('token_type', 'initial') if token_data else 'initial'
@@ -2280,7 +2554,8 @@ async def registration_form(request: Request, token: str = None):
         "telegram_username": telegram_username,
         "token": token,
         "form_hash": form_hash,
-        "translations": TRANSLATIONS['ms'],
+        "translations": translations,
+        "lang": lang,
         "token_type": token_type,
         "existing_registration": existing_registration.to_dict() if existing_registration else None,
         "is_resubmission": token_type == "resubmission",
@@ -2317,11 +2592,16 @@ async def submit_registration(
     
     # Verify token
     telegram_id, telegram_username, token_data = verify_registration_token(token)
+    
+    # Get language from token
+    lang = token_data.get('language', 'ms') if token_data else 'ms'
+    translations = get_translations(lang)
+    
     if not telegram_id:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Token tidak sah atau telah tamat tempoh",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("invalid_token", "Token tidak sah atau telah tamat tempoh"),
+            "translations": translations
         })
     
     # Determine if this is a resubmission
@@ -2337,8 +2617,8 @@ async def submit_registration(
     if not all([full_name.strip(), email.strip(), phone_number.strip(), deposit_amount.strip(), client_id.strip()]):
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Sila lengkapkan semua medan yang diperlukan",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("required_fields", "Sila lengkapkan semua medan yang diperlukan"),
+            "translations": translations
         })
     
     # Validate email format
@@ -2347,8 +2627,8 @@ async def submit_registration(
     except EmailNotValidError:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Sila masukkan alamat email yang sah",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("invalid_email", "Sila masukkan alamat email yang sah"),
+            "translations": translations
         })
     
     # Validate phone number format with Malaysian/Indonesian region support
@@ -2371,8 +2651,8 @@ async def submit_registration(
     except phonenumbers.NumberParseException:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": "Sila masukkan nombor telefon yang sah (contoh: +60123456789 atau 0123456789)",
-            "translations": TRANSLATIONS['ms']
+            "error_message": translations.get("invalid_phone", "Sila masukkan nombor telefon yang sah (contoh: +60123456789 atau 0123456789)"),
+            "translations": translations
         })
     
     # Process file uploads
@@ -2464,6 +2744,7 @@ async def submit_registration(
                         existing_setup.ip_address = request.client.host
                         existing_setup.user_agent = request.headers.get('User-Agent', '')
                         existing_setup.step_completed = 2  # Both steps completed
+                        existing_setup.preferred_language = lang  # Save language preference
                         
                         db.commit()
                         logger.info(f"✅ Registration completed for {full_name} (updated existing record)")
@@ -2496,7 +2777,8 @@ async def submit_registration(
                             deposit_proof_3_path=deposit_proof_3_path,
                             ip_address=request.client.host,
                             user_agent=request.headers.get('User-Agent', ''),
-                            step_completed=2  # Both steps completed (edge case)
+                            step_completed=2,  # Both steps completed (edge case)
+                            preferred_language=lang  # Save language preference
                         )
                         
                         db.add(new_registration)
@@ -2528,24 +2810,30 @@ async def submit_registration(
                 db.close()
     
     # Redirect to success page
-    return RedirectResponse(url=f"/success?token={token}", status_code=303)
+    return RedirectResponse(url=f"/success?token={token}&lang={lang}", status_code=303)
 
 @app.get("/success", response_class=HTMLResponse)
 async def success_page(request: Request, token: str = None):
     """Registration success page"""
     telegram_id = None
     telegram_username = None
+    lang = get_language_from_request(request)
     
     if token:
         telegram_id, telegram_username, token_data = verify_registration_token(token)
+        # Get language from token if available
+        if token_data and token_data.get('language'):
+            lang = token_data.get('language')
+    
+    translations = get_translations(lang)
     
     return templates.TemplateResponse("success.html", {
         "request": request,
-        "translations": TRANSLATIONS['ms'],
+        "translations": translations,
         "token": token,
         "telegram_id": telegram_id,
         "telegram_username": telegram_username,
-        "lang": "ms"
+        "lang": lang
     })
 
 @app.get("/health")

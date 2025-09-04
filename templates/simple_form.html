@@ -9,7 +9,7 @@
                     {% if is_campaign_registration %}
                         {{ page_title }}
                     {% else %}
-                        Complete Group Chat Fighter Rentung Registration
+{{ translations.title }}
                     {% endif %}
                 </h1>
                 <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">Step 2 of 2</span>
@@ -53,43 +53,43 @@
                     <input type="hidden" name="token" value="{{ token }}">
                     <input type="hidden" name="telegram_id" value="{{ telegram_id }}">
                     <input type="hidden" name="telegram_username" value="{{ telegram_username or '' }}">
-                    <input type="hidden" name="language" value="ms">
+                    <input type="hidden" name="language" value="{{ lang }}">
                     <input type="hidden" name="form_hash" value="{{ form_hash }}">
                     <input type="hidden" name="brokerage_name" value="Valetax">
                     
                     <!-- Personal Information -->
-                    <h5 class="mb-4 text-primary">Maklumat Diri</h5>
+                    <h5 class="mb-4 text-primary">{{ translations.full_name }}</h5>
                     
                     <div class="mb-4">
                         <label for="full_name" class="form-label">
-                            Nama Penuh <span class="text-danger">*</span>
+                            {{ translations.full_name }} <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user fa-sm"></i></span>
                             <input type="text" class="form-control form-control-lg" id="full_name" name="full_name" 
-                                   placeholder="Masukkan nama penuh anda" required>
+                                   placeholder="{{ translations.full_name_placeholder }}" required>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label for="email" class="form-label">
-                            Alamat Email <span class="text-danger">*</span>
+                            {{ translations.email }} <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-envelope fa-sm"></i></span>
                             <input type="email" class="form-control form-control-lg" id="email" name="email" 
-                                   placeholder="nama@example.com" required>
+                                   placeholder="{{ translations.email_placeholder }}" required>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label for="phone_number" class="form-label">
-                            Nombor Telefon <span class="text-danger">*</span>
+                            {{ translations.phone }} <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-phone fa-sm"></i></span>
                             <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
-                                   placeholder="01234567890" required>
+                                   placeholder="{{ translations.phone_placeholder }}" required>
                         </div>
                     </div>
 

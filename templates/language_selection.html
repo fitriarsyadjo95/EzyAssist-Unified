@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-xl-5">
+        <div class="card shadow-lg border-0 registration-card">
+            <div class="card-header text-center">
+                <h1 class="mb-2">🌍 {{ translations.select_language }}</h1>
+                <p class="text-muted mb-0">{{ translations.select_language_desc }}</p>
+            </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <form id="languageForm" method="POST" action="/select-language">
+                    <input type="hidden" name="token" value="{{ token }}">
+                    {% if campaign_id %}
+                        <input type="hidden" name="campaign_id" value="{{ campaign_id }}">
+                    {% endif %}
+                    {% if is_indicator %}
+                        <input type="hidden" name="is_indicator" value="true">
+                    {% endif %}
+                    
+                    <div class="language-options">
+                        <!-- Malaysian Option -->
+                        <div class="language-option mb-3" onclick="selectLanguage('ms')">
+                            <div class="card border-2" id="option-ms">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="language-flag me-4">
+                                        <span style="font-size: 2.5rem;">🇲🇾</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">{{ translations.language_malay }}</h5>
+                                        <small class="text-muted">Bahasa Melayu - Malaysia</small>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="language" id="lang-ms" value="ms">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- English Option -->
+                        <div class="language-option mb-3" onclick="selectLanguage('en')">
+                            <div class="card border-2" id="option-en">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="language-flag me-4">
+                                        <span style="font-size: 2.5rem;">🇺🇸</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">{{ translations.language_english }}</h5>
+                                        <small class="text-muted">English - International</small>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="language" id="lang-en" value="en">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Indonesian Option -->
+                        <div class="language-option mb-4" onclick="selectLanguage('id')">
+                            <div class="card border-2" id="option-id">
+                                <div class="card-body d-flex align-items-center p-4">
+                                    <div class="language-flag me-4">
+                                        <span style="font-size: 2.5rem;">🇮🇩</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">{{ translations.language_indonesian }}</h5>
+                                        <small class="text-muted">Bahasa Indonesia - Indonesia</small>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="language" id="lang-id" value="id">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5" id="continueBtn" disabled>
+                            <i class="fas fa-arrow-right me-2"></i>{{ translations.continue }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.language-option {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.language-option:hover .card {
+    border-color: #007bff !important;
+    background-color: #f8f9fa;
+}
+
+.language-option .card {
+    border-color: #e3e6ea;
+    transition: all 0.2s ease;
+}
+
+.language-option.selected .card {
+    border-color: #007bff !important;
+    background-color: #e3f2fd;
+}
+
+.language-flag {
+    min-width: 60px;
+    text-align: center;
+}
+
+.registration-card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    padding: 2rem 1.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+</style>
+
+<script>
+function selectLanguage(lang) {
+    // Remove selected class from all options
+    document.querySelectorAll('.language-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked option
+    document.querySelector(`#option-${lang}`).closest('.language-option').classList.add('selected');
+    
+    // Check the radio button
+    document.getElementById(`lang-${lang}`).checked = true;
+    
+    // Enable continue button
+    document.getElementById('continueBtn').disabled = false;
+}
+
+// Enable continue button if any option is already selected
+document.addEventListener('DOMContentLoaded', function() {
+    const radioButtons = document.querySelectorAll('input[name="language"]');
+    radioButtons.forEach(radio => {
+        if (radio.checked) {
+            document.getElementById('continueBtn').disabled = false;
+            selectLanguage(radio.value);
+        }
+    });
+});
+</script>
+{% endblock %}
