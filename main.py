@@ -1481,12 +1481,8 @@ class RentungBot_Ai:
         self.update_daily_stats(telegram_id, 'indicator')
         self.reset_daily_tracking()
         
-        # Detect user's language
-        try:
-            language = self.conversation_engine.detect_language("indicator high level engulfing")
-        except Exception as e:
-            logger.error(f"Error detecting language: {e}")
-            language = 'ms'  # Default to Malaysian
+        # Default to Bahasa Melayu for indicator command
+        language = 'ms'
         
         try:
             # Check if user already has a completed indicator registration
