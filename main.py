@@ -8646,6 +8646,36 @@ async def migrate_database():
                     conn.commit()
                     logger.info(f"✅ Added campaign column: {column}")
             
+            # Check and add preferred_language column for multi-language support
+            lang_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'vip_registrations' 
+                AND column_name = 'preferred_language'
+            """))
+            if not lang_result.fetchone():
+                conn.execute(text("""
+                    ALTER TABLE vip_registrations 
+                    ADD COLUMN preferred_language VARCHAR DEFAULT 'ms'
+                """))
+                conn.commit()
+                logger.info("✅ Added column: preferred_language")
+            
+            # Also check indicator_registrations table for preferred_language
+            ind_lang_result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'indicator_registrations' 
+                AND column_name = 'preferred_language'
+            """))
+            if not ind_lang_result.fetchone():
+                conn.execute(text("""
+                    ALTER TABLE indicator_registrations 
+                    ADD COLUMN preferred_language VARCHAR DEFAULT 'ms'
+                """))
+                conn.commit()
+                logger.info("✅ Added preferred_language to indicator_registrations")
+            
             # Check and create campaigns table
             campaigns_table_result = conn.execute(text("""
                 SELECT EXISTS (
